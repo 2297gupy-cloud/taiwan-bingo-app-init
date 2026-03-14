@@ -20,22 +20,20 @@ export default function BingoGame({ gameId, roomId }: GameProps) {
   const { data: game, refetch: refetchGame } = trpc.bingo.getGame.useQuery({ gameId });
   const { data: myCard } = trpc.bingo.getMyCard.useQuery({ gameId });
 
-  const drawNumberMutation = trpc.bingo.drawNumber.useMutation({
-    onSuccess: (data) => {
-      setDrawnNumbers(data.drawnNumbers);
-      if (data.winners.length > 0) {
-        setWinners(data.winners);
-      }
+  const startGameMutation = trpc.bingo.startGame.useMutation({
+    onSuccess: () => {
       refetchGame();
     },
   });
 
   useEffect(() => {
-    if (game?.drawnNumbers) {
-      setDrawnNumbers(Array.isArray(game.drawnNumbers) ? game.drawnNumbers : []);
-    }
-    if (game?.winners) {
-      setWinners(Array.isArray(game.winners) ? game.winners : []);
+    if (game) {
+      const drawn = Array.isArray(game.drawnNumbers) ? game.drawnNumbers : [];
+      setDrawnNumbers(drawn);
+      const gameWinners = Array.isArray(game.winners) ? game.winners : [];
+      if (gameWinners.length > 0) {
+        setWinners(gameWinners);
+      }
     }
   }, [game]);
 
@@ -46,8 +44,8 @@ export default function BingoGame({ gameId, roomId }: GameProps) {
     }
   }, [myCard]);
 
-  const handleDrawNumber = async () => {
-    await drawNumberMutation.mutateAsync({ gameId });
+  const handleStartGame = async () => {
+    await startGameMutation.mutateAsync({ roomId });
   };
 
   const handleMarkCell = (number: number) => {
@@ -87,12 +85,19 @@ export default function BingoGame({ gameId, roomId }: GameProps) {
             <div style={{ textAlign: "center", marginBottom: "32px" }}>
               {currentDrawn ? (
                 <div
-                  className="bingo-ball bingo-fade-in"
                   style={{
                     width: "120px",
                     height: "120px",
-                    fontSize: "48px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #e8c547 0%, #d4af37 100%)",
+                    color: "#1a1a1a",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     margin: "0 auto 16px",
+                    fontSize: "48px",
+                    fontWeight: "700",
+                    boxShadow: "0 4px 12px rgba(212, 175, 55, 0.3)",
                   }}
                 >
                   {currentDrawn}
@@ -122,8 +127,8 @@ export default function BingoGame({ gameId, roomId }: GameProps) {
             {/* 抽號按鈕 */}
             {game?.status === "playing" && (
               <Button
-                onClick={handleDrawNumber}
-                disabled={drawNumberMutation.isPending}
+                onClick={handleStartGame}
+                disabled={startGameMutation.isPending}
                 style={{
                   width: "100%",
                   padding: "16px",
@@ -135,10 +140,10 @@ export default function BingoGame({ gameId, roomId }: GameProps) {
                   fontSize: "18px",
                   cursor: "pointer",
                   marginBottom: "24px",
-                  opacity: drawNumberMutation.isPending ? 0.5 : 1,
+                  opacity: startGameMutation.isPending ? 0.5 : 1,
                 }}
               >
-                {drawNumberMutation.isPending ? "抽取中..." : "抽取下一個號碼"}
+                {startGameMutation.isPending ? "抽取中..." : "抽取下一個號碼"}
               </Button>
             )}
 
@@ -198,10 +203,32 @@ export default function BingoGame({ gameId, roomId }: GameProps) {
                   <div
                     key={num}
                     onClick={() => handleMarkCell(num)}
-                    className={`bingo-cell ${markedNumbers.includes(num) ? "marked" : ""}`}
                     style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      aspectRatio: "1",
+                      background: markedNumbers.includes(num) 
+                        ? "linear-gradient(135deg, #4ade80 0%, #22c55e 100%)" 
+                        : drawnNumbers.includes(num)
+                        ? "linear-gradient(135deg, #e8c547 0%, #d4af37 100%)"
+                        : "linear-gradient(135deg, #404040 0%, #2d2d2d 100%)",
+                      color: markedNumbers.includes(num) ? "#1a1a1a" : drawnNumbers.includes(num) ? "#1a1a1a" : "#d4af37",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      fontSize: "14px",
                       cursor: drawnNumbers.includes(num) ? "pointer" : "not-allowed",
                       opacity: drawnNumbers.includes(num) ? 1 : 0.5,
+                      border: markedNumbers.includes(num) ? "2px solid #22c55e" : "1px solid rgba(212, 175, 55, 0.2)",
+                      transition: "all 200ms",
+                    }}
+                    onMouseOver={(e) => {
+                      if (drawnNumbers.includes(num)) {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
                     }}
                   >
                     {num}

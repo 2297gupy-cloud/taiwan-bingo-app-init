@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import {
   getLatestDraw,
@@ -13,11 +13,19 @@ import {
   getRecentPredictions,
 } from "./db";
 import { taiwanBingoV2Config, exportUIConfigAsJSON } from "./ui-config-export";
-import { bingoRouter } from "./bingo-router";
+import {
+  createBingoRoom,
+  listBingoRooms,
+  getBingoRoom,
+  createBingoGame,
+  getBingoGame,
+  getPlayerBingoCard,
+  addGameParticipant,
+  getPlayerStats,
+} from "./bingo-db";
 
 export const appRouter = router({
   system: systemRouter,
-  bingo: bingoRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -114,6 +122,85 @@ export const appRouter = router({
         databaseTableCount: taiwanBingoV2Config.databaseConfig.tables.length,
       };
     }),
+  }),
+
+  /** 賓果遊戲系統 */
+  bingo: router({
+    /** 創建遊戲房間 */
+    createRoom: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        description: z.string().optional(),
+        maxPlayers: z.number().min(2).max(100).default(20),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return createBingoRoom({
+          name: input.name,
+          description: input.description,
+          maxPlayers: input.maxPlayers,
+          creatorId: ctx.user.id,
+        });
+      }),
+
+    /** 列表遊戲房間 */
+    listRooms: publicProcedure
+      .input(z.object({
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+      }))
+      .query(async ({ input }) => {
+        return listBingoRooms(input.limit, input.offset);
+      }),
+
+    /** 獲取房間詳情 */
+    getRoom: publicProcedure
+      .input(z.object({ roomId: z.number() }))
+      .query(async ({ input }) => {
+        return getBingoRoom(input.roomId);
+      }),
+
+    /** 加入房間 */
+    joinRoom: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return addGameParticipant({
+          gameId: 0,
+          playerId: ctx.user.id,
+          status: "joined",
+        });
+      }),
+
+    /** 開始遊戲 */
+    startGame: protectedProcedure
+      .input(z.object({ roomId: z.number() }))
+      .mutation(async ({ input }) => {
+        return createBingoGame({
+          roomId: input.roomId,
+          status: "playing",
+          drawnNumbers: [],
+          winners: [],
+        });
+      }),
+
+    /** 獲取遊戲詳情 */
+    getGame: publicProcedure
+      .input(z.object({ gameId: z.number() }))
+      .query(async ({ input }) => {
+        return getBingoGame(input.gameId);
+      }),
+
+    /** 獲取我的賓果卡 */
+    getMyCard: protectedProcedure
+      .input(z.object({ gameId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return getPlayerBingoCard(input.gameId, ctx.user.id);
+      }),
+
+    /** 獲取玩家統計 */
+    getPlayerStats: protectedProcedure
+      .query(async ({ ctx }) => {
+        return getPlayerStats(ctx.user.id);
+      }),
   }),
 });
 
