@@ -1,5 +1,27 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1773382198015,
+      "tag": "0000_spotty_ben_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1773382416740,
+      "tag": "0001_cultured_wild_child",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1773509189601,
+      "tag": "0002_fantastic_diamondback",
+      "breakpoints": true
+    }
+  ]
 }
