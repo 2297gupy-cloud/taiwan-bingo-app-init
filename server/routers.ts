@@ -313,16 +313,19 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    /** 驗證預測結果 */
+    /** 驗證預測結果
+     * verifyHour: 實際驗證的時段（卡片顯示時段+1）
+     * 例：08時卡片的黃金球 → verifyHour="09" → 驗證 09:00~09:55
+     */
     verify: publicProcedure
       .input(z.object({
         dateStr: z.string().optional(),
-        targetHour: z.string(),
+        verifyHour: z.string(),
         goldenBalls: z.array(z.number().min(1).max(80)),
       }))
       .query(async ({ input }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        return verifyPrediction(dateStr, input.targetHour, input.goldenBalls);
+        return verifyPrediction(dateStr, input.verifyHour, input.goldenBalls);
       }),
 
     /** 取得時段開獎數據（用於複製到 AI） */

@@ -22,21 +22,21 @@ async function db() {
  * 例：08時卡片 → 複製 07:00~07:55 的數據（source="07"）
  */
 export const HOUR_SLOTS = [
-  { source: "07", target: "08", label: "08時", copyRange: "0700~0755", draws: 12 },
-  { source: "08", target: "09", label: "09時", copyRange: "0800~0855", draws: 12 },
-  { source: "09", target: "10", label: "10時", copyRange: "0900~0955", draws: 12 },
-  { source: "10", target: "11", label: "11時", copyRange: "1000~1055", draws: 12 },
-  { source: "11", target: "12", label: "12時", copyRange: "1100~1155", draws: 12 },
-  { source: "12", target: "13", label: "13時", copyRange: "1200~1255", draws: 12 },
-  { source: "13", target: "14", label: "14時", copyRange: "1300~1355", draws: 12 },
-  { source: "14", target: "15", label: "15時", copyRange: "1400~1455", draws: 12 },
-  { source: "15", target: "16", label: "16時", copyRange: "1500~1555", draws: 12 },
-  { source: "16", target: "17", label: "17時", copyRange: "1600~1655", draws: 12 },
-  { source: "17", target: "18", label: "18時", copyRange: "1700~1755", draws: 12 },
-  { source: "18", target: "19", label: "19時", copyRange: "1800~1855", draws: 12 },
-  { source: "19", target: "20", label: "20時", copyRange: "1900~1955", draws: 12 },
-  { source: "20", target: "21", label: "21時", copyRange: "2000~2055", draws: 12 },
-  { source: "21", target: "22", label: "22時", copyRange: "2100~2155", draws: 12 },
+  { source: "07", target: "08", label: "08時", copyRange: "0700~0755", draws: 12, verifyHour: "09", verifyRange: "0900~0955" },
+  { source: "08", target: "09", label: "09時", copyRange: "0800~0855", draws: 12, verifyHour: "10", verifyRange: "1000~1055" },
+  { source: "09", target: "10", label: "10時", copyRange: "0900~0955", draws: 12, verifyHour: "11", verifyRange: "1100~1155" },
+  { source: "10", target: "11", label: "11時", copyRange: "1000~1055", draws: 12, verifyHour: "12", verifyRange: "1200~1255" },
+  { source: "11", target: "12", label: "12時", copyRange: "1100~1155", draws: 12, verifyHour: "13", verifyRange: "1300~1355" },
+  { source: "12", target: "13", label: "13時", copyRange: "1200~1255", draws: 12, verifyHour: "14", verifyRange: "1400~1455" },
+  { source: "13", target: "14", label: "14時", copyRange: "1300~1355", draws: 12, verifyHour: "15", verifyRange: "1500~1555" },
+  { source: "14", target: "15", label: "15時", copyRange: "1400~1455", draws: 12, verifyHour: "16", verifyRange: "1600~1655" },
+  { source: "15", target: "16", label: "16時", copyRange: "1500~1555", draws: 12, verifyHour: "17", verifyRange: "1700~1755" },
+  { source: "16", target: "17", label: "17時", copyRange: "1600~1655", draws: 12, verifyHour: "18", verifyRange: "1800~1855" },
+  { source: "17", target: "18", label: "18時", copyRange: "1700~1755", draws: 12, verifyHour: "19", verifyRange: "1900~1955" },
+  { source: "18", target: "19", label: "19時", copyRange: "1800~1855", draws: 12, verifyHour: "20", verifyRange: "2000~2055" },
+  { source: "19", target: "20", label: "20時", copyRange: "1900~1955", draws: 12, verifyHour: "21", verifyRange: "2100~2155" },
+  { source: "20", target: "21", label: "21時", copyRange: "2000~2055", draws: 12, verifyHour: "22", verifyRange: "2200~2255" },
+  { source: "21", target: "22", label: "22時", copyRange: "2100~2155", draws: 12, verifyHour: "23", verifyRange: "2300~2355" },
 ];
 
 /** 取得當前時段（台灣時間 UTC+8）
@@ -356,34 +356,76 @@ export async function deleteAiStarPrediction(dateStr: string, sourceHour: string
     );
 }
 
-/** 驗證預測結果：比對黃金球是否命中目標時段的開獎 */
+/** 驗證預測結果：比對黃金球是否命中驗證時段的開獎
+ * verifyHour: 實際要驗證的時段（卡片顯示時段+1）
+ * 例：08時卡片的黃金球 → 驗證 09:00~09:55
+ */
 export async function verifyPrediction(
   dateStr: string,
-  targetHour: string,
+  verifyHour: string,
   goldenBalls: number[]
 ) {
   const database = await db();
-  // 取得目標時段的開獎記錄（近 12 期）
-  const draws = await database
+  const rocDate = toROCDateStr(dateStr);
+  const hourNum = parseInt(verifyHour, 10);
+
+  // 生成完整 12 個時間點（xx:00, xx:05, xx:10 ... xx:55）
+  const timeSlots: string[] = [];
+  for (let m = 0; m < 60; m += 5) {
+    timeSlots.push(`${String(hourNum).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+
+  // 查詢指定日期 + 指定驗證時段的開獎記錄
+  const allDraws = await database
     .select()
     .from(drawRecords)
-    .where(like(drawRecords.drawTime, `%${targetHour}:%`))
-    .orderBy(desc(drawRecords.drawNumber))
-    .limit(12);
+    .where(
+      and(
+        like(drawRecords.drawTime, `${rocDate}%`),
+        like(drawRecords.drawTime, `% ${verifyHour}:%`)
+      )
+    )
+    .orderBy(desc(drawRecords.drawTime))
+    .limit(30);
+
+  // 用 drawTime 去重，建立時間→開獎記錄的 Map
+  const drawMap = new Map<string, typeof allDraws[0]>();
+  for (const d of allDraws) {
+    const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
+    if (!drawMap.has(timeKey)) {
+      drawMap.set(timeKey, d);
+    }
+  }
 
   const goldenSetArr = goldenBalls;
 
-  return draws.map((draw: DrawRecord, idx: number) => {
-    const numbers = draw.numbers as number[];
-    const hits = numbers.filter((n) => goldenSetArr.includes(n));
-    return {
-      term: draw.drawNumber,
-      time: draw.drawTime.split(" ")[1]?.substring(0, 5) || "",
-      isHit: hits.length > 0,
-      hits,
-      index: idx + 1,
-      pending: false,
-    };
+  // 從新到舊排列（xx:55 → xx:00）
+  const reversedSlots = [...timeSlots].reverse();
+
+  return reversedSlots.map((timeSlot, idx) => {
+    const draw = drawMap.get(timeSlot);
+    if (draw) {
+      const numbers = draw.numbers as number[];
+      const hits = numbers.filter((n) => goldenSetArr.includes(n));
+      return {
+        term: draw.drawNumber,
+        time: timeSlot,
+        isHit: hits.length > 0,
+        hits,
+        index: idx + 1,
+        pending: false,
+      };
+    } else {
+      // 未開獎
+      return {
+        term: "---",
+        time: timeSlot,
+        isHit: false,
+        hits: [] as number[],
+        index: idx + 1,
+        pending: true,
+      };
+    }
   });
 }
 

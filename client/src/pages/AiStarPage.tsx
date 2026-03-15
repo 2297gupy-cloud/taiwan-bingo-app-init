@@ -250,7 +250,7 @@ function VerifyRow({ item }: {
       <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs border border-border/10 bg-transparent opacity-40">
         <span className="font-mono text-muted-foreground/50 text-[9px] shrink-0 w-4 text-right">[{item.index}]</span>
         <span className="font-mono text-muted-foreground/50 text-[9px] shrink-0 w-9">{item.time}</span>
-        <span className="text-[9px] text-muted-foreground/40 italic">等待開獎...</span>
+        <span className="text-[9px] text-muted-foreground/40 italic">未開獎</span>
       </div>
     );
   }
@@ -305,7 +305,7 @@ function SlotCard({
   onDelete,
   dateStr,
 }: {
-  slot: { source: string; target: string; label: string; copyRange?: string; draws: number };
+  slot: { source: string; target: string; label: string; copyRange?: string; draws: number; verifyHour?: string; verifyRange?: string };
   prediction?: {
     goldenBalls: number[];
     reasoning: string | null;
@@ -509,21 +509,24 @@ export default function AiStarPage() {
   const currentPrediction = predictions?.find(p => p.sourceHour === effectiveSlot);
   const currentSlotInfo = slots.find(s => s.source === effectiveSlot);
 
-  // 驗證時段
+  // 驗證時段：每個卡片的黃金球在 verifyHour 時段驗證
+  // 08時卡片 → verifyHour="09" → 驗證 09:00~09:55
   const effectiveVerifySlot = verifySlot || currentSlotInfo?.target || null;
+  const verifySlotInfo = effectiveVerifySlot ? slots.find(s => s.target === effectiveVerifySlot) : null;
   const verifyPrediction = effectiveVerifySlot
     ? predictions?.find(p => p.targetHour === effectiveVerifySlot)
     : currentPrediction;
 
-  // 驗證結果查詢
+  // 驗證結果查詢：用 verifyHour（卡片顯示時段+1）查詢
+  const actualVerifyHour = verifySlotInfo?.verifyHour || "";
   const { data: verifyResult } = trpc.aiStar.verify.useQuery(
     {
       dateStr,
-      targetHour: effectiveVerifySlot || "",
+      verifyHour: actualVerifyHour,
       goldenBalls: verifyPrediction?.goldenBalls || [],
     },
     {
-      enabled: !!verifyPrediction && !!effectiveVerifySlot,
+      enabled: !!verifyPrediction && !!actualVerifyHour,
       staleTime: 0,
       refetchInterval: 30000,
     }
@@ -912,12 +915,13 @@ export default function AiStarPage() {
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
               <span className="text-xs font-medium text-foreground">驗證結果</span>
+              <span className="text-[10px] text-muted-foreground font-mono">{formatDateDisplay(dateStr)}</span>
             </div>
           </div>
 
-          {/* 驗證時段選擇 */}
+          {/* 驗證時段選擇：顯示卡片時段 + 驗證範圍 */}
           <div className="mb-2">
-            <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段：</p>
+            <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段（黃金球→驗證範圍）：</p>
             <div className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border/20">
               {slots.map(slot => {
                 const pred = predictions?.find(p => p.targetHour === slot.target);
@@ -928,7 +932,7 @@ export default function AiStarPage() {
                     onClick={() => setVerifySlot(slot.target)}
                     disabled={!pred}
                     className={cn(
-                      "shrink-0 py-1 px-1.5 text-center text-[10px] font-mono transition-all border-b-2",
+                      "shrink-0 py-1 px-1.5 text-center text-[10px] font-mono transition-all border-b-2 flex flex-col items-center",
                       isVerifySelected
                         ? "border-green-400 text-green-400 bg-green-400/10"
                         : pred
@@ -936,7 +940,10 @@ export default function AiStarPage() {
                           : "border-transparent text-muted-foreground/30 cursor-not-allowed"
                     )}
                   >
-                    {slot.target.padStart(2, "0")}時
+                    <span>{slot.target.padStart(2, "0")}時</span>
+                    {slot.verifyRange && (
+                      <span className="text-[7px] opacity-60">→{slot.verifyRange.split("~")[0]}</span>
+                    )}
                   </button>
                 );
               })}
@@ -952,18 +959,26 @@ export default function AiStarPage() {
                   {verifyPrediction?.goldenBalls.map((n: number) => (
                     <GoldenBall key={n} number={n} size="sm" />
                   ))}
+                  {verifySlotInfo?.verifyRange && (
+                    <span className="text-[9px] text-amber-400/70 font-mono ml-1">→ {verifySlotInfo.verifyRange}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] text-muted-foreground">
                     命中 <span className="font-bold text-green-400">
                       {verifyResult.filter((v) => v.isHit).length}
-                    </span>/{verifyResult.length} 期
+                    </span>/{verifyResult.filter((v) => !v.pending).length} 期
+                    {verifyResult.some((v) => v.pending) && (
+                      <span className="text-muted-foreground/40 ml-1">(待開{verifyResult.filter((v) => v.pending).length}期)</span>
+                    )}
                   </span>
                   <button
                     onClick={() => {
-                      const hitCount = verifyResult.filter((v) => v.isHit).length;
+                      const opened = verifyResult.filter((v) => !v.pending);
+                      const hitCount = opened.filter((v) => v.isHit).length;
                       const balls = verifyPrediction?.goldenBalls.map((n: number) => String(n).padStart(2, "0")).join(" ") || "";
-                      const text = `驗證結果 號碼：${balls}\n命中 ${hitCount}/${verifyResult.length} 期（命中率：${Math.round(hitCount / verifyResult.length * 100)}%）`;
+                      const rate = opened.length > 0 ? Math.round(hitCount / opened.length * 100) : 0;
+                      const text = `驗證結果 號碼：${balls}\n命中 ${hitCount}/${opened.length} 期（命中率：${rate}%）\n已開${opened.length}/12期，待開${verifyResult.filter((v) => v.pending).length}期`;
                       navigator.clipboard.writeText(text);
                       toast.success("驗證結果已複製");
                     }}
@@ -979,19 +994,33 @@ export default function AiStarPage() {
                 ))}
               </div>
               <div className="mt-2 pt-1.5 border-t border-border/20 flex items-center justify-center gap-3 text-[10px]">
-                <span className="text-green-400">
-                  命中率：{Math.round(verifyResult.filter((v) => v.isHit).length / verifyResult.length * 100)}%
-                </span>
-                <span className="text-muted-foreground">
-                  總命中球數：{verifyResult.reduce((sum, v) => sum + v.hits.length, 0)}
-                </span>
+                {(() => {
+                  const opened = verifyResult.filter((v) => !v.pending);
+                  const hitCount = opened.filter((v) => v.isHit).length;
+                  const rate = opened.length > 0 ? Math.round(hitCount / opened.length * 100) : 0;
+                  return (
+                    <>
+                      <span className="text-green-400">
+                        命中率：{rate}%
+                      </span>
+                      <span className="text-muted-foreground">
+                        總命中球數：{verifyResult.reduce((sum, v) => sum + v.hits.length, 0)}
+                      </span>
+                      <span className="text-muted-foreground/50">
+                        已開{opened.length}/12期
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
             </>
           ) : (
             <div className="flex flex-col items-center gap-1 py-3">
               <XCircle className="h-4 w-4 text-muted-foreground/30" />
               <p className="text-[10px] text-muted-foreground/50">
-                {effectiveVerifySlot ? `${effectiveVerifySlot}時段尚無預測資料或開獎資料` : "請先選擇驗證時段"}
+                {effectiveVerifySlot
+                  ? `${effectiveVerifySlot}時卡片尚無預測資料，或${verifySlotInfo?.verifyRange || ""}開獎資料尚未入庫`
+                  : "請先選擇驗證時段"}
               </p>
             </div>
           )}
