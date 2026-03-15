@@ -28,7 +28,7 @@ import { Download, Share2, ChevronUp, Star } from "lucide-react";
 import { toast } from "sonner";
 
 // ============ Section: Header ============
-function SiteHeader() {
+function SiteHeader({ activeTab, onTabChange }: { activeTab: string; onTabChange: (key: string) => void }) {
   return (
     <header id="top" className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
       <div className="px-3 py-2 flex items-center gap-2">
@@ -44,17 +44,25 @@ function SiteHeader() {
       </div>
       {/* Quick nav buttons */}
       <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-        {["即時開獎", "歷史紀錄", "規則說明", "台彩最新資訊"].map((label, i) => (
+        {[
+          { label: "即時開獎", key: "live" },
+          { label: "歷史紀錄", key: "history" },
+          { label: "規則說明", key: null },
+          { label: "台彩最新資訊🔥", key: null },
+        ].map(({ label, key }) => (
           <button
             key={label}
             onClick={() => {
-              if (i === 0) document.querySelector("#live")?.scrollIntoView({ behavior: "smooth" });
-              else if (i === 1) document.querySelector("#history")?.scrollIntoView({ behavior: "smooth" });
+              if (key) onTabChange(key);
               else toast.info("功能開發中");
             }}
-            className="text-[10px] px-2.5 py-1 rounded border border-primary/40 text-primary whitespace-nowrap hover:bg-primary/10 transition-colors flex-shrink-0"
+            className={`text-[10px] px-2.5 py-1 rounded border whitespace-nowrap transition-colors flex-shrink-0 ${
+              key && activeTab === key
+                ? "bg-primary/20 border-primary text-primary"
+                : "border-primary/40 text-primary hover:bg-primary/10"
+            }`}
           >
-            {label}{i === 3 && <span className="text-destructive ml-0.5">🔥</span>}
+            {label}
           </button>
         ))}
       </div>
@@ -718,21 +726,23 @@ function Footer() {
 
 // ============ Main Page ============
 export default function MainPage() {
+  const [activeTab, setActiveTab] = useState<"live" | "ai" | "history" | "stats">("live");
+
+  const handleTabChange = (key: string) => {
+    setActiveTab(key as "live" | "ai" | "history" | "stats");
+    // 切換標籤時回到頁面頂部
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen">
-      <SiteHeader />
+      <SiteHeader activeTab={activeTab} onTabChange={handleTabChange} />
       <Announcement />
-      <SectionTabs
-        active="live"
-        onChange={(key) => {
-          const el = document.querySelector(`#${key}`);
-          if (el) el.scrollIntoView({ behavior: "smooth" });
-        }}
-      />
-      <LiveDraw />
-      <HistorySection />
-      <AiPredictionSection />
-      <StatsSection />
+      <SectionTabs active={activeTab} onChange={handleTabChange} />
+      {activeTab === "live" && <LiveDraw />}
+      {activeTab === "history" && <HistorySection />}
+      {activeTab === "ai" && <AiPredictionSection />}
+      {activeTab === "stats" && <StatsSection />}
       <Footer />
       <BackToTop />
     </div>
