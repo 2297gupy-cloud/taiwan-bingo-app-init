@@ -919,9 +919,9 @@ export default function AiStarPage() {
             </div>
           </div>
 
-          {/* 驗證時段選擇：顯示卡片時段 + 驗證範圍 */}
+          {/* 驗證時段選擇：顯示「卡片時段 → 驗證時段」 */}
           <div className="mb-2">
-            <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段（黃金球→驗證範圍）：</p>
+            <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段（卡片時段→驗證時段）：</p>
             <div className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border/20">
               {slots.map(slot => {
                 const pred = predictions?.find(p => p.targetHour === slot.target);
@@ -940,9 +940,11 @@ export default function AiStarPage() {
                           : "border-transparent text-muted-foreground/30 cursor-not-allowed"
                     )}
                   >
+                    {/* 顯示卡片時段（target） */}
                     <span>{slot.target.padStart(2, "0")}時</span>
-                    {slot.verifyRange && (
-                      <span className="text-[7px] opacity-60">→{slot.verifyRange.split("~")[0]}</span>
+                    {/* 顯示實際驗證時段（verifyHour = target+1） */}
+                    {slot.verifyHour && (
+                      <span className="text-[7px] opacity-60">→{slot.verifyHour.padStart(2, "0")}時</span>
                     )}
                   </button>
                 );
@@ -959,8 +961,8 @@ export default function AiStarPage() {
                   {verifyPrediction?.goldenBalls.map((n: number) => (
                     <GoldenBall key={n} number={n} size="sm" />
                   ))}
-                  {verifySlotInfo?.verifyRange && (
-                    <span className="text-[9px] text-amber-400/70 font-mono ml-1">→ {verifySlotInfo.verifyRange}</span>
+                  {actualVerifyHour && (
+                    <span className="text-[9px] text-amber-400/70 font-mono ml-1">→ {actualVerifyHour.padStart(2, "0")}:00~{actualVerifyHour.padStart(2, "0")}:55</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
