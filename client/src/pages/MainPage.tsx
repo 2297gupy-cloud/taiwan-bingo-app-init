@@ -133,7 +133,14 @@ function LiveDraw() {
             <p className="text-[10px] text-muted-foreground">目前期數</p>
             <p className="text-lg font-mono font-bold">{latest.drawNumber}</p>
             <p className="text-[9px] text-muted-foreground">
-              日期/北京時間：{formatFullDateTime(latest.drawTime)}
+              日期/開獎時間：{(() => {
+                const d = latest.drawTime as any;
+                if (d instanceof Date || (d && typeof d === 'object' && 'getFullYear' in d)) {
+                  const date = new Date(d);
+                  return `${date.getFullYear() - 1911}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00`;
+                }
+                return formatFullDateTime(latest.drawTime);
+              })()}
             </p>
           </div>
           <div className="text-right">
