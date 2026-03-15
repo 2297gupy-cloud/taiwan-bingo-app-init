@@ -110,11 +110,11 @@ export class MockLotteryScraper {
   }
 
   /**
-   * 啟動模擬輪詢
+   * 啟動模擬輫詢
    */
   startPolling(
     callback: (draw: MockDrawRecord) => Promise<void>,
-    intervalSeconds: number = 300 // 預設 5 分鐘
+    intervalSeconds: number = 20 // 預設 20 秒
   ): void {
     if (this.syncInterval) {
       console.warn('[MockLotteryScraper] Polling already started');
@@ -134,7 +134,7 @@ export class MockLotteryScraper {
       }
     })();
 
-    // 然後每隔指定時間生成新數據
+    // 然後每隔 20 秒生成新數據
     this.syncInterval = setInterval(async () => {
       try {
         const draw = this.generateNewDraw();
