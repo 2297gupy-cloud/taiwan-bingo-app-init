@@ -340,15 +340,18 @@ function HistorySection() {
               return (
                 <tr key={draw.id} className="border-t border-border hover:bg-secondary/20">
                   <td className="py-1.5 px-2 font-mono whitespace-nowrap">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-bold">{draw.drawNumber}</span>
+                    <div className="flex flex-col gap-0.5 text-center">
+                      <span className="font-bold text-[11px]">{draw.drawNumber}</span>
                       <span className="text-muted-foreground text-[9px]">
-                        {new Date(draw.drawTime).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        {new Date(draw.drawTime).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit" })}
+                      </span>
+                      <span className="text-muted-foreground text-[9px]">
+                        {new Date(draw.drawTime).toLocaleString("zh-TW", { hour: "numeric", minute: "2-digit", hour12: true })}
                       </span>
                     </div>
                   </td>
-                  <td className="py-1.5 px-2">
-                    <div className="flex flex-wrap gap-0.5">
+                  <td className="py-1.5 px-2 text-center">
+                    <div className="flex flex-wrap gap-0.5 justify-center">
                       {sorted.map((num, i) => (
                         <span
                           key={i}
