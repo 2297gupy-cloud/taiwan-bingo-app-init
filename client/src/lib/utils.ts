@@ -10,21 +10,25 @@ export function formatDrawNumber(drawNumber: string): string {
   return `No. ${drawNumber}`;
 }
 
-/** 格式化時間戳為本地時間 */
+/** 格式化時間戳為本地時間（民國年份格式） */
 export function formatDrawTime(timestamp: number): string {
   const d = new Date(timestamp);
+  const year = d.getFullYear();
+  const rocYear = year - 1911; // 民國年份 = 西元年份 - 1911
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
   const seconds = String(d.getSeconds()).padStart(2, "0");
-  return `${month}/${day} ${hours}:${minutes}:${seconds}`;
+  return `${rocYear}/${month}/${day} ${hours}:${minutes}:${seconds}`;
 }
 
-/** 格式化完整日期時間 */
+/** 格式化完整日期時間（民國年份格式） */
 export function formatFullDateTime(timestamp: number): string {
   const d = new Date(timestamp);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
+  const year = d.getFullYear();
+  const rocYear = year - 1911; // 民國年份 = 西元年份 - 1911
+  return `${rocYear}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 }
 
 export function getBigSmallLabel(val: string): string {
