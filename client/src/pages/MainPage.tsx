@@ -26,6 +26,7 @@ import {
 } from "recharts";
 import { Download, Share2, ChevronUp, Star } from "lucide-react";
 import AiStarPage from "./AiStarPage";
+import NumberPredictModule from "@/components/NumberPredictModule";
 import { toast } from "sonner";
 
 // ============ Section: Header ============
@@ -559,6 +560,16 @@ function AiPredictionSection() {
       <div className="mt-2 px-3 py-2 rounded bg-destructive/10 border border-destructive/20 text-center">
         <p className="text-[10px] text-destructive font-semibold">⚠️ 預測僅供參考，請勿梭哈上頭。</p>
         <p className="text-[8px] text-muted-foreground">AI model based on historical data. Past performance is not indicative of future results.</p>
+      </div>
+
+      {/* 🔮 號碼預測模組 */}
+      <div className="mt-3">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-base">🔮</span>
+          <h3 className="text-sm font-bold text-foreground">號碼預測參考</h3>
+          <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">新功能</span>
+        </div>
+        <NumberPredictModule />
       </div>
     </section>
   );

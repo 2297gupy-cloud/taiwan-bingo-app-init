@@ -44,6 +44,7 @@ import {
 import { getDb } from "./db";
 import { aiApiKeys } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
 
 export const appRouter = router({
   system: systemRouter,
@@ -449,6 +450,42 @@ export const appRouter = router({
       };
     }),
   }),
-});
 
+  /** 號碼預測模組 */
+  numberPredict: router({
+    /** 執行號碼預測 */
+    predict: publicProcedure
+      .input(z.object({
+        strategy: z.enum(["hot", "cold", "balanced", "weighted", "overdue", "custom"]),
+        periods: z.number().min(1).max(20).default(5),
+        count: z.number().min(1).max(10).default(5),
+        customNumbers: z.array(z.number().min(1).max(80)).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await predictNumbers(
+          input.strategy as PredictStrategy,
+          input.periods,
+          input.count,
+          input.customNumbers
+        );
+        return result;
+      }),
+
+    /** 取得熱號冷號統計（用於展示） */
+    stats: publicProcedure
+      .input(z.object({
+        periods: z.number().min(1).max(20).default(10),
+      }))
+      .query(async ({ input }) => {
+        const result = await predictNumbers("hot", input.periods, 10);
+        return {
+          hotNumbers: result.hotNumbers,
+          coldNumbers: result.coldNumbers,
+          frequencyMap: result.frequencyMap,
+          lastSeenMap: result.lastSeenMap,
+          totalPeriods: result.totalPeriods,
+        };
+      }),
+  }),
+});
 export type AppRouter = typeof appRouter;
