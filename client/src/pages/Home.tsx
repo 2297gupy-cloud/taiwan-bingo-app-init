@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import NumberBall from "@/components/NumberBall";
+import DataControlPanel from "@/components/DataControlPanel";
 import {
   formatDrawTime,
   getBigSmallLabel,
@@ -27,6 +28,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* 數據控制面板 */}
+      <DataControlPanel />
+
       {/* Header */}
       <header className="px-4 pt-4 pb-3">
         <div className="flex items-center gap-2">
