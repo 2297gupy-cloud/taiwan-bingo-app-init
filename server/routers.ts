@@ -23,6 +23,7 @@ import {
   addGameParticipant,
   getPlayerStats,
 } from "./bingo-db";
+import { backupCsvRouter } from "./backup-csv-router";
 
 export const appRouter = router({
   system: systemRouter,
@@ -202,6 +203,8 @@ export const appRouter = router({
         return getPlayerStats(ctx.user.id);
       }),
   }),
+
+  backup: backupCsvRouter,
 });
 
 export type AppRouter = typeof appRouter;
