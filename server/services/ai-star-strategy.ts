@@ -15,42 +15,48 @@ async function db() {
   return d;
 }
 
-/** 每天的時段配置：07-22時，每時段分析前一時段 */
+/**
+ * 每天的時段配置（08~22時，共15個）
+ * - target: 卡片顯示的時段（要預測的時段）
+ * - source: 複製數據的時段（前一個時段，用於 AI 演算）
+ * 例：08時卡片 → 複製 07:00~07:55 的數據（source="07"）
+ */
 export const HOUR_SLOTS = [
-  { source: "07", target: "08", label: "07時→08時", draws: 12 },
-  { source: "08", target: "09", label: "08時→09時", draws: 12 },
-  { source: "09", target: "10", label: "09時→10時", draws: 12 },
-  { source: "10", target: "11", label: "10時→11時", draws: 12 },
-  { source: "11", target: "12", label: "11時→12時", draws: 12 },
-  { source: "12", target: "13", label: "12時→13時", draws: 12 },
-  { source: "13", target: "14", label: "13時→14時", draws: 12 },
-  { source: "14", target: "15", label: "14時→15時", draws: 12 },
-  { source: "15", target: "16", label: "15時→16時", draws: 12 },
-  { source: "16", target: "17", label: "16時→17時", draws: 12 },
-  { source: "17", target: "18", label: "17時→18時", draws: 12 },
-  { source: "18", target: "19", label: "18時→19時", draws: 12 },
-  { source: "19", target: "20", label: "19時→20時", draws: 12 },
-  { source: "20", target: "21", label: "20時→21時", draws: 12 },
-  { source: "21", target: "22", label: "21時→22時", draws: 12 },
-  { source: "22", target: "23", label: "22時→23時", draws: 12 },
+  { source: "07", target: "08", label: "08時", copyRange: "0700~0755", draws: 12 },
+  { source: "08", target: "09", label: "09時", copyRange: "0800~0855", draws: 12 },
+  { source: "09", target: "10", label: "10時", copyRange: "0900~0955", draws: 12 },
+  { source: "10", target: "11", label: "11時", copyRange: "1000~1055", draws: 12 },
+  { source: "11", target: "12", label: "12時", copyRange: "1100~1155", draws: 12 },
+  { source: "12", target: "13", label: "13時", copyRange: "1200~1255", draws: 12 },
+  { source: "13", target: "14", label: "14時", copyRange: "1300~1355", draws: 12 },
+  { source: "14", target: "15", label: "15時", copyRange: "1400~1455", draws: 12 },
+  { source: "15", target: "16", label: "16時", copyRange: "1500~1555", draws: 12 },
+  { source: "16", target: "17", label: "17時", copyRange: "1600~1655", draws: 12 },
+  { source: "17", target: "18", label: "18時", copyRange: "1700~1755", draws: 12 },
+  { source: "18", target: "19", label: "19時", copyRange: "1800~1855", draws: 12 },
+  { source: "19", target: "20", label: "20時", copyRange: "1900~1955", draws: 12 },
+  { source: "20", target: "21", label: "21時", copyRange: "2000~2055", draws: 12 },
+  { source: "21", target: "22", label: "22時", copyRange: "2100~2155", draws: 12 },
 ];
 
-/** 取得當前時段（台灣時間 UTC+8） */
+/** 取得當前時段（台灣時間 UTC+8）
+ * 返回的 hour 是目前小時，卡片顯示的是 target（預測時段）
+ */
 export function getCurrentSlot() {
   const now = new Date();
   const utc8 = new Date(now.getTime() + 8 * 60 * 60 * 1000);
   const hour = utc8.getUTCHours();
   const minute = utc8.getUTCMinutes();
 
-  // 找出當前時段
   const currentHour = String(hour).padStart(2, "0");
-  const slot = HOUR_SLOTS.find((s) => s.source === currentHour);
+  // 尋找 target == currentHour 的時段（即現在正在進行的時段）
+  const slot = HOUR_SLOTS.find((s) => s.target === currentHour);
 
   return {
     slot: slot || null,
     hour: currentHour,
     minute,
-    isActive: hour >= 7 && hour <= 22,
+    isActive: hour >= 8 && hour <= 22,
   };
 }
 
@@ -381,13 +387,65 @@ export async function verifyPrediction(
   });
 }
 
-/** 取得格式化的時段數據（用於複製到 AI 計算） */
-export async function getFormattedHourData(dateStr: string, sourceHour: string) {
+/** 將 YYYY-MM-DD 轉換為民國年日期字串（用於查詢 drawTime）
+ * 例: 2026-03-15 → 115/03/15
+ */
+function toROCDateStr(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const rocYear = year - 1911;
+  return `${rocYear}/${String(month).padStart(2, "0")}/${String(day).padStart(2, "0")}`;
+}
+
+/** 將 big/small/tie 轉換為顯示文字 */
+function formatBigSmall(val: string): string {
+  if (val === "big") return "大";
+  if (val === "small") return "小";
+  return "―";
+}
+
+/** 將 odd/even 轉換為顯示文字 */
+function formatOddEven(val: string): string {
+  if (val === "odd") return "單";
+  if (val === "even") return "雙";
+  return "―";
+}
+
+/** 固定演算說明文字 */
+const FIXED_ANALYSIS_FOOTER = `
+1. 演算之後 12 期出至最佳三顏黃金球數字，展開以下說明
+2. 強勢熱門號，「尾數共振」偵測
+3. 穩定的連莊號，捕捉剛起步的二連莊趨勢
+4. 捕捉斜連交會點，鎖定高機率落球區
+5. 縮小斜連跨度執行與精準死碼排除，強化防穡邏輯
+6. 核心演算邏輯穩定，不用回測驗證
+7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯
+`;
+
+/** 取得格式化的時段數據（用於複製到 AI 計算）
+ * dateStr: YYYY-MM-DD 格式
+ * sourceHour: "07"~"21" （要複製的時段）
+ * copyRange: 例 "0700~0755"
+ */
+export async function getFormattedHourData(
+  dateStr: string,
+  sourceHour: string,
+  copyRange?: string
+) {
   const database = await db();
+
+  // 將 YYYY-MM-DD 轉為民國年日期字串（用於查詢 drawTime）
+  const rocDate = toROCDateStr(dateStr);
+
+  // 查詢指定日期 + 指定時段的開獎記錄
   const draws = await database
     .select()
     .from(drawRecords)
-    .where(like(drawRecords.drawTime, `%${sourceHour}:%`))
+    .where(
+      and(
+        like(drawRecords.drawTime, `${rocDate}%`),
+        like(drawRecords.drawTime, `% ${sourceHour}:%`)
+      )
+    )
     .orderBy(desc(drawRecords.drawNumber))
     .limit(12);
 
@@ -395,14 +453,33 @@ export async function getFormattedHourData(dateStr: string, sourceHour: string) 
     return { text: null };
   }
 
-  const lines = draws.map((draw: DrawRecord, idx: number) => {
+  // 小時範圍標顔（例: 0700~0755）
+  const rangeLabel = copyRange || `${sourceHour}00~${sourceHour}55`;
+
+  // 標題列
+  const separator = "-".repeat(89);
+  const header = `BINGO BINGO 專業數據演算報告 (${rangeLabel})
+報告日期：${rocDate.replace(/\//g, "/")}
+${separator}`;
+
+  // 每期資料行（從最舊到最新）
+  const sortedDraws = [...draws].sort((a, b) =>
+    a.drawNumber.localeCompare(b.drawNumber)
+  );
+
+  const lines = sortedDraws.map((draw: DrawRecord) => {
     const numbers = (draw.numbers as number[])
+      .sort((a, b) => a - b)
       .map((n) => String(n).padStart(2, "0"))
       .join(" ");
-    return `期 ${idx + 1}: ${numbers}`;
+    // 取開獎時間中的 HH:MM
+    const timePart = draw.drawTime.split(" ")[1]?.substring(0, 5) || "";
+    const bigSmall = formatBigSmall(draw.bigSmall);
+    const oddEven = formatOddEven(draw.oddEven);
+    return `${draw.drawNumber}\n${timePart}\t${numbers}\t${draw.total}\t${bigSmall}\t${oddEven}`;
   });
 
-  const text = `${sourceHour}時段近 ${draws.length} 期開獎數據：\n${lines.join("\n")}`;
+  const text = `${header}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
   return { text };
 }
 

@@ -305,7 +305,7 @@ function SlotCard({
   onDelete,
   dateStr,
 }: {
-  slot: { source: string; target: string; label: string; draws: number };
+  slot: { source: string; target: string; label: string; copyRange?: string; draws: number };
   prediction?: {
     goldenBalls: number[];
     reasoning: string | null;
@@ -318,8 +318,9 @@ function SlotCard({
   dateStr: string;
 }) {
   const [copied, setCopied] = useState(false);
+  // 每個卡片複製的是 source 時段的數據（前一個時段）
   const { data: formattedData } = trpc.aiStar.getHourData.useQuery(
-    { dateStr, sourceHour: slot.source },
+    { dateStr, sourceHour: slot.source, copyRange: slot.copyRange },
     { staleTime: 30000 }
   );
 
@@ -327,13 +328,14 @@ function SlotCard({
     if (formattedData?.text) {
       navigator.clipboard.writeText(formattedData.text).then(() => {
         setCopied(true);
-        toast.success(`已複製 ${slot.source} 時段數據`);
+        // 顯示卡片標籤（target 時段）
+        toast.success(`已複製 ${slot.target}時 (${slot.copyRange || slot.source + "00~" + slot.source + "55"}) 數據`);
         setTimeout(() => setCopied(false), 2000);
       });
     } else {
       toast.error("此時段尚無數據可複製");
     }
-  }, [formattedData, slot.source]);
+  }, [formattedData, slot.source, slot.target, slot.copyRange]);
 
   const longPress = useLongPress(handleCopy, 300);
 
@@ -363,7 +365,7 @@ function SlotCard({
             "font-mono text-[10px] font-medium",
             isCurrent ? "text-amber-400" : "text-foreground"
           )}>
-            {slot.source.padStart(2, "0")}時
+            {slot.target.padStart(2, "0")}時
           </span>
           {isCurrent && (
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -570,7 +572,7 @@ export default function AiStarPage() {
 
   // 取得格式化時段數據（用於複製）
   const { data: hourDataForCopy } = trpc.aiStar.getHourData.useQuery(
-    { dateStr, sourceHour: effectiveSlot },
+    { dateStr, sourceHour: effectiveSlot, copyRange: currentSlotInfo?.copyRange },
     { staleTime: 30000 }
   );
 
@@ -740,7 +742,8 @@ export default function AiStarPage() {
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-1">
             {slots.map(slot => {
               const pred = predictions?.find(p => p.sourceHour === slot.source);
-              const isCurrent = currentSlot?.hour === slot.source;
+              // isCurrent: 當前時間對應的卡片（比對 target 時段）
+              const isCurrent = currentSlot?.hour === slot.target;
               const isSelected = effectiveSlot === slot.source;
               return (
                 <SlotCard
@@ -776,7 +779,7 @@ export default function AiStarPage() {
             <div className="flex items-center gap-1.5">
               <Zap className="h-3.5 w-3.5 text-amber-400" />
               <span className="text-xs font-medium text-foreground">
-                {effectiveSlot.padStart(2, "0")}時 黃金球
+                {currentSlotInfo?.target.padStart(2, "0") || effectiveSlot.padStart(2, "0")}時 黃金球
                 {currentPrediction && (
                   <span className="ml-1 text-[10px] text-muted-foreground font-normal">
                     ({currentPrediction.isManual ? "手動" : "AI"} · {currentPrediction.goldenBalls.length}顆)
@@ -827,7 +830,7 @@ export default function AiStarPage() {
                 </p>
               )}
               <p className="text-[10px] text-muted-foreground/50 text-center">
-                分析 {effectiveSlot.padStart(2, "0")}:00~{effectiveSlot.padStart(2, "0")}:55 → 預測 {currentSlotInfo?.target.padStart(2, "0") || "??"}:00~{currentSlotInfo?.target.padStart(2, "0") || "??"}:55
+                數據 {currentSlotInfo?.copyRange || (effectiveSlot.padStart(2, "0") + "00~" + effectiveSlot.padStart(2, "0") + "55")} → 預測 {currentSlotInfo?.target.padStart(2, "0") || "??"}:00~{currentSlotInfo?.target.padStart(2, "0") || "??"}:55
               </p>
             </div>
           ) : (
@@ -851,7 +854,7 @@ export default function AiStarPage() {
           <div className="flex items-center gap-1.5 mb-1.5">
             <Pencil className="h-3.5 w-3.5 text-amber-400" />
             <span className="text-xs font-medium text-foreground">
-              手動輸入（{effectiveSlot.padStart(2, "0")}時）
+              手動輸入（{currentSlotInfo?.target.padStart(2, "0") || effectiveSlot.padStart(2, "0")}時）
             </span>
             <span className="text-[10px] text-muted-foreground ml-auto">1~6 顆球</span>
           </div>

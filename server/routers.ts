@@ -330,10 +330,11 @@ export const appRouter = router({
       .input(z.object({
         dateStr: z.string().optional(),
         sourceHour: z.string(),
+        copyRange: z.string().optional(),
       }))
       .query(async ({ input }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        return getFormattedHourData(dateStr, input.sourceHour);
+        return getFormattedHourData(dateStr, input.sourceHour, input.copyRange);
       }),
 
     /** 取得時段開獎數據列表 */
