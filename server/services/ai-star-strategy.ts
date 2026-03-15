@@ -437,7 +437,6 @@ export async function getFormattedHourData(
   const rocDate = toROCDateStr(dateStr);
 
   // 查詢指定日期 + 指定時段的開獎記錄
-  // 只取舊格式期號（9位數字，例: 115014843），排除新格式期號（10位，例: 1150315030）
   const allDraws = await database
     .select()
     .from(drawRecords)
@@ -447,13 +446,20 @@ export async function getFormattedHourData(
         like(drawRecords.drawTime, `% ${sourceHour}:%`)
       )
     )
-    .orderBy(desc(drawRecords.drawNumber))
-    .limit(30); // 多取一些再過濾
+    .orderBy(desc(drawRecords.drawTime))
+    .limit(30);
 
-  // 只保留 9 位期號的舊格式資料
-  const draws = allDraws
-    .filter((d) => d.drawNumber.length === 9)
-    .slice(0, 12);
+  // 用 drawTime 去重（同一時間可能有新舊格式期號），只取前 12 筆
+  const seen = new Set<string>();
+  const draws: typeof allDraws = [];
+  for (const d of allDraws) {
+    const timeKey = d.drawTime;
+    if (!seen.has(timeKey)) {
+      seen.add(timeKey);
+      draws.push(d);
+    }
+    if (draws.length >= 12) break;
+  }
 
   if (draws.length === 0) {
     return { text: null };
