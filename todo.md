@@ -334,3 +334,10 @@
 - [x] 移除 App.tsx 中對獎工具路由
 - [x] 移除 TabBar.tsx 中對獎工具 Tab 項目
 - [x] 刪除 Checker.tsx 檔案
+
+## 自選球號卡片移除 (2026-03-15 v24)
+- [x] 移除 STRATEGIES 中的 custom 策略
+- [x] 移除 CustomBallGrid 元件
+- [x] 移除自選球號卡片 UI
+- [x] 移除 customNums 狀態和相關邏輯
+- [x] 修復 Strategy 類型定義
