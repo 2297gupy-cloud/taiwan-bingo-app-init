@@ -465,3 +465,8 @@
 - [x] 前端：APIKey 輸入框可記憶已儲存的 Key（載入時顯示已儲存狀態、首幾碼遠碼）
 - [x] 前端：APIKey 可更換或清除（點擊更換/清除按鈕）
 - [x] 後端：點擊 AI分析 後優先使用用戶儲存的 Gemini/OpenAI Key；未儲存則 fallback 到系統內建 Key
+
+## AI一星策略 APIKey 視覺反饋特效 (2026-03-15 v44)
+- [x] 前端：GoldenBall 元件加入紅色閃爝特效（當使用用戶 APIKey 時）
+- [x] 前端：SlotCard 加入紅色小圓球指示器（表示使用了用戶 APIKey）
+- [x] 前端：AI 分析結果 toast 顯示 APIKey 類型（用戶 APIKey 或系統 Key）

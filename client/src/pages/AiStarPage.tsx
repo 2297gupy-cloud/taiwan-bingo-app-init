@@ -102,7 +102,7 @@ function useLongPress(callback: () => void, ms: number = 300) {
 // 黃金球組件
 // ============================================================
 
-function GoldenBall({ number, size = "md" }: { number: number; size?: "xs" | "sm" | "md" | "lg" }) {
+function GoldenBall({ number, size = "md", isUserKey = false }: { number: number; size?: "xs" | "sm" | "md" | "lg"; isUserKey?: boolean }) {
   const sizeClasses =
     size === "xs" ? "w-4 h-4 text-[7px]" :
     size === "sm" ? "w-6 h-6 text-[9px]" :
@@ -112,15 +112,27 @@ function GoldenBall({ number, size = "md" }: { number: number; size?: "xs" | "sm
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-full font-bold text-black shrink-0",
-        sizeClasses
+        "flex items-center justify-center rounded-full font-bold text-black shrink-0 relative",
+        sizeClasses,
+        isUserKey && "animate-pulse"
       )}
       style={{
         background: "radial-gradient(circle at 35% 35%, #fde68a, #f59e0b, #d97706)",
-        boxShadow: "0 0 12px rgba(245, 158, 11, 0.6), 0 2px 4px rgba(0,0,0,0.3)",
+        boxShadow: isUserKey
+          ? "0 0 12px rgba(245, 158, 11, 0.6), 0 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(239, 68, 68, 0.8)"
+          : "0 0 12px rgba(245, 158, 11, 0.6), 0 2px 4px rgba(0,0,0,0.3)",
       }}
     >
       {String(number).padStart(2, "0")}
+      {isUserKey && (
+        <div
+          className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"
+          style={{
+            boxShadow: "0 0 8px rgba(239, 68, 68, 0.8)",
+            animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -436,13 +448,16 @@ function SlotCard({
         </div>
       </div>
       {prediction ? (
-        <div className="flex items-center gap-0.5 justify-center flex-wrap">
+        <div className="flex items-center gap-0.5 justify-center flex-wrap relative">
           {prediction.goldenBalls.map((n, idx) => (
-            <GoldenBall key={idx} number={n} size="xs" />
+            <GoldenBall key={idx} number={n} size="xs" isUserKey={!prediction.isManual} />
           ))}
           <span className="text-[7px] text-muted-foreground/50 ml-0.5">
             {prediction.isManual ? "手動" : "AI"}
           </span>
+          {!prediction.isManual && (
+            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          )}
         </div>
       ) : drawsInHour > 0 ? (
         <div className="flex items-center justify-center py-0.5">
@@ -640,7 +655,8 @@ export default function AiStarPage() {
   // AI 分析 mutation
   const analyzeMutation = trpc.aiStar.analyze.useMutation({
     onSuccess: (data) => {
-      toast.success(`${data.sourceHour}時段 AI 分析完成，推薦 ${data.goldenBalls.length} 顆黃金球`);
+      const keyType = data.usedLLM ? "用戶 APIKey" : "系統 Key";
+      toast.success(`${data.sourceHour}時段 AI 分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顆黃金球`);
       refetchPredictions();
     },
     onError: (err) => {
