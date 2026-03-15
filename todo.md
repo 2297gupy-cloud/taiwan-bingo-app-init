@@ -470,3 +470,7 @@
 - [x] 前端：GoldenBall 元件加入紅色閃爝特效（當使用用戶 APIKey 時）
 - [x] 前端：SlotCard 加入紅色小圓球指示器（表示使用了用戶 APIKey）
 - [x] 前端：AI 分析結果 toast 顯示 APIKey 類型（用戶 APIKey 或系統 Key）
+
+## APIKey 清除後紅點自動消失 (2026-03-15 v45)
+- [x] 前端：AiStarPage 新增 getApiKey 查詢，監聽 APIKey 是否存在
+- [x] 前端：依據 APIKey 是否存在來控制紅色小圓球顯示（有 Key 顯示，無 Key 消失）

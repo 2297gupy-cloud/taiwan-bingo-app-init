@@ -351,6 +351,7 @@ function SlotCard({
   onSelect,
   onDelete,
   dateStr,
+  userApiKey,
 }: {
   slot: { source: string; target: string; label: string; copyRange?: string; draws: number; verifyHour?: string; verifyRange?: string };
   prediction?: {
@@ -363,6 +364,7 @@ function SlotCard({
   onSelect: () => void;
   onDelete?: () => void;
   dateStr: string;
+  userApiKey?: { openaiKey: string | null; geminiKey: string | null };
 }) {
   const [copied, setCopied] = useState(false);
   // 每個卡片複製的是 source 時段的數據（前一個時段）
@@ -446,7 +448,7 @@ function SlotCard({
             ) : (
               <Copy className="h-3 w-3 text-muted-foreground/30" />
             )}
-            {!prediction?.isManual && (
+            {!prediction?.isManual && (userApiKey?.openaiKey || userApiKey?.geminiKey) && (
               <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 6px rgba(239, 68, 68, 0.8)" }} />
             )}
           </div>
@@ -623,6 +625,10 @@ export default function AiStarPage() {
     { days: 7 },
     { enabled: showAnalysisHistory, staleTime: 60000 }
   );
+  // 查詢用戶已儲存的 APIKey
+  const { data: userApiKey, refetch: refetchApiKey } = trpc.aiStar.getApiKey.useQuery(undefined, {
+    staleTime: 30000,
+  });
 
   const slots = slotsData?.slots || [];
   const currentSlot = slotsData?.currentSlot;
@@ -878,6 +884,7 @@ export default function AiStarPage() {
                   prediction={pred}
                   isCurrent={isCurrent}
                   isSelected={isSelected}
+                  userApiKey={userApiKey}
                   onSelect={() => {
                     setSelectedSlot(slot.source);
                     if (slot.target) setVerifySlot(slot.target);
@@ -938,7 +945,7 @@ export default function AiStarPage() {
                   )}
                   AI分析
                 </Button>
-                {currentPrediction && !currentPrediction.isManual && (
+                {currentPrediction && !currentPrediction.isManual && (userApiKey?.openaiKey || userApiKey?.geminiKey) && (
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }} />
                 )}
               </div>
