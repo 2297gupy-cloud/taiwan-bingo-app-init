@@ -963,9 +963,16 @@ export default function AiStarPage() {
                 </div>
               </div>
               {currentPrediction.reasoning && (
-                <p className="text-[10px] text-muted-foreground/70 text-center px-2">
-                  {currentPrediction.reasoning}
-                </p>
+                <details className="w-full">
+                  <summary className="cursor-pointer text-[10px] text-amber-400/70 hover:text-amber-400 text-center px-2 py-1 rounded hover:bg-amber-500/5 transition-colors">
+                    📋 AI 分析推理說明
+                  </summary>
+                  <div className="mt-2 p-2.5 rounded bg-secondary/30 border border-amber-500/20">
+                    <p className="text-[9px] text-muted-foreground/80 leading-relaxed whitespace-pre-wrap">
+                      {currentPrediction.reasoning}
+                    </p>
+                  </div>
+                </details>
               )}
               <p className="text-[10px] text-muted-foreground/50 text-center">
                 數據 {currentSlotInfo?.copyRange || (effectiveSlot.padStart(2, "0") + "00~" + effectiveSlot.padStart(2, "0") + "55")} → 預測 {currentSlotInfo?.target.padStart(2, "0") || "??"}:00~{currentSlotInfo?.target.padStart(2, "0") || "??"}:55
