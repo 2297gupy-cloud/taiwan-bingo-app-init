@@ -459,3 +459,9 @@
 - [x] 前端：時段選擇區加入一鍵全部分析按鈕（Sparkles）
 - [x] 前端：時段選擇區加入 AI手動計算連結（Gemini）
 - [x] 後端：新增 aiSuperPrize.batchAnalyze 路由（批量分析所有時段）顆球號）
+
+## AI一星策略 APIKey 修正 (2026-03-15 v43)
+- [x] 後端：確認 APIKey 儲存路由正確（saveApiKey）
+- [x] 前端：APIKey 輸入框可記憶已儲存的 Key（載入時顯示已儲存狀態、首幾碼遠碼）
+- [x] 前端：APIKey 可更換或清除（點擊更換/清除按鈕）
+- [x] 後端：點擊 AI分析 後優先使用用戶儲存的 Gemini/OpenAI Key；未儲存則 fallback 到系統內建 Key

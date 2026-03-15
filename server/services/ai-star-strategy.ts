@@ -76,7 +76,8 @@ export function getTodayDateStr(): string {
 /** 使用 LLM 智能分析開獎數據，推薦黃金球 */
 async function analyzeWithLLM(
   draws: { term: string; time: string; numbers: number[] }[],
-  sourceHour: string
+  sourceHour: string,
+  userApiKey?: { openaiKey?: string | null; geminiKey?: string | null }
 ): Promise<{ goldenBalls: number[]; reasoning: string }> {
   // 格式化開獎數據
   const drawLines = draws.map((d, idx) => {
@@ -104,42 +105,90 @@ ${dataText}
   "reasoning": "簡短分析說明（50字以內）"
 }`;
 
-  try {
-    const response = await invokeLLM({
-      messages: [
-        {
-          role: "system",
-          content: "你是台灣賓果彩票數據分析專家，專門分析開獎規律。請用繁體中文回應，並嚴格按照 JSON 格式輸出。",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "bingo_prediction",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              goldenBalls: {
-                type: "array",
-                items: { type: "integer" },
-                description: "推薦的3顆黃金球號碼，每個號碼在1-80之間",
-              },
-              reasoning: {
-                type: "string",
-                description: "分析說明",
-              },
-            },
-            required: ["goldenBalls", "reasoning"],
-            additionalProperties: false,
+  // 準備 LLM 請求參數
+  const llmMessages = [
+    {
+      role: "system" as const,
+      content: "你是台灣賓果彩票數據分析專家，專門分析開獎規律。請用繁體中文回應，並嚴格按照 JSON 格式輸出。",
+    },
+    {
+      role: "user" as const,
+      content: prompt,
+    },
+  ];
+  const llmResponseFormat = {
+    type: "json_schema" as const,
+    json_schema: {
+      name: "bingo_prediction",
+      strict: true,
+      schema: {
+        type: "object",
+        properties: {
+          goldenBalls: {
+            type: "array",
+            items: { type: "integer" },
+            description: "推薦的3顆黃金球號碼，每個號碼在1-80之間",
+          },
+          reasoning: {
+            type: "string",
+            description: "分析說明",
           },
         },
+        required: ["goldenBalls", "reasoning"],
+        additionalProperties: false,
       },
-    });
+    },
+  };
+
+  try {
+    let response;
+    // 若用戶有儲存的 Gemini Key，將使用外部 Gemini API
+    if (userApiKey?.geminiKey) {
+      const geminiPayload = {
+        model: "gemini-2.0-flash",
+        messages: llmMessages,
+        response_format: llmResponseFormat,
+      };
+      const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${userApiKey.geminiKey}`,
+        },
+        body: JSON.stringify(geminiPayload),
+      });
+      if (!geminiRes.ok) {
+        const errText = await geminiRes.text();
+        throw new Error(`Gemini API 錯誤: ${geminiRes.status} ${errText}`);
+      }
+      response = await geminiRes.json();
+    } else if (userApiKey?.openaiKey) {
+      // 若用戶有儲存的 OpenAI Key，將使用外部 OpenAI API
+      const openaiPayload = {
+        model: "gpt-4o-mini",
+        messages: llmMessages,
+        response_format: llmResponseFormat,
+      };
+      const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${userApiKey.openaiKey}`,
+        },
+        body: JSON.stringify(openaiPayload),
+      });
+      if (!openaiRes.ok) {
+        const errText = await openaiRes.text();
+        throw new Error(`OpenAI API 錯誤: ${openaiRes.status} ${errText}`);
+      }
+      response = await openaiRes.json();
+    } else {
+      // 使用系統內建 Key
+      response = await invokeLLM({
+        messages: llmMessages,
+        response_format: llmResponseFormat,
+      });
+    }
 
     const rawContent = response.choices?.[0]?.message?.content;
     if (!rawContent) throw new Error("LLM 無回應");
@@ -209,7 +258,8 @@ function analyzeWithStats(
 /** 分析指定時段的開獎數據，返回黃金球推薦（優先使用 LLM，失敗則使用統計方法） */
 export async function analyzeHourSlot(
   dateStr: string,
-  sourceHour: string
+  sourceHour: string,
+  userApiKey?: { openaiKey?: string | null; geminiKey?: string | null }
 ): Promise<{
   goldenBalls: number[];
   reasoning: string;
@@ -246,9 +296,10 @@ export async function analyzeHourSlot(
   let result: { goldenBalls: number[]; reasoning: string };
 
   try {
-    result = await analyzeWithLLM(drawsForAnalysis, sourceHour);
+    result = await analyzeWithLLM(drawsForAnalysis, sourceHour, userApiKey);
     usedLLM = true;
-    console.log(`[analyzeHourSlot] LLM 分析成功，時段 ${sourceHour}:`, result.goldenBalls);
+    const keyType = userApiKey?.geminiKey ? "Gemini Key" : userApiKey?.openaiKey ? "OpenAI Key" : "系統內建 Key";
+    console.log(`[analyzeHourSlot] LLM 分析成功（${keyType}），時段 ${sourceHour}:`, result.goldenBalls);
   } catch (err) {
     console.log(`[analyzeHourSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}`);
     result = analyzeWithStats(drawsForAnalysis, sourceHour);

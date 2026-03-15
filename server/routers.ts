@@ -266,16 +266,25 @@ export const appRouter = router({
       }),
 
     /** AI 自動分析指定時段 */
-    analyze: publicProcedure
+    analyze: protectedProcedure
       .input(z.object({
         dateStr: z.string().optional(),
         sourceHour: z.string(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const dateStr = input.dateStr || getTodayDateStr();
         const slot = HOUR_SLOTS.find(s => s.source === input.sourceHour);
         if (!slot) throw new Error("時段不存在");
-        const result = await analyzeHourSlot(dateStr, input.sourceHour);
+        // 讀取用戶儲存的 APIKey
+        const db = await getDb();
+        let userApiKey: { openaiKey?: string | null; geminiKey?: string | null } | undefined;
+        if (db) {
+          const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
+          if (keyRows.length > 0) {
+            userApiKey = { openaiKey: keyRows[0].openaiKey, geminiKey: keyRows[0].geminiKey };
+          }
+        }
+        const result = await analyzeHourSlot(dateStr, input.sourceHour, userApiKey);
         await saveAiStarPrediction(
           dateStr,
           input.sourceHour,
