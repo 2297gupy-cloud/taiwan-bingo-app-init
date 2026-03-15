@@ -24,6 +24,8 @@ import {
   getPlayerStats,
 } from "./bingo-db";
 import { backupCsvRouter } from "./backup-csv-router";
+import { syncRecentDays, syncBingoDataForDate, getTaiwanDateStr } from "./services/taiwan-lottery-api";
+import { resetAPIMode, getTodayDrawSchedule, getCurrentDrawIndex } from "./services/live-draw-simulator";
 
 export const appRouter = router({
   system: systemRouter,
@@ -205,6 +207,48 @@ export const appRouter = router({
   }),
 
   backup: backupCsvRouter,
+
+  /** 台彩數據同步管理 */
+  sync: router({
+    /** 手動同步今天數據 */
+    today: protectedProcedure.mutation(async () => {
+      const dateStr = getTaiwanDateStr();
+      const result = await syncBingoDataForDate(dateStr);
+      resetAPIMode();
+      return { success: true, ...result };
+    }),
+
+    /** 手動同步最近 N 天數據（最多 30 天） */
+    recentDays: protectedProcedure
+      .input(z.object({ days: z.number().min(1).max(30).default(30) }))
+      .mutation(async ({ input }) => {
+        const result = await syncRecentDays(input.days);
+        resetAPIMode();
+        return { success: true, ...result };
+      }),
+
+    /** 手動同步指定日期數據 */
+    byDate: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .mutation(async ({ input }) => {
+        const result = await syncBingoDataForDate(input.date);
+        return { success: true, ...result };
+      }),
+
+    /** 取得今日開獎時間表 */
+    schedule: publicProcedure.query(() => {
+      const schedule = getTodayDrawSchedule();
+      const currentIndex = getCurrentDrawIndex();
+      return {
+        schedule,
+        currentIndex,
+        totalPeriods: 204,
+        firstDraw: '07:05',
+        lastDraw: '23:55',
+        intervalMinutes: 5,
+      };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

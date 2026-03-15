@@ -1,240 +1,274 @@
 /**
- * 台灣彩券官方 API 連接模組
- * 負責與台灣彩券官方 API 通信，獲取即時開獎數據
+ * 台灣彩券賓果賓果 API 爬蟲服務
+ * 從官方 API 抓取開獎數據並備份到資料庫
+ * API: https://api.taiwanlottery.com/TLCAPIWeB/Lottery/BingoResult
  */
 
-import axios from 'axios';
-import { toROCDateTime, getCurrentROCDateTime } from '../utils/date-converter';
+import { sql } from "drizzle-orm";
+import { getDb } from "../db";
+
+// ============ 台彩 API 數據格式 ============
+
+interface BingoQueryResult {
+  drawTerm: number;         // 期號
+  bigShowOrder: string[];   // 排序後的號碼（大小排序）
+  openShowOrder: string[];  // 開獎順序號碼
+  bullEyeTop: string;       // 超級號碼（第一個開出的號碼）
+  highLowTop: string;       // 大小結果（大/小）
+  oddEvenTop: string;       // 單雙結果（單/雙）
+}
+
+interface TaiwanLotteryAPIResponse {
+  rtCode: number;
+  content: {
+    bingoQueryResult: BingoQueryResult[];
+    totalSize: number;
+  };
+}
+
+// ============ 工具函數 ============
 
 /**
- * 開獎記錄介面
+ * 格式化日期為 YYYY-MM-DD 格式（台灣時間 UTC+8）
  */
-export interface DrawRecord {
-  drawNumber: string;        // 期數 (例: 113000001)
-  drawTime: Date;            // 開獎時間
-  numbers: number[];         // 開獎號碼 (1-75)
-  superNumber: number;       // 超級號碼
-  total: number;             // 總和
-  bigSmall: 'big' | 'small'; // 大小
-  oddEven: 'odd' | 'even';   // 奇偶
-  plate: string;             // 盤別
+export function getTaiwanDateStr(date: Date = new Date()): string {
+  const taiwanOffset = 8 * 60 * 60 * 1000;
+  const utcMs = date.getTime() + (date.getTimezoneOffset() * 60 * 1000);
+  const taiwanDate = new Date(utcMs + taiwanOffset);
+  
+  const year = taiwanDate.getFullYear();
+  const month = String(taiwanDate.getMonth() + 1).padStart(2, '0');
+  const day = String(taiwanDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
- * 台灣彩券 API 客戶端
+ * 格式化日期為民國年份格式（用於顯示）
+ * 輸入：YYYY-MM-DD + HH:MM，輸出：RRR/MM/DD HH:MM:00
  */
-export class TaiwanLotteryAPI {
-  private apiBaseUrl = 'https://api.taiwanlottery.com.tw'; // 實際 API 端點
-  private lastDrawNumber: string | null = null;
-  private syncInterval: NodeJS.Timeout | null = null;
+export function formatToROCDateTime(dateStr: string, timeStr: string): string {
+  const [year, month, day] = dateStr.split('-');
+  const rocYear = parseInt(year) - 1911;
+  return `${rocYear}/${month}/${day} ${timeStr}:00`;
+}
 
-  /**
-   * 初始化 API 客戶端
-   */
-  constructor() {
-    console.log('[TaiwanLotteryAPI] Initialized');
-  }
+/**
+ * 根據每日期號索引計算開獎時間
+ * 第一期 07:05，每 5 分鐘一期，共 204 期到 23:55
+ */
+export function calcDrawTime(index: number): string {
+  const baseMinutes = 7 * 60 + 5; // 07:05
+  const totalMinutes = baseMinutes + index * 5;
+  const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+  const mins = (totalMinutes % 60).toString().padStart(2, '0');
+  return `${hours}:${mins}`;
+}
 
-  /**
-   * 獲取最新開獎記錄
-   * @returns 最新開獎記錄
-   */
-  async getLatestDraw(): Promise<DrawRecord | null> {
+// ============ API 抓取 ============
+
+/**
+ * 從台彩 API 抓取指定日期的開獎數據
+ * @param dateStr 日期字符串，格式 YYYY-MM-DD
+ */
+export async function fetchBingoDataFromAPI(dateStr: string): Promise<BingoQueryResult[]> {
+  const allResults: BingoQueryResult[] = [];
+  let pageNum = 1;
+  const pageSize = 50;
+
+  while (true) {
+    const url = `https://api.taiwanlottery.com/TLCAPIWeB/Lottery/BingoResult?openDate=${dateStr}&pageNum=${pageNum}&pageSize=${pageSize}`;
     try {
-      const response = await axios.get(`${this.apiBaseUrl}/api/lottery/latest`, {
-        timeout: 5000,
+      const response = await fetch(url, {
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json',
+          'Referer': 'https://www.taiwanlottery.com/',
+        },
+        signal: AbortSignal.timeout(15000),
       });
-
-      if (response.data && response.data.success) {
-        return this.parseDrawRecord(response.data.data);
+      
+      if (!response.ok) {
+        console.error(`[TaiwanLottery] HTTP ${response.status} for ${dateStr} page ${pageNum}`);
+        break;
       }
-
-      console.warn('[TaiwanLotteryAPI] Invalid response format');
-      return null;
-    } catch (error) {
-      console.error('[TaiwanLotteryAPI] Failed to fetch latest draw:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 獲取指定期數的開獎記錄
-   * @param drawNumber - 期數
-   * @returns 開獎記錄
-   */
-  async getDrawByNumber(drawNumber: string): Promise<DrawRecord | null> {
-    try {
-      const response = await axios.get(
-        `${this.apiBaseUrl}/api/lottery/draw/${drawNumber}`,
-        { timeout: 5000 }
-      );
-
-      if (response.data && response.data.success) {
-        return this.parseDrawRecord(response.data.data);
+      
+      const data = await response.json() as TaiwanLotteryAPIResponse;
+      
+      if (data?.rtCode !== 0 || !data?.content?.bingoQueryResult) {
+        console.log(`[TaiwanLottery] No data for ${dateStr} page ${pageNum}, rtCode: ${data?.rtCode}`);
+        break;
       }
-
-      return null;
-    } catch (error) {
-      console.error(`[TaiwanLotteryAPI] Failed to fetch draw ${drawNumber}:`, error);
-      return null;
+      
+      const results = data.content.bingoQueryResult;
+      allResults.push(...results);
+      
+      if (allResults.length >= data.content.totalSize) break;
+      pageNum++;
+      
+      await new Promise(r => setTimeout(r, 300));
+    } catch (err) {
+      console.error(`[TaiwanLottery] Failed to fetch page ${pageNum} for ${dateStr}:`, err);
+      break;
     }
   }
+  
+  return allResults;
+}
 
-  /**
-   * 獲取過去 N 天的開獎記錄
-   * @param days - 天數
-   * @returns 開獎記錄列表
-   */
-  async getDrawsInPastDays(days: number): Promise<DrawRecord[]> {
-    try {
-      const response = await axios.get(
-        `${this.apiBaseUrl}/api/lottery/draws`,
-        {
-          params: { days },
-          timeout: 10000,
-        }
-      );
+// ============ 數據處理 ============
 
-      if (response.data && response.data.success && Array.isArray(response.data.data)) {
-        return response.data.data.map((draw: any) => this.parseDrawRecord(draw));
-      }
+export interface ProcessedDraw {
+  drawNumber: string;
+  drawTime: string;   // 民國年份格式：115/03/15 07:05:00
+  numbers: number[];
+  superNumber: number;
+  total: number;
+  bigSmall: string;
+  oddEven: string;
+  plate: string;
+}
 
-      return [];
-    } catch (error) {
-      console.error('[TaiwanLotteryAPI] Failed to fetch draws:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 檢測新開獎（輪詢）
-   * @param callback - 檢測到新開獎時的回調函數
-   * @param intervalSeconds - 檢測間隔（秒）
-   */
-  startPolling(
-    callback: (draw: DrawRecord) => Promise<void>,
-    intervalSeconds: number = 30
-  ): void {
-    if (this.syncInterval) {
-      console.warn('[TaiwanLotteryAPI] Polling already started');
-      return;
-    }
-
-    console.log(`[TaiwanLotteryAPI] Starting polling every ${intervalSeconds} seconds`);
-
-    this.syncInterval = setInterval(async () => {
-      try {
-        const latestDraw = await this.getLatestDraw();
-
-        if (latestDraw && latestDraw.drawNumber !== this.lastDrawNumber) {
-          console.log(`[TaiwanLotteryAPI] New draw detected: ${latestDraw.drawNumber}`);
-          this.lastDrawNumber = latestDraw.drawNumber;
-
-          try {
-            await callback(latestDraw);
-          } catch (error) {
-            console.error('[TaiwanLotteryAPI] Callback error:', error);
-          }
-        }
-      } catch (error) {
-        console.error('[TaiwanLotteryAPI] Polling error:', error);
-      }
-    }, intervalSeconds * 1000);
-  }
-
-  /**
-   * 停止輪詢
-   */
-  stopPolling(): void {
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-      this.syncInterval = null;
-      console.log('[TaiwanLotteryAPI] Polling stopped');
-    }
-  }
-
-  /**
-   * 解析開獎記錄
-   * @param data - API 返回的原始數據
-   * @returns 解析後的開獎記錄
-   */
-  private parseDrawRecord(data: any): DrawRecord {
-    const numbers = Array.isArray(data.numbers)
-      ? data.numbers.map((n: any) => parseInt(n, 10))
-      : [];
-
-    const total = numbers.reduce((sum: number, n: number) => sum + n, 0);
-    const bigSmall = total > 1900 ? 'big' : 'small';
-    const oddEven = total % 2 === 0 ? 'even' : 'odd';
-
+/**
+ * 處理 API 原始數據，轉換為應用格式
+ */
+export function processRawData(rawData: BingoQueryResult[], dateStr: string): ProcessedDraw[] {
+  const sorted = [...rawData].sort((a, b) => a.drawTerm - b.drawTerm);
+  
+  return sorted.map((res, index) => {
+    const drawNumber = String(res.drawTerm);
+    const timeStr = calcDrawTime(index);
+    const drawTime = formatToROCDateTime(dateStr, timeStr);
+    
+    const numbers = (res.bigShowOrder || []).map(Number).sort((a, b) => a - b);
+    const superNumber = Number(res.bullEyeTop) || (numbers[0] ?? 0);
+    const total = numbers.reduce((sum, n) => sum + n, 0);
+    
+    // 優先使用 API 返回的大小單雙結果
+    const bigSmall = res.highLowTop === '大' ? 'big' : res.highLowTop === '小' ? 'small' : (total > 810 ? 'big' : 'small');
+    const oddEven = res.oddEvenTop === '單' ? 'odd' : res.oddEvenTop === '雙' ? 'even' : (total % 2 === 0 ? 'even' : 'odd');
+    
     return {
-      drawNumber: data.drawNumber || '',
-      drawTime: new Date(data.drawTime || new Date()),
+      drawNumber,
+      drawTime,
       numbers,
-      superNumber: parseInt(data.superNumber, 10) || 0,
+      superNumber,
       total,
       bigSmall,
       oddEven,
-      plate: data.plate || 'A',
+      plate: 'A',
     };
+  });
+}
+
+// ============ 資料庫操作 ============
+
+/**
+ * 批量 upsert 開獎數據到資料庫
+ */
+export async function batchUpsertDraws(draws: ProcessedDraw[]): Promise<number> {
+  const db = await getDb();
+  if (!db || draws.length === 0) return 0;
+  
+  const BATCH_SIZE = 50;
+  let totalInserted = 0;
+  
+  for (let i = 0; i < draws.length; i += BATCH_SIZE) {
+    const batch = draws.slice(i, i + BATCH_SIZE);
+    
+    const valuePlaceholders: string[] = [];
+    const params: unknown[] = [];
+    
+    for (const draw of batch) {
+      valuePlaceholders.push(`(?, ?, ?, ?, ?, ?, ?, ?)`);
+      params.push(
+        draw.drawNumber,
+        draw.drawTime,
+        JSON.stringify(draw.numbers),
+        draw.superNumber,
+        draw.total,
+        draw.bigSmall,
+        draw.oddEven,
+        draw.plate
+      );
+    }
+    
+    const query = `
+      INSERT INTO draw_records (drawNumber, drawTime, numbers, superNumber, total, bigSmall, oddEven, plate)
+      VALUES ${valuePlaceholders.join(', ')}
+      ON DUPLICATE KEY UPDATE
+        drawTime = VALUES(drawTime),
+        numbers = VALUES(numbers),
+        superNumber = VALUES(superNumber),
+        total = VALUES(total),
+        bigSmall = VALUES(bigSmall),
+        oddEven = VALUES(oddEven),
+        plate = VALUES(plate)
+    `;
+    
+    try {
+      await db.execute(sql.raw(query.replace(/\?/g, () => {
+        const val = params.shift();
+        if (typeof val === 'number') return String(val);
+        return `'${String(val).replace(/'/g, "''")}'`;
+      })));
+      totalInserted += batch.length;
+    } catch (err) {
+      console.error(`[TaiwanLottery] Batch upsert error at offset ${i}:`, err);
+    }
   }
-
-  /**
-   * 驗證開獎數據的完整性
-   * @param draw - 開獎記錄
-   * @returns 是否有效
-   */
-  validateDraw(draw: DrawRecord): boolean {
-    // 檢查期數格式
-    if (!/^\d{9}$/.test(draw.drawNumber)) {
-      console.warn(`[TaiwanLotteryAPI] Invalid draw number: ${draw.drawNumber}`);
-      return false;
-    }
-
-    // 檢查號碼數量
-    if (draw.numbers.length !== 20) {
-      console.warn(`[TaiwanLotteryAPI] Invalid number count: ${draw.numbers.length}`);
-      return false;
-    }
-
-    // 檢查號碼範圍
-    if (!draw.numbers.every((n) => n >= 1 && n <= 75)) {
-      console.warn('[TaiwanLotteryAPI] Numbers out of range');
-      return false;
-    }
-
-    // 檢查超級號碼
-    if (draw.superNumber < 1 || draw.superNumber > 75) {
-      console.warn(`[TaiwanLotteryAPI] Invalid super number: ${draw.superNumber}`);
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * 格式化開獎記錄為顯示格式
-   * @param draw - 開獎記錄
-   * @returns 格式化後的字符串
-   */
-  formatDrawForDisplay(draw: DrawRecord): string {
-    const rocDateTime = toROCDateTime(draw.drawTime);
-    const numbersStr = draw.numbers.join(', ');
-    return `期數: ${draw.drawNumber}\n時間: ${rocDateTime}\n號碼: ${numbersStr}\n超級號: ${draw.superNumber}\n總和: ${draw.total} (${draw.bigSmall}/${draw.oddEven})`;
-  }
+  
+  return totalInserted;
 }
 
 /**
- * 全局 API 實例
+ * 同步指定日期的開獎數據
  */
-let apiInstance: TaiwanLotteryAPI | null = null;
+export async function syncBingoDataForDate(dateStr: string): Promise<{ count: number; date: string }> {
+  console.log(`[TaiwanLottery] Syncing data for ${dateStr}...`);
+  
+  const rawData = await fetchBingoDataFromAPI(dateStr);
+  if (rawData.length === 0) {
+    console.log(`[TaiwanLottery] No data found for ${dateStr}`);
+    return { count: 0, date: dateStr };
+  }
+  
+  const processed = processRawData(rawData, dateStr);
+  const count = await batchUpsertDraws(processed);
+  
+  console.log(`[TaiwanLottery] Synced ${count} records for ${dateStr}`);
+  return { count, date: dateStr };
+}
 
 /**
- * 獲取或創建 API 實例
+ * 同步最近 N 天的開獎數據（30 天備份）
  */
-export function getTaiwanLotteryAPI(): TaiwanLotteryAPI {
-  if (!apiInstance) {
-    apiInstance = new TaiwanLotteryAPI();
+export async function syncRecentDays(days: number = 30): Promise<{ total: number; results: Array<{ date: string; count: number }> }> {
+  const results: Array<{ date: string; count: number }> = [];
+  let total = 0;
+  
+  const today = new Date();
+  
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = getTaiwanDateStr(d);
+    
+    const result = await syncBingoDataForDate(dateStr);
+    results.push(result);
+    total += result.count;
+    
+    if (i < days - 1) {
+      await new Promise(r => setTimeout(r, 500));
+    }
   }
-  return apiInstance;
+  
+  return { total, results };
+}
+
+/**
+ * 同步今天的開獎數據
+ */
+export async function syncToday(): Promise<{ count: number; date: string }> {
+  const dateStr = getTaiwanDateStr();
+  return syncBingoDataForDate(dateStr);
 }
