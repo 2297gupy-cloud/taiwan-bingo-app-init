@@ -483,7 +483,7 @@ ${separator}`;
     const timePart = draw.drawTime.split(" ")[1]?.substring(0, 5) || "";
     const bigSmall = formatBigSmall(draw.bigSmall);
     const oddEven = formatOddEven(draw.oddEven);
-    return `${draw.drawNumber}\n${timePart}\t${numbers}\t${draw.total}\t${bigSmall}\t${oddEven}`;
+    return `${draw.drawNumber}\n${timePart}\t${numbers}\t${bigSmall}\t${oddEven}`;
   });
 
   const text = `${header}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
