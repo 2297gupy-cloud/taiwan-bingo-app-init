@@ -276,7 +276,7 @@ export default function NumberPredictModule() {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm">🎯</span>
             <span className="text-xs font-semibold text-foreground">自選球號</span>
-            <span className="text-[10px] text-pink-400 ml-auto">最多選 {count} 顆</span>
+            <span className="text-[10px] text-pink-400 ml-auto">最多選 {count}星</span>
           </div>
           <CustomBallGrid
             selected={customNums}
@@ -291,7 +291,7 @@ export default function NumberPredictModule() {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-sm">🔢</span>
           <span className="text-xs font-semibold text-foreground">選號數量</span>
-          <span className="text-[10px] text-amber-400 ml-auto font-bold">{count} 號</span>
+          <span className="text-[10px] text-amber-400 ml-auto font-bold">{count}星</span>
         </div>
         <div className="flex gap-1 flex-wrap">
           {COUNT_OPTIONS.map(c => (
