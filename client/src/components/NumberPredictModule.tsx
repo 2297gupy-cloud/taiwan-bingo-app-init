@@ -176,24 +176,24 @@ export default function NumberPredictModule() {
           <span className="text-sm">🎯</span>
           <span className="text-xs font-semibold text-foreground">選擇預測策略</span>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {STRATEGIES.map(s => (
             <button
               key={s.key}
               onClick={() => setStrategy(s.key)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border-2 transition-all text-left",
                 strategy === s.key
-                  ? `${s.bgColor} ${s.borderColor} shadow-sm`
-                  : "bg-secondary/20 border-border/20 hover:bg-secondary/40"
+                  ? `${s.bgColor} ${s.borderColor} shadow-md`
+                  : "bg-secondary/30 border-border/40 hover:bg-secondary/50 hover:border-border/60"
               )}
             >
-              <span className="text-lg shrink-0">{s.emoji}</span>
+              <span className="text-base shrink-0">{s.emoji}</span>
               <div className="flex-1 min-w-0">
-                <p className={cn("text-xs font-semibold", strategy === s.key ? s.color : "text-foreground")}>
+                <p className={cn("text-[11px] font-semibold", strategy === s.key ? s.color : "text-foreground")}>
                   {s.name}
                 </p>
-                <p className="text-[10px] text-muted-foreground truncate">{s.desc}</p>
+                <p className="text-[9px] text-muted-foreground truncate">{s.desc}</p>
               </div>
               {strategy === s.key && (
                 <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", s.bgColor, s.borderColor, "border")}>
