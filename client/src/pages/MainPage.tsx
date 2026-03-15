@@ -540,12 +540,6 @@ function AiPredictionSection() {
         )}
       </div>
 
-      {/* Disclaimer */}
-      <div className="mt-2 px-3 py-2 rounded bg-destructive/10 border border-destructive/20 text-center">
-        <p className="text-[10px] text-destructive font-semibold">⚠️ 預測僅供參考，請勿梭哈上頭。</p>
-        <p className="text-[8px] text-muted-foreground">AI model based on historical data. Past performance is not indicative of future results.</p>
-      </div>
-
       {/* 🔮 號碼預測模組 */}
       <div className="mt-3">
         <div className="flex items-center gap-2 mb-2">
