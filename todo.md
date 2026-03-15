@@ -388,3 +388,11 @@
 - [x] 後端：計算每個策略過去十期的平均命中率（strategyHitRates API）
 - [x] 前端：在卡片下方顯示命中率百分比
 - [x] 前端：命中率視覺化（綠超過50%、黃超過30%、紅低於30%）
+
+## 30 天數據抓取與 CSV 下載 (2026-03-15 v33)
+- [x] 後端：sync.recentDays 改為 publicProcedure（允許未登入使用）
+- [x] 後端：已有 syncRecentDays + exportDrawRecordsCSV API
+- [x] 前端：增加「抓取 30 天」按鈕（綠色 Database 圖示）與進度顯示
+- [x] 前端：修復 CSV 下載（使用 useQuery + refetch 正確調用 tRPC）
+- [x] 前端：CSV 加入 BOM 確保 Excel 正確顯示中文
+- [x] 測試：CSV 下載 API 返回 6206 筆記錄正常

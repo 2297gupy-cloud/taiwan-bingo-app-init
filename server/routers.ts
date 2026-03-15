@@ -420,7 +420,7 @@ export const appRouter = router({
     }),
 
     /** 手動同步最近 N 天數據（最多 30 天） */
-    recentDays: protectedProcedure
+    recentDays: publicProcedure
       .input(z.object({ days: z.number().min(1).max(30).default(30) }))
       .mutation(async ({ input }) => {
         const result = await syncRecentDays(input.days);
