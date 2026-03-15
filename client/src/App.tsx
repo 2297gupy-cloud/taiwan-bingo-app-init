@@ -6,14 +6,14 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import TabBar from "./components/TabBar";
 import MainPage from "./pages/MainPage";
-import Checker from "./pages/Checker";
+
 import Trend from "./pages/Trend";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={MainPage} />
-      <Route path="/checker" component={Checker} />
+
       <Route path="/trend" component={Trend} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

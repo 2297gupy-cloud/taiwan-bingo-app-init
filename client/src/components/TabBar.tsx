@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { Home, Zap, Clock, TrendingUp, CheckCircle, Brain, BarChart3 } from "lucide-react";
+import { Home, Zap, Clock, TrendingUp, Brain, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
@@ -7,7 +7,7 @@ const tabs = [
   { id: "live", path: "/", anchor: "#live", label: "即時開獎", icon: Zap },
   { id: "history", path: "/", anchor: "#history", label: "歷史號碼", icon: Clock },
   { id: "trend", path: "/trend", anchor: null, label: "走勢分析", icon: TrendingUp },
-  { id: "checker", path: "/checker", anchor: null, label: "對獎工具", icon: CheckCircle },
+
   { id: "ai", path: "/", anchor: "#ai", label: "AI預測", icon: Brain },
   { id: "stats", path: "/", anchor: "#stats", label: "統計分析", icon: BarChart3 },
 ];
