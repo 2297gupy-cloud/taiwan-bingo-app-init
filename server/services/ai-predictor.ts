@@ -242,20 +242,7 @@ export async function generateAIPrediction(
       confidence: superOddConf,
       trend: getTrend(superOddConf),
     },
-    {
-      label: '盤面分布',
-      icon: '🧱',
-      prediction: plateDesc,
-      confidence: plateConf,
-      trend: getTrend(plateConf),
-    },
-    {
-      label: '奇偶盤',
-      icon: '🎯',
-      prediction: oddBoardPercent >= 50 ? '奇盤' : '偶盤',
-      confidence: oddBoardConf,
-      trend: getTrend(oddBoardConf),
-    },
+
   ];
 
   // ---- 推薦號碼 ----

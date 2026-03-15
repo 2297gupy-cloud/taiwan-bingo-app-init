@@ -491,8 +491,8 @@ function AiPredictionSection() {
           </div>
         </div>
 
-        {/* Prediction indicators - 2x3 grid */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        {/* Prediction indicators - 2x2 grid */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
           {prediction.indicators.map((item) => (
             <div key={item.label} className="p-2 rounded bg-secondary/40 border border-border">
               <div className="flex items-center gap-1 mb-1">
