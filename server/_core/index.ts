@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getTaiwanLotteryScraper } from "../services/taiwan-lottery-scraper";
 import { getDb } from "../db";
+import { drawRecords } from "../../drizzle/schema";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -94,7 +95,35 @@ async function initializeLotteryScraper() {
             return;
           }
 
-          console.log(`[Scraper] Draw synced successfully: ${draw.drawNumber}`);
+          // 保存開獎數據到資料庫
+          try {
+            const drawData = {
+              drawNumber: draw.drawNumber,
+              drawTime: draw.drawTime,
+              numbers: draw.numbers,
+              superNumber: draw.superNumber,
+              total: draw.total,
+              bigSmall: draw.bigSmall,
+              oddEven: draw.oddEven,
+              plate: draw.plate,
+            };
+            
+            await db.insert(drawRecords).values(drawData).onDuplicateKeyUpdate({
+              set: {
+                drawTime: draw.drawTime,
+                numbers: draw.numbers,
+                superNumber: draw.superNumber,
+                total: draw.total,
+                bigSmall: draw.bigSmall,
+                oddEven: draw.oddEven,
+                plate: draw.plate,
+              },
+            });
+            
+            console.log(`[Scraper] Draw synced successfully: ${draw.drawNumber}`);
+          } catch (dbError) {
+            console.error('[Scraper] Database error:', dbError);
+          }
         } catch (error) {
           console.error('[Scraper] Error syncing draw:', error);
         }

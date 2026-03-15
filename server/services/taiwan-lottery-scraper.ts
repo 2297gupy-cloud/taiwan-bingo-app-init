@@ -10,7 +10,7 @@ import axios from 'axios';
  */
 export interface DrawRecord {
   drawNumber: string;        // 期數
-  drawTime: Date;            // 開獎時間
+  drawTime: string;          // 開獎時間（民國年份格式：115/03/15 08:10:00）
   numbers: number[];         // 開獎號碼 (1-75)
   superNumber: number;       // 超級號碼
   total: number;             // 總和
@@ -86,9 +86,8 @@ export class TaiwanLotteryScraper {
       const hours = parseInt(timeMatch[4], 10);
       const minutes = parseInt(timeMatch[5], 10);
 
-      // 民國年轉西元年
-      const year = rocYear + 1911;
-      const drawTime = new Date(year, month - 1, day, hours, minutes, 0);
+      // 直接使用民國年份格式的時間字符串
+      const drawTime = `${String(rocYear).padStart(3, '0')}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')} ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
       // 提取開獎號碼（尋找所有 2 位數字）
       const numbersMatch = html.match(/class="ball[^"]*"[^>]*>(\d{2})<\/span>/g);

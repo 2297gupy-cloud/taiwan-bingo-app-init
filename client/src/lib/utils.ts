@@ -11,8 +11,23 @@ export function formatDrawNumber(drawNumber: string): string {
 }
 
 /** 格式化時間戳為本地時間（民國年份格式） */
-export function formatDrawTime(timestamp: number | Date): string {
-  const d = timestamp instanceof Date ? timestamp : new Date(timestamp);
+export function formatDrawTime(timestamp: number | Date | string): string {
+  // 如果已經是民國年份格式的字符串，直接返回
+  if (typeof timestamp === 'string') {
+    return timestamp;
+  }
+  
+  let d: Date;
+  if (timestamp instanceof Date) {
+    d = timestamp;
+  } else if (typeof timestamp === 'number') {
+    // 自動判斷是綒級還是毫綒級時間戳
+    // 綒級時間戳通常小於 10^11，毫綒級通常大於 10^12
+    const ts = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+    d = new Date(ts);
+  } else {
+    return '';
+  }
   const year = d.getFullYear();
   const rocYear = year - 1911; // 民國年份 = 西元年份 - 1911
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -24,8 +39,22 @@ export function formatDrawTime(timestamp: number | Date): string {
 }
 
 /** 格式化完整日期時間（民國年份格式） */
-export function formatFullDateTime(timestamp: number | Date): string {
-  const d = timestamp instanceof Date ? timestamp : new Date(timestamp);
+export function formatFullDateTime(timestamp: number | Date | string): string {
+  // 如果已經是民國年份格式的字符串，直接返回
+  if (typeof timestamp === 'string') {
+    return timestamp;
+  }
+  
+  let d: Date;
+  if (timestamp instanceof Date) {
+    d = timestamp;
+  } else if (typeof timestamp === 'number') {
+    // 自動判斷是綒級還是毫綒級時間戳
+    const ts = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+    d = new Date(ts);
+  } else {
+    return '';
+  }
   const year = d.getFullYear();
   const rocYear = year - 1911; // 民國年份 = 西元年份 - 1911
   return `${rocYear}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;

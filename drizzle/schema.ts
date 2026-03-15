@@ -26,8 +26,8 @@ export const drawRecords = mysqlTable("draw_records", {
   id: int("id").autoincrement().primaryKey(),
   /** 期號，例如 1150313086 */
   drawNumber: varchar("drawNumber", { length: 20 }).notNull().unique(),
-  /** 開獎時間 (UTC timestamp ms) */
-  drawTime: bigint("drawTime", { mode: "number" }).notNull(),
+  /** 開獎時間（民國年份格式：115/03/15 08:10:00） */
+  drawTime: varchar("drawTime", { length: 50 }).notNull(),
   /** 20 個開獎號碼，JSON 陣列，例如 [5,15,17,24,...] */
   numbers: json("numbers").notNull().$type<number[]>(),
   /** 超級獎號（第一個開出的號碼） */
