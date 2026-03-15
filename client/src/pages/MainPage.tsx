@@ -100,8 +100,8 @@ function SectionTabs({ active, onChange }: { active: string; onChange: (v: strin
 
 // ============ Section: Live Draw ============
 function LiveDraw() {
-  const { data: latest, refetch } = trpc.draw.latest.useQuery(undefined, { refetchInterval: 10000 });
-  const { data: recent } = trpc.draw.recent.useQuery({ limit: 10 }, { refetchInterval: 15000 });
+  const { data: latest, refetch } = trpc.draw.latest.useQuery(undefined, { refetchInterval: 10000, staleTime: 0 });
+  const { data: recent } = trpc.draw.recent.useQuery({ limit: 10 }, { refetchInterval: 15000, staleTime: 0 });
   const { data: stats } = trpc.stats.summary.useQuery({ periods: 20 });
   const [countdown, setCountdown] = useState(getCountdown());
   const [sortMode, setSortMode] = useState<"draw" | "size">("draw");
