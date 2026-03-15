@@ -25,23 +25,24 @@ export default function Live() {
     { limit: 50 },
     { refetchInterval: 30000 }
   );
-  const { data: history30days } = trpc.draw.history.useQuery(
-    { page: 1, pageSize: 1000 },
-    { refetchInterval: 60000 }
-  );
+  const { data: history30days } = trpc.draw.recent.useQuery({
+    limit: 500,
+  }, {
+    refetchInterval: 60000
+  });
 
   const [countdown, setCountdown] = useState(getCountdown());
   const [sortMode, setSortMode] = useState<"draw" | "size">("draw");
   
   // CSV 下載函數
   const downloadCSV = () => {
-    if (!history30days || history30days.records.length === 0) {
+    if (!history30days || history30days.length === 0) {
       alert("沒有數據可下載");
       return;
     }
     
     const headers = ["期號", "開獎時間", "號碼", "總和", "大小", "單雙", "超級號", "盤面"];
-    const rows = history30days.records.map(draw => [
+    const rows = history30days.map(draw => [
       draw.drawNumber,
       draw.drawTime,
       (draw.numbers as number[]).join(","),
@@ -67,7 +68,7 @@ export default function Live() {
   
   // 數據驗證函數
   const validateData = () => {
-    if (!history30days || history30days.records.length === 0) {
+    if (!history30days || history30days.length === 0) {
       alert("沒有數據可驗證");
       return;
     }
@@ -75,7 +76,7 @@ export default function Live() {
     let validCount = 0;
     let invalidCount = 0;
     
-    history30days.records.forEach(draw => {
+    history30days.forEach(draw => {
       const drawNum = draw.drawNumber.toString();
       if (drawNum.length === 9 && /^\d+$/.test(drawNum)) {
         validCount++;
@@ -84,7 +85,7 @@ export default function Live() {
       }
     });
     
-    alert(`數據驗證結果:\n正確: ${validCount} 期\n錯誤: ${invalidCount} 期\n總計: ${history30days.records.length} 期`);
+    alert(`數據驗證結果:\n正確: ${validCount} 期\n錯誤: ${invalidCount} 期\n總計: ${history30days.length} 期`);
   };
 
   useEffect(() => {

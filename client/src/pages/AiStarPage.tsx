@@ -526,8 +526,8 @@ export default function AiStarPage() {
   const currentPrediction = predictions?.find(p => p.sourceHour === effectiveSlot);
   const currentSlotInfo = slots.find(s => s.source === effectiveSlot);
 
-  // 驗證時段：每個卡片的黃金球在 verifyHour 時段驗證
-  // 08時卡片 → verifyHour="09" → 驗證 09:00~09:55
+  // 驗證時段：每個卡片的黃金球在同時段驗證（verifyHour = target）
+  // 14時卡片 → verifyHour="14" → 驗證 14:00~14:55（即時顯示已開獎結果）
   const effectiveVerifySlot = verifySlot || currentSlotInfo?.target || null;
   const verifySlotInfo = effectiveVerifySlot ? slots.find(s => s.target === effectiveVerifySlot) : null;
   const verifyPrediction = effectiveVerifySlot
@@ -938,7 +938,7 @@ export default function AiStarPage() {
 
           {/* 驗證時段選擇：顯示「卡片時段 → 驗證時段」 */}
           <div className="mb-2">
-            <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段（卡片時段→驗證時段）：</p>
+            <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段（即時驗證同時段開獎結果）：</p>
             <div className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border/20">
               {slots.map(slot => {
                 const pred = predictions?.find(p => p.targetHour === slot.target);
@@ -957,12 +957,9 @@ export default function AiStarPage() {
                           : "border-transparent text-muted-foreground/30 cursor-not-allowed"
                     )}
                   >
-                    {/* 顯示卡片時段（target） */}
+                    {/* 顯示卡片時段（target = verifyHour，即時驗證同時段） */}
                     <span>{slot.target.padStart(2, "0")}時</span>
-                    {/* 顯示實際驗證時段（verifyHour = target+1） */}
-                    {slot.verifyHour && (
-                      <span className="text-[7px] opacity-60">→{slot.verifyHour.padStart(2, "0")}時</span>
-                    )}
+                    <span className="text-[7px] opacity-60">{slot.verifyRange?.replace("~", "-") || ""}</span>
                   </button>
                 );
               })}

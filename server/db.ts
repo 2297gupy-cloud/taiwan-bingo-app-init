@@ -9,12 +9,13 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       _db = drizzle(process.env.DATABASE_URL);
+      console.log("[Database] Connected successfully");
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
-      _db = null;
+      // 不設為 null，讓下次重試
     }
   }
-  return _db;
+  return _db || null;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
