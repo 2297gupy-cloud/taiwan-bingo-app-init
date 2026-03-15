@@ -176,28 +176,28 @@ export default function NumberPredictModule() {
           <span className="text-sm">🎯</span>
           <span className="text-xs font-semibold text-foreground">選擇預測策略</span>
         </div>
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-1.5">
           {STRATEGIES.map(s => (
             <button
               key={s.key}
               onClick={() => setStrategy(s.key)}
               className={cn(
-                "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg border-2 transition-all text-left",
+                "relative flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg border-2 transition-all",
                 strategy === s.key
                   ? `${s.bgColor} ${s.borderColor} shadow-md`
                   : "bg-secondary/30 border-border/40 hover:bg-secondary/50 hover:border-border/60"
               )}
             >
-              <span className="text-sm shrink-0">{s.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <p className={cn("text-[10px] font-semibold leading-tight", strategy === s.key ? s.color : "text-foreground")}>
+              <span className="text-base">{s.emoji}</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <p className={cn("text-[9px] font-semibold leading-tight", strategy === s.key ? s.color : "text-foreground")}>
                   {s.name}
                 </p>
-                <p className="text-[8px] text-muted-foreground truncate leading-tight">{s.desc}</p>
+                <p className="text-[7px] text-muted-foreground leading-tight line-clamp-1">{s.desc}</p>
               </div>
               {strategy === s.key && (
-                <div className={cn("w-5 h-5 rounded-full flex items-center justify-center shrink-0", s.bgColor, s.borderColor, "border")}>
-                  <Check className={cn("h-3 w-3", s.color)} />
+                <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center bg-current">
+                  <Check className="h-2.5 w-2.5 text-background" />
                 </div>
               )}
             </button>

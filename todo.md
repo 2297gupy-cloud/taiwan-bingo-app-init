@@ -376,3 +376,10 @@
 - [x] 減小圖標大小（text-base → text-sm）
 - [x] 減小字體大小（text-[11px] → text-[10px]、text-[9px] → text-[8px]）
 - [x] 加入 leading-tight 減少行高
+
+## 預測策略卡片 2 列並排 (2026-03-15 v31)
+- [x] 改為 grid grid-cols-2 layout
+- [x] 改為 flex-col items-center justify-center 居中排列
+- [x] 調整卡片內容為上下排列（圖標、名稱、說明）
+- [x] 移動選中指示器到右上角（absolute top-1 right-1）
+- [x] 減少卡片間距（gap-1.5）
