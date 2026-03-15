@@ -110,6 +110,13 @@ export const backupCsvRouter = router({
 
       sortedDates.forEach(dateKey => {
         const dayRecords = groupedByDate.get(dateKey) || [];
+        // 同一天內按時間由大到小排序（晚的在前，早的在後）
+        dayRecords.sort((a, b) => {
+          const timeA = a.drawTime || '';
+          const timeB = b.drawTime || '';
+          return timeB.localeCompare(timeA);
+        });
+
         csvLines.push(`# ${dateKey}`);
         csvLines.push(header);
 
