@@ -38,6 +38,8 @@ import {
   deleteAiStarPrediction,
   verifyPrediction,
   getFormattedHourData,
+  batchAnalyzeAllSlots,
+  getAnalysisRecords,
 } from "./services/ai-star-strategy";
 import { getDb } from "./db";
 import { aiApiKeys } from "../drizzle/schema";
@@ -356,6 +358,25 @@ export const appRouter = router({
         geminiKey: rows[0].geminiKey ? rows[0].geminiKey.substring(0, 10) + "..." : null,
       };
     }),
+
+    /** 批量分析所有時段 */
+    batchAnalyze: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return batchAnalyzeAllSlots(dateStr);
+      }),
+
+    /** 取得近 N 天的分析記錄 */
+    getAnalysisRecords: publicProcedure
+      .input(z.object({
+        days: z.number().min(1).max(30).default(7),
+      }))
+      .query(async ({ input }) => {
+        return getAnalysisRecords(input.days);
+      }),
 
     /** 儲存用戶 API Key */
     saveApiKey: protectedProcedure

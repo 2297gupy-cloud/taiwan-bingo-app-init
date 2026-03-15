@@ -1,10 +1,12 @@
 /**
  * AI 一星策略服務
  * 分析各時段開獎數據，預測黃金球號碼
+ * 支援 LLM 智能分析（使用 Manus 內建 Forge API）
  */
 import { getDb } from "../db";
 import { drawRecords, aiStarPredictions, type DrawRecord } from "../../drizzle/schema";
-import { eq, and, desc, like } from "drizzle-orm";
+import { eq, and, desc, like, gte } from "drizzle-orm";
+import { invokeLLM } from "../_core/llm";
 
 // Helper to get db instance
 async function db() {
@@ -63,43 +65,108 @@ export function getTodayDateStr(): string {
   return utc8.toISOString().split("T")[0];
 }
 
-/** 分析指定時段的開獎數據，返回黃金球推薦 */
-export async function analyzeHourSlot(
-  dateStr: string,
+/** 使用 LLM 智能分析開獎數據，推薦黃金球 */
+async function analyzeWithLLM(
+  draws: { term: string; time: string; numbers: number[] }[],
   sourceHour: string
-): Promise<{
-  goldenBalls: number[];
-  reasoning: string;
-  sampleCount: number;
-}> {
-  // 取得該時段的開獎記錄（近 15 期）
-  const database = await db();
-  // 取得近 30 天該時段的數據
-  const allDraws = await database
-    .select()
-    .from(drawRecords)
-    .where(like(drawRecords.drawTime, `%${sourceHour}:%`))
-    .orderBy(desc(drawRecords.drawNumber))
-    .limit(15);
+): Promise<{ goldenBalls: number[]; reasoning: string }> {
+  // 格式化開獎數據
+  const drawLines = draws.map((d, idx) => {
+    const nums = d.numbers.map((n) => String(n).padStart(2, "0")).join(" ");
+    return `第${idx + 1}期 [${d.time}]: ${nums}`;
+  });
 
-  if (allDraws.length === 0) {
-    // 沒有數據時，返回統計最常出現的號碼
+  const dataText = drawLines.join("\n");
+
+  const prompt = `你是台灣賓果彩票分析專家。以下是台灣賓果 ${sourceHour}:00-${sourceHour}:55 時段最近 ${draws.length} 期開獎數據（每期從1-80中開出20個號碼）：
+
+${dataText}
+
+請分析這些數據，找出規律，推薦 3 顆最有可能在下一個時段出現的「黃金球」號碼（1-80之間的整數）。
+
+分析要點：
+1. 統計各號碼出現頻率
+2. 觀察近期趨勢（最近幾期的熱號）
+3. 考慮冷號回補可能性
+4. 注意號碼分布（大小、奇偶、區間分布）
+
+請以 JSON 格式回應：
+{
+  "goldenBalls": [數字1, 數字2, 數字3],
+  "reasoning": "簡短分析說明（50字以內）"
+}`;
+
+  try {
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: "你是台灣賓果彩票數據分析專家，專門分析開獎規律。請用繁體中文回應，並嚴格按照 JSON 格式輸出。",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "bingo_prediction",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              goldenBalls: {
+                type: "array",
+                items: { type: "integer" },
+                description: "推薦的3顆黃金球號碼，每個號碼在1-80之間",
+              },
+              reasoning: {
+                type: "string",
+                description: "分析說明",
+              },
+            },
+            required: ["goldenBalls", "reasoning"],
+            additionalProperties: false,
+          },
+        },
+      },
+    });
+
+    const rawContent = response.choices?.[0]?.message?.content;
+    if (!rawContent) throw new Error("LLM 無回應");
+    const content = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
+
+    const parsed = JSON.parse(content);
+    const goldenBalls = (parsed.goldenBalls as number[])
+      .filter((n) => Number.isInteger(n) && n >= 1 && n <= 80)
+      .slice(0, 3);
+
+    if (goldenBalls.length < 1) throw new Error("LLM 未返回有效號碼");
+
     return {
-      goldenBalls: [7, 14, 21, 28, 35, 42],
-      reasoning: "數據不足，使用預設推薦號碼",
-      sampleCount: 0,
+      goldenBalls: goldenBalls.sort((a, b) => a - b),
+      reasoning: parsed.reasoning || "AI 智能分析完成",
     };
+  } catch (err) {
+    console.error("[analyzeWithLLM] LLM 分析失敗，回退到統計方法:", err instanceof Error ? err.message : String(err));
+    throw err;
   }
+}
 
+/** 統計方法分析（LLM 失敗時的備用方案） */
+function analyzeWithStats(
+  draws: { numbers: number[] }[],
+  sourceHour: string
+): { goldenBalls: number[]; reasoning: string } {
   // 統計各號碼出現頻率
   const frequency: Record<number, number> = {};
   for (let i = 1; i <= 80; i++) {
     frequency[i] = 0;
   }
 
-  for (const draw of allDraws) {
-    const numbers = draw.numbers as number[];
-    for (const num of numbers) {
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
       frequency[num] = (frequency[num] || 0) + 1;
     }
   }
@@ -109,30 +176,80 @@ export async function analyzeHourSlot(
     .map(([num, count]) => ({ num: parseInt(num), count }))
     .sort((a, b) => b.count - a.count);
 
-  // 取最熱的 3 個和最冷的 3 個
-  const hotNumbers = sortedByFreq.slice(0, 3).map((x) => x.num);
+  // 取最熱的 2 個和最冷的 1 個（共 3 顆）
+  const hotNumbers = sortedByFreq.slice(0, 2).map((x) => x.num);
   const coldNumbers = sortedByFreq
-    .slice(-10)
+    .slice(-15)
     .sort(() => Math.random() - 0.5)
-    .slice(0, 3)
+    .slice(0, 1)
     .map((x) => x.num);
 
-  // 混合熱號和冷號（避免 Set spread 的 TypeScript 問題）
   const combined = [...hotNumbers, ...coldNumbers];
   const unique: number[] = [];
   for (const n of combined) {
     if (!unique.includes(n)) unique.push(n);
   }
-  const goldenBalls = unique.slice(0, 6);
+  const goldenBalls = unique.slice(0, 3);
   goldenBalls.sort((a, b) => a - b);
 
   const topHot = hotNumbers.map((n) => String(n).padStart(2, "0")).join(", ");
-  const reasoning = `根據近 ${allDraws.length} 期 ${sourceHour}時段數據分析：熱號 ${topHot}，混合冷熱策略推薦 ${goldenBalls.length} 顆黃金球`;
+  const reasoning = `統計分析 ${draws.length} 期 ${sourceHour}時段：熱號 ${topHot}，混合冷熱策略`;
+
+  return { goldenBalls, reasoning };
+}
+
+/** 分析指定時段的開獎數據，返回黃金球推薦（優先使用 LLM，失敗則使用統計方法） */
+export async function analyzeHourSlot(
+  dateStr: string,
+  sourceHour: string
+): Promise<{
+  goldenBalls: number[];
+  reasoning: string;
+  sampleCount: number;
+  usedLLM: boolean;
+}> {
+  const database = await db();
+
+  // 取得近 30 天該時段的數據（最多 15 期）
+  const allDraws = await database
+    .select()
+    .from(drawRecords)
+    .where(like(drawRecords.drawTime, `%${sourceHour}:%`))
+    .orderBy(desc(drawRecords.drawNumber))
+    .limit(15);
+
+  if (allDraws.length === 0) {
+    return {
+      goldenBalls: [7, 14, 21, 28, 35, 42].slice(0, 3),
+      reasoning: "數據不足，使用預設推薦號碼",
+      sampleCount: 0,
+      usedLLM: false,
+    };
+  }
+
+  const drawsForAnalysis = allDraws.map((d: DrawRecord) => ({
+    term: d.drawNumber,
+    time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
+    numbers: d.numbers as number[],
+  }));
+
+  // 嘗試 LLM 分析
+  let usedLLM = false;
+  let result: { goldenBalls: number[]; reasoning: string };
+
+  try {
+    result = await analyzeWithLLM(drawsForAnalysis, sourceHour);
+    usedLLM = true;
+    console.log(`[analyzeHourSlot] LLM 分析成功，時段 ${sourceHour}:`, result.goldenBalls);
+  } catch (err) {
+    console.log(`[analyzeHourSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}`);
+    result = analyzeWithStats(drawsForAnalysis, sourceHour);
+  }
 
   return {
-    goldenBalls,
-    reasoning,
+    ...result,
     sampleCount: allDraws.length,
+    usedLLM,
   };
 }
 
@@ -248,7 +365,6 @@ export async function verifyPrediction(
     .orderBy(desc(drawRecords.drawNumber))
     .limit(12);
 
-  const goldenSet = new Set<number>(goldenBalls);
   const goldenSetArr = goldenBalls;
 
   return draws.map((draw: DrawRecord, idx: number) => {
@@ -288,4 +404,88 @@ export async function getFormattedHourData(dateStr: string, sourceHour: string) 
 
   const text = `${sourceHour}時段近 ${draws.length} 期開獎數據：\n${lines.join("\n")}`;
   return { text };
+}
+
+/** 批量分析所有時段（用於一鍵全部分析） */
+export async function batchAnalyzeAllSlots(dateStr: string): Promise<{
+  total: number;
+  success: number;
+  failed: number;
+  results: Array<{
+    sourceHour: string;
+    success: boolean;
+    goldenBalls?: number[];
+    error?: string;
+  }>;
+}> {
+  const results = [];
+  let successCount = 0;
+  let failedCount = 0;
+
+  for (const slot of HOUR_SLOTS) {
+    try {
+      const result = await analyzeHourSlot(dateStr, slot.source);
+      await saveAiStarPrediction(
+        dateStr,
+        slot.source,
+        slot.target,
+        result.goldenBalls,
+        false,
+        result.reasoning
+      );
+      results.push({
+        sourceHour: slot.source,
+        success: true,
+        goldenBalls: result.goldenBalls,
+      });
+      successCount++;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "未知錯誤";
+      results.push({
+        sourceHour: slot.source,
+        success: false,
+        error: errorMsg,
+      });
+      failedCount++;
+    }
+  }
+
+  return {
+    total: HOUR_SLOTS.length,
+    success: successCount,
+    failed: failedCount,
+    results,
+  };
+}
+
+/** 取得近 7 天的分析記錄 */
+export async function getAnalysisRecords(days: number = 7): Promise<Array<{
+  dateStr: string;
+  totalSlots: number;
+  analyzedSlots: number;
+  hitRate: number;
+}>> {
+  const database = await db();
+  const records = [];
+
+  for (let i = 0; i < days; i++) {
+    const date = new Date();
+    const utc8 = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+    utc8.setUTCDate(utc8.getUTCDate() - i);
+    const dateStr = utc8.toISOString().split("T")[0];
+
+    const predictions = await database
+      .select()
+      .from(aiStarPredictions)
+      .where(eq(aiStarPredictions.dateStr, dateStr));
+
+    records.push({
+      dateStr,
+      totalSlots: HOUR_SLOTS.length,
+      analyzedSlots: predictions.length,
+      hitRate: 0, // 可以後續計算實際命中率
+    });
+  }
+
+  return records;
 }
