@@ -483,7 +483,8 @@ ${separator}`;
     const timePart = draw.drawTime.split(" ")[1]?.substring(0, 5) || "";
     const bigSmall = formatBigSmall(draw.bigSmall);
     const oddEven = formatOddEven(draw.oddEven);
-    return `${draw.drawNumber}\n${timePart}\t${numbers}\t${bigSmall}\t${oddEven}`;
+    const superNum = draw.superNumber ? `超級獎${String(draw.superNumber).padStart(2, '0')}` : '';
+    return `${draw.drawNumber}\n${timePart}\t${numbers}\t${superNum}\t${bigSmall}\t${oddEven}`;
   });
 
   const text = `${header}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
