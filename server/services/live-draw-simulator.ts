@@ -152,7 +152,7 @@ async function tryRealAPIOrSimulate(): Promise<void> {
   const index = getCurrentDrawIndex();
   if (index < 0) return; // 今天開獎尚未開始
   
-  const dateStr = getTaiwanDateStr(now);
+  const dateStr = getTaiwanDateStr(); // 不傳 now，避免雙重 UTC+8 導致日期展到明天
   const drawNumber = calcCurrentDrawNumber();
   if (!drawNumber) return;
   
