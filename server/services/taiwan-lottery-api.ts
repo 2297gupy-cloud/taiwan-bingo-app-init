@@ -129,14 +129,47 @@ export interface ProcessedDraw {
 }
 
 /**
+ * 驗證單筆開獎數據是否合法
+ * - 期號必須是 9 位數字
+ * - 號碼必須是 20 個，且每個在 1-80 之間
+ */
+export function validateDraw(res: BingoQueryResult): boolean {
+  const termStr = String(res.drawTerm);
+  if (termStr.length !== 9) {
+    console.warn(`[Validate] Invalid drawTerm length: ${termStr} (expected 9 digits)`);
+    return false;
+  }
+  const numbers = (res.bigShowOrder || []).map(Number);
+  if (numbers.length !== 20) {
+    console.warn(`[Validate] Invalid number count: ${numbers.length} (expected 20) for term ${termStr}`);
+    return false;
+  }
+  if (numbers.some(n => n < 1 || n > 80 || !Number.isInteger(n))) {
+    console.warn(`[Validate] Invalid number range for term ${termStr}`);
+    return false;
+  }
+  return true;
+}
+
+/**
  * 處理 API 原始數據，轉換為應用格式
+ * 使用期號差值計算開獎時間（避免 index 錯位問題）
  */
 export function processRawData(rawData: BingoQueryResult[], dateStr: string): ProcessedDraw[] {
-  const sorted = [...rawData].sort((a, b) => a.drawTerm - b.drawTerm);
+  // 過濾無效數據
+  const valid = rawData.filter(validateDraw);
+  const sorted = [...valid].sort((a, b) => a.drawTerm - b.drawTerm);
   
-  return sorted.map((res, index) => {
+  if (sorted.length === 0) return [];
+  
+  // 取當天最小期號作為第 0 期（07:05）
+  const minTerm = sorted[0].drawTerm;
+  
+  return sorted.map((res) => {
     const drawNumber = String(res.drawTerm);
-    const timeStr = calcDrawTime(index);
+    // 用期號差值計算時間：第 0 期 = 07:05，每期 +5 分鐘
+    const indexFromMin = res.drawTerm - minTerm;
+    const timeStr = calcDrawTime(indexFromMin);
     const drawTime = formatToROCDateTime(dateStr, timeStr);
     
     const numbers = (res.bigShowOrder || []).map(Number).sort((a, b) => a - b);
@@ -266,9 +299,43 @@ export async function syncRecentDays(days: number = 30): Promise<{ total: number
 }
 
 /**
- * 同步今天的開獎數據
+ * 清除 30 天以前的舊數據
+ * 保留最近 30 天的開獎記錄
+ */
+export async function purgeOldDraws(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  // 計算 30 天前的民國年日期字串
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const cutoffDateStr = getTaiwanDateStr(cutoff);
+  const [y, m, d] = cutoffDateStr.split('-');
+  const rocYear = parseInt(y) - 1911;
+  const cutoffROC = `${rocYear}/${m}/${d}`;
+  
+  try {
+    const result = await db.execute(
+      sql.raw(`DELETE FROM draw_records WHERE drawTime < '${cutoffROC} 00:00:00'`)
+    );
+    const deleted = (result as unknown as { rowsAffected?: number }[])[0]?.rowsAffected ?? 0;
+    if (deleted > 0) {
+      console.log(`[TaiwanLottery] Purged ${deleted} records older than ${cutoffROC}`);
+    }
+    return deleted;
+  } catch (err) {
+    console.error('[TaiwanLottery] Failed to purge old draws:', err);
+    return 0;
+  }
+}
+
+/**
+ * 同步今天的開獎數據，並清除 30 天以前舊數據
  */
 export async function syncToday(): Promise<{ count: number; date: string }> {
   const dateStr = getTaiwanDateStr();
-  return syncBingoDataForDate(dateStr);
+  const result = await syncBingoDataForDate(dateStr);
+  // 每天同步時順便清除舊數據
+  await purgeOldDraws();
+  return result;
 }
