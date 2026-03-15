@@ -421,3 +421,8 @@
 ## CSV 總和欄位移除 (2026-03-15 v37)
 - [x] 後端：移除 backup-csv-router.ts 中的總和欄位
 - [x] 前端：MainPage.tsx HistorySection 的 CSV 不含總和（本來就沒有）
+
+## CSV 日期分組功能 (2026-03-15 v38)
+- [x] 後端：修改 exportDrawRecordsCSV 按日期分組（每天用 # 日期 註解分隔）
+- [x] 後端：確保按日期降序排列（最新日期在前）
+- [x] 測試：下載 7/14/30 天 CSV 驗證日期分組正確（8 個單元測試全部通過）

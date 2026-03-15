@@ -89,30 +89,53 @@ export const backupCsvRouter = router({
         ? await query.limit(input.limit)
         : await query;
 
-      // 導出為 CSV（修正 drawTime 格式）
-      const csvRows = records.map(r => {
-        // drawTime 格式：115/03/15 08:10:00 → 轉為正常日期顯示
+      // 導出為 CSV（按日期分組）
+      const groupedByDate = new Map<string, typeof records>();
+      records.forEach(r => {
         const rawTime = r.drawTime || '';
-        const timeDisplay = rawTime.startsWith('-')
-          ? rawTime.replace(/^-\d+/, (m) => {
-              const rocYear = Math.abs(parseInt(m));
-              return String(rocYear + 1911);
-            })
-          : rawTime;
-
-        const nums = Array.isArray(r.numbers) ? (r.numbers as number[]).sort((a,b)=>a-b).join('|') : '';
-        return [
-          r.drawNumber,
-          timeDisplay,
-          nums,
-          r.superNumber,
-          r.bigSmall === 'big' ? '大' : r.bigSmall === 'small' ? '小' : r.bigSmall,
-          r.oddEven === 'odd' ? '單' : r.oddEven === 'even' ? '雙' : r.oddEven,
-        ].join(',');
+        // 提取日期部分（格式：115/03/15 或 -1796/03/15）
+        const dateMatch = rawTime.match(/^-?\d+\/(\d{2})\/(\d{2})/);
+        const dateKey = dateMatch ? `${dateMatch[1]}/${dateMatch[2]}` : 'unknown';
+        if (!groupedByDate.has(dateKey)) {
+          groupedByDate.set(dateKey, []);
+        }
+        groupedByDate.get(dateKey)!.push(r);
       });
 
+      // 按日期降序排列（最新在前）
+      const sortedDates = Array.from(groupedByDate.keys()).sort().reverse();
+
       const header = '期數,開獎時間,號碼,超級獎號,大小,單雙';
-      const csv = [header, ...csvRows].join('\n');
+      const csvLines: string[] = [];
+
+      sortedDates.forEach(dateKey => {
+        const dayRecords = groupedByDate.get(dateKey) || [];
+        csvLines.push(`# ${dateKey}`);
+        csvLines.push(header);
+
+        dayRecords.forEach(r => {
+          const rawTime = r.drawTime || '';
+          const timeDisplay = rawTime.startsWith('-')
+            ? rawTime.replace(/^-\d+/, (m) => {
+                const rocYear = Math.abs(parseInt(m));
+                return String(rocYear + 1911);
+              })
+            : rawTime;
+
+          const nums = Array.isArray(r.numbers) ? (r.numbers as number[]).sort((a,b)=>a-b).join('|') : '';
+          csvLines.push([
+            r.drawNumber,
+            timeDisplay,
+            nums,
+            r.superNumber,
+            r.bigSmall === 'big' ? '大' : r.bigSmall === 'small' ? '小' : r.bigSmall,
+            r.oddEven === 'odd' ? '單' : r.oddEven === 'even' ? '雙' : r.oddEven,
+          ].join(','));
+        });
+        csvLines.push(''); // 空行分隔
+      });
+
+      const csv = csvLines.join('\n');
 
       const suffix = input.limit ? `_最新${input.limit}期` : input.days ? `_${input.days}天` : '_全部';
       const now = new Date();
