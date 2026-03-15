@@ -401,10 +401,8 @@ export async function verifyPrediction(
 
   const goldenSetArr = goldenBalls;
 
-  // 從新到舊排列（xx:55 → xx:00）
-  const reversedSlots = [...timeSlots].reverse();
-
-  return reversedSlots.map((timeSlot, idx) => {
+  // 從舊到新排列（xx:00 → xx:55）——時間由小到大
+  return timeSlots.map((timeSlot, idx) => {
     const draw = drawMap.get(timeSlot);
     if (draw) {
       const numbers = draw.numbers as number[];
