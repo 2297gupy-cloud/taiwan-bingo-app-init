@@ -440,24 +440,26 @@ function SlotCard({
               <Trash2 className="h-2.5 w-2.5" />
             </button>
           )}
-          {copied ? (
-            <ClipboardCheck className="h-3 w-3 text-green-400" />
-          ) : (
-            <Copy className="h-3 w-3 text-muted-foreground/30" />
-          )}
+          <div className="relative flex items-center">
+            {copied ? (
+              <ClipboardCheck className="h-3 w-3 text-green-400" />
+            ) : (
+              <Copy className="h-3 w-3 text-muted-foreground/30" />
+            )}
+            {!prediction?.isManual && (
+              <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 6px rgba(239, 68, 68, 0.8)" }} />
+            )}
+          </div>
         </div>
       </div>
       {prediction ? (
-        <div className="flex items-center gap-0.5 justify-center flex-wrap relative">
+        <div className="flex items-center gap-0.5 justify-center flex-wrap">
           {prediction.goldenBalls.map((n, idx) => (
             <GoldenBall key={idx} number={n} size="xs" isUserKey={!prediction.isManual} />
           ))}
           <span className="text-[7px] text-muted-foreground/50 ml-0.5">
             {prediction.isManual ? "手動" : "AI"}
           </span>
-          {!prediction.isManual && (
-            <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          )}
         </div>
       ) : drawsInHour > 0 ? (
         <div className="flex items-center justify-center py-0.5">
@@ -921,20 +923,25 @@ export default function AiStarPage() {
                   複製數據
                 </button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => analyzeMutation.mutate({ dateStr, sourceHour: effectiveSlot })}
-                disabled={analyzeMutation.isPending}
-                className="gap-1 border border-amber-500 text-xs px-2 py-1 h-7 hover:bg-amber-500/10 font-semibold"
-              >
-                {analyzeMutation.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Brain className="h-3 w-3" />
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => analyzeMutation.mutate({ dateStr, sourceHour: effectiveSlot })}
+                  disabled={analyzeMutation.isPending}
+                  className="gap-1 border border-amber-500 text-xs px-2 py-1 h-7 hover:bg-amber-500/10 font-semibold"
+                >
+                  {analyzeMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Brain className="h-3 w-3" />
+                  )}
+                  AI分析
+                </Button>
+                {currentPrediction && !currentPrediction.isManual && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }} />
                 )}
-                AI分析
-              </Button>
+              </div>
             </div>
           </div>
 
