@@ -42,8 +42,8 @@ import {
   getAnalysisRecords,
 } from "./services/ai-star-strategy";
 import { getDb } from "./db";
-import { aiApiKeys } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { aiApiKeys, drawRecords } from "../drizzle/schema";
+import { eq, desc } from "drizzle-orm";
 import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
 
 export const appRouter = router({
@@ -485,6 +485,40 @@ export const appRouter = router({
           lastSeenMap: result.lastSeenMap,
           totalPeriods: result.totalPeriods,
         };
+      }),
+
+    /** 計算每個策略過去十期的平均命中率 */
+    strategyHitRates: publicProcedure
+      .query(async () => {
+        const db = await getDb();
+        if (!db) return null;
+
+        const records = await db
+          .select()
+          .from(drawRecords)
+          .orderBy(desc(drawRecords.drawTime))
+          .limit(10);
+
+        if (records.length === 0) return null;
+
+        const strategies = ["hot", "cold", "balanced", "weighted", "overdue"] as const;
+        const hitRates: Record<string, number> = {};
+
+        for (const strategy of strategies) {
+          let hitCount = 0;
+          for (const record of records) {
+            const prediction = await predictNumbers(strategy, 5, 5);
+            const predictedNums = new Set(prediction.numbers);
+            const actualNums = new Set(record.numbers as number[]);
+            let hits = 0;
+            predictedNums.forEach((num) => {
+              if (actualNums.has(num)) hits++;
+            });
+            if (hits >= 3) hitCount++;
+          }
+          hitRates[strategy] = Math.round((hitCount / records.length) * 100);
+        }
+        return hitRates;
       }),
   }),
 });

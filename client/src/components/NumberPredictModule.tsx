@@ -119,6 +119,11 @@ export default function NumberPredictModule() {
     { staleTime: 30000 }
   );
 
+  const { data: hitRates } = trpc.numberPredict.strategyHitRates.useQuery(
+    undefined,
+    { staleTime: 60000 }
+  );
+
   const selectedStrategy = STRATEGIES.find(s => s.key === strategy)!;
 
   const handlePredict = () => {
@@ -194,6 +199,18 @@ export default function NumberPredictModule() {
                   {s.name}
                 </p>
                 <p className="text-[7px] text-muted-foreground leading-tight line-clamp-1">{s.desc}</p>
+                {hitRates && (
+                  <div className="mt-0.5 flex items-center gap-1">
+                    <span className="text-[6px] text-muted-foreground">命中率:</span>
+                    <span className={cn("text-[8px] font-bold", 
+                      hitRates[s.key] >= 50 ? "text-green-400" : 
+                      hitRates[s.key] >= 30 ? "text-yellow-400" : 
+                      "text-red-400"
+                    )}>
+                      {hitRates[s.key]}%
+                    </span>
+                  </div>
+                )}
               </div>
               {strategy === s.key && (
                 <div className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center bg-current">
