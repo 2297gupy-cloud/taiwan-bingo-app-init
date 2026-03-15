@@ -324,8 +324,7 @@ function HistorySection() {
         <table className="w-full text-[10px]">
           <thead>
             <tr className="bg-secondary/50 text-muted-foreground">
-              <th className="py-1.5 px-2 text-left font-medium">期數</th>
-              <th className="py-1.5 px-2 text-left font-medium">時間</th>
+              <th className="py-1.5 px-2 text-left font-medium">期數/時間</th>
               <th className="py-1.5 px-2 text-left font-medium">開獎號碼</th>
               <th className="py-1.5 px-1 text-center font-medium">總和</th>
               <th className="py-1.5 px-1 text-center font-medium">大小</th>
@@ -340,9 +339,13 @@ function HistorySection() {
               const sorted = sortMode === "size" ? nums.sort((a, b) => a - b) : nums;
               return (
                 <tr key={draw.id} className="border-t border-border hover:bg-secondary/20">
-                  <td className="py-1.5 px-2 font-mono whitespace-nowrap">{draw.drawNumber}</td>
-                  <td className="py-1.5 px-2 text-muted-foreground whitespace-nowrap">
-                    {new Date(draw.drawTime).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                  <td className="py-1.5 px-2 font-mono whitespace-nowrap">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-bold">{draw.drawNumber}</span>
+                      <span className="text-muted-foreground text-[9px]">
+                        {new Date(draw.drawTime).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
                   </td>
                   <td className="py-1.5 px-2">
                     <div className="flex flex-wrap gap-0.5">
