@@ -21,9 +21,71 @@ export default function Live() {
     { limit: 10 },
     { refetchInterval: 15000 }
   );
+  const { data: history50 } = trpc.draw.recent.useQuery(
+    { limit: 50 },
+    { refetchInterval: 30000 }
+  );
+  const { data: history30days } = trpc.draw.history.useQuery(
+    { page: 1, pageSize: 1000 },
+    { refetchInterval: 60000 }
+  );
 
   const [countdown, setCountdown] = useState(getCountdown());
   const [sortMode, setSortMode] = useState<"draw" | "size">("draw");
+  
+  // CSV 下載函數
+  const downloadCSV = () => {
+    if (!history30days || history30days.records.length === 0) {
+      alert("沒有數據可下載");
+      return;
+    }
+    
+    const headers = ["期號", "開獎時間", "號碼", "總和", "大小", "單雙", "超級號", "盤面"];
+    const rows = history30days.records.map(draw => [
+      draw.drawNumber,
+      draw.drawTime,
+      (draw.numbers as number[]).join(","),
+      draw.total,
+      draw.bigSmall,
+      draw.oddEven,
+      draw.superNumber,
+      draw.plate,
+    ]);
+    
+    const csv = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `台灣賓果_${new Date().toISOString().split('T')[0]}.csv`);
+    link.click();
+  };
+  
+  // 數據驗證函數
+  const validateData = () => {
+    if (!history30days || history30days.records.length === 0) {
+      alert("沒有數據可驗證");
+      return;
+    }
+    
+    let validCount = 0;
+    let invalidCount = 0;
+    
+    history30days.records.forEach(draw => {
+      const drawNum = draw.drawNumber.toString();
+      if (drawNum.length === 9 && /^\d+$/.test(drawNum)) {
+        validCount++;
+      } else {
+        invalidCount++;
+      }
+    });
+    
+    alert(`數據驗證結果:\n正確: ${validCount} 期\n錯誤: ${invalidCount} 期\n總計: ${history30days.records.length} 期`);
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -150,8 +212,24 @@ export default function Live() {
         </div>
       )}
 
+      {/* Data controls */}
+      <div className="mx-4 mb-4 flex gap-2">
+        <button
+          onClick={validateData}
+          className="flex-1 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/50 text-xs font-semibold text-blue-400 hover:bg-blue-500/30 transition-colors"
+        >
+          數據驗證
+        </button>
+        <button
+          onClick={downloadCSV}
+          className="flex-1 px-3 py-2 rounded-lg bg-green-500/20 border border-green-500/50 text-xs font-semibold text-green-400 hover:bg-green-500/30 transition-colors"
+        >
+          下載 CSV
+        </button>
+      </div>
+
       {/* Recent draws */}
-      <div className="mx-4 mb-20">
+      <div className="mx-4 mb-4">
         <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <span>近期開獎</span>
         </h2>
@@ -198,6 +276,46 @@ export default function Live() {
                 <span className={`font-bold ${getPlateClass(draw.plate)}`}>
                   {getPlateLabel(draw.plate)}
                 </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* History 50 draws */}
+      <div className="mx-4 mb-20">
+        <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+          <span>歷史號碼（最近50期）</span>
+        </h2>
+
+        <div className="grid grid-cols-2 gap-1">
+          {history50?.map((draw) => (
+            <div
+              key={draw.id}
+              className="p-2 rounded-lg bg-card border border-border/30 text-[9px]"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-mono font-semibold text-foreground">
+                  {draw.drawNumber}
+                </span>
+                <span className="text-muted-foreground/70">
+                  {new Date(draw.drawTime).toLocaleString("zh-TW", { 
+                    month: "2-digit", 
+                    day: "2-digit", 
+                    hour: "2-digit", 
+                    minute: "2-digit" 
+                  })}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-0.5">
+                {(draw.numbers as number[]).map((num, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-secondary text-[7px] font-semibold"
+                  >
+                    {num}
+                  </span>
+                ))}
               </div>
             </div>
           ))}
