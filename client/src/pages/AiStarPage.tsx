@@ -992,7 +992,7 @@ export default function AiStarPage() {
               </div>
               <div className="space-y-0.5">
                 {verifyResult.map((item, idx) => (
-                  <VerifyRow key={item.term || idx} item={{ ...item, index: idx + 1 }} />
+                  <VerifyRow key={item.time} item={{ ...item, index: idx + 1 }} />
                 ))}
               </div>
               <div className="mt-2 pt-1.5 border-t border-border/20 flex items-center justify-center gap-3 text-[10px]">
