@@ -76,7 +76,7 @@ export async function getUserByOpenId(openId: string) {
 export async function getLatestDraw() {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(drawRecords).orderBy(desc(drawRecords.drawTime)).limit(1);
+  const result = await db.select().from(drawRecords).orderBy(desc(drawRecords.drawNumber)).limit(1);
   return result[0] || null;
 }
 
@@ -84,7 +84,7 @@ export async function getLatestDraw() {
 export async function getRecentDraws(limit: number = 20) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(drawRecords).orderBy(desc(drawRecords.drawTime)).limit(limit);
+  return db.select().from(drawRecords).orderBy(desc(drawRecords.drawNumber)).limit(limit);
 }
 
 /** 取得歷史開獎記錄（分頁） */

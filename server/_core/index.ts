@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getTaiwanLotteryScraper } from "../services/taiwan-lottery-scraper";
+import { getMockLotteryScraper } from "../services/mock-lottery-scraper";
 import { getDb } from "../db";
 import { drawRecords } from "../../drizzle/schema";
 
@@ -65,7 +66,77 @@ async function startServer() {
   });
 
   // 初始化台灣彩券爬蟲並開始輪詢
-  initializeLotteryScraper();
+  // 使用模擬爬蟲進行測試
+  initializeMockLotteryScraper();
+}
+
+/**
+ * 初始化模擬台灣彩券爬蟲（用於測試環境）
+ */
+async function initializeMockLotteryScraper() {
+  try {
+    const scraper = getMockLotteryScraper();
+    const db = await getDb();
+
+    if (!db) {
+      console.warn('[MockScraper] Database not available, skipping scraper initialization');
+      return;
+    }
+
+    console.log('[MockScraper] Starting mock lottery data sync...');
+
+    // 啟動輪詢，每 5 分鐘生成一次新開獎
+    scraper.startPolling(
+      async (draw) => {
+        try {
+          console.log(`[MockScraper] Generated new draw: ${draw.drawNumber}`);
+          
+          // 驗證開獎數據
+          if (!scraper.validateDraw(draw)) {
+            console.warn(`[MockScraper] Invalid draw data: ${draw.drawNumber}`);
+            return;
+          }
+
+          // 保存開獎數據到資料庫
+          try {
+            const drawData = {
+              drawNumber: draw.drawNumber,
+              drawTime: draw.drawTime,
+              numbers: draw.numbers,
+              superNumber: draw.superNumber,
+              total: draw.total,
+              bigSmall: draw.bigSmall,
+              oddEven: draw.oddEven,
+              plate: draw.plate,
+            };
+            
+            await db.insert(drawRecords).values(drawData).onDuplicateKeyUpdate({
+              set: {
+                drawTime: draw.drawTime,
+                numbers: draw.numbers,
+                superNumber: draw.superNumber,
+                total: draw.total,
+                bigSmall: draw.bigSmall,
+                oddEven: draw.oddEven,
+                plate: draw.plate,
+              },
+            });
+            
+            console.log(`[MockScraper] Draw synced successfully: ${draw.drawNumber}`);
+          } catch (dbError) {
+            console.error('[MockScraper] Database error:', dbError);
+          }
+        } catch (error) {
+          console.error('[MockScraper] Error syncing draw:', error);
+        }
+      },
+      300 // 每 5 分鐘生成一次
+    );
+
+    console.log('[MockScraper] Mock lottery scraper initialized and polling started');
+  } catch (error) {
+    console.error('[MockScraper] Failed to initialize mock lottery scraper:', error);
+  }
 }
 
 /**
