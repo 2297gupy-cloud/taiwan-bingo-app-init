@@ -1,0 +1,28 @@
+{
+  "query": "SELECT id, drawNumber, drawTime, UNIX_TIMESTAMP(drawTime) as timestamp FROM draw_records ORDER BY drawTime DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT id, drawNumber, drawTime, UNIX_TIMESTAMP(drawTime) as timestamp FROM draw_records ORDER BY drawTime DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "drawNumber": "113000001",
+      "drawTime": "20260314231300",
+      "timestamp": "1773529980"
+    },
+    {
+      "id": "2",
+      "drawNumber": "113000002",
+      "drawTime": "20240313160000",
+      "timestamp": "1710345600"
+    },
+    {
+      "id": "3",
+      "drawNumber": "113000003",
+      "drawTime": "20240312160000",
+      "timestamp": "1710259200"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdrawNumber\tdrawTime\ttimestamp\n1\t113000001\t20260314231300\t1773529980\n2\t113000002\t20240313160000\t1710345600\n3\t113000003\t20240312160000\t1710259200\n",
+  "stderr": "",
+  "execution_time_ms": 1531
+}
