@@ -434,3 +434,20 @@
 ## CSV 時間排序調整完成 (2026-03-15 v39)
 - [x] 後端：修改 exportDrawRecordsCSV 同一天內的記錄按時間由大到小排序（晚的在前，早的在後）
 - [x] 測試：驗證 CSV 時間排序正確（同一天內晚時間在前，4 個單元測試全部通過）
+
+## 四項功能擴充 (2026-03-15 v40)
+- [x] 新增 AI超級獎 頁面（複製 AI一星 模板，改為10顆球，放在歷史號碼前面）
+- [x] AI超級獎：AI計算後顯示10顆球（數字球更小緊排）
+- [x] 即時數字分布：增加紅色框標示超級獎球（開獎球號顯示）
+- [x] 驗證結果：增加超級獎球驗證（並排顯示，是否中超級獎）
+
+## AI超級獎功能 (2026-03-15 v40)
+- [x] 後端：新增 ai_super_prize_predictions 表（已建立）
+- [x] 後端：新增 analyzeSuperPrizeSlot 函數（分析超級獎，返回10顆候選球）
+- [x] 後端：新增 aiSuperPrize router（getSlots/analyze/saveManual/deletePrediction/verify）
+- [x] 後端：修改 getHourDraws 加入 superNumber 欄位
+- [x] 後端：修改 verifyPrediction 加入 superNumber 欄位
+- [x] 前端：新增 AiSuperPrizePage.tsx（複製 AI一星模板，10顆球緊排）
+- [x] 前端：MainPage.tsx 加入 AI超級獎 Tab（在歷史號碼前）
+- [x] 前端：AiStarPage.tsx NumberDistributionBlock 加超級獎紅色框
+- [x] 前端：AiStarPage.tsx VerifyRow 加超級獎並排驗證

@@ -41,6 +41,12 @@ import {
   getFormattedHourData,
   batchAnalyzeAllSlots,
   getAnalysisRecords,
+  analyzeSuperPrizeSlot,
+  getAiSuperPrizePredictions,
+  saveAiSuperPrizePrediction,
+  deleteAiSuperPrizePrediction,
+  getHourDrawsWithSuper,
+  verifySuperPrizePrediction,
 } from "./services/ai-star-strategy";
 import { aiApiKeys, drawRecords } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
@@ -406,6 +412,91 @@ export const appRouter = router({
           });
         }
         return { success: true };
+      }),
+    /** 取得時段開獎（含 superNumber），用於數字分布矩陣 */
+    getHourDrawsWithSuper: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        targetHour: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return getHourDrawsWithSuper(dateStr, input.targetHour);
+      }),
+  }),
+  /** AI 超級獎預測 */
+  aiSuperPrize: router({
+    /** 取得時段配置和當前時段 */
+    getSlots: publicProcedure.query(() => {
+      const currentSlotInfo = getCurrentSlot();
+      const dateStr = getTodayDateStr();
+      return { slots: HOUR_SLOTS, currentSlot: currentSlotInfo, dateStr };
+    }),
+    /** 取得指定日期的所有超級獎預測 */
+    getPredictions: publicProcedure
+      .input(z.object({ dateStr: z.string().optional() }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return getAiSuperPrizePredictions(dateStr);
+      }),
+    /** AI 分析超級獎候選球（10顆） */
+    analyze: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+        targetHour: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour);
+        await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
+        return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
+      }),
+    /** 手動儲存超級獎候選球 */
+    saveManual: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+        targetHour: z.string(),
+        candidateBalls: z.array(z.number().min(1).max(80)).min(1).max(10),
+      }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, input.candidateBalls, true);
+        return { success: true };
+      }),
+    /** 刪除超級獎預測 */
+    deletePrediction: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        await deleteAiSuperPrizePrediction(dateStr, input.sourceHour);
+        return { success: true };
+      }),
+    /** 驗證超級獎預測結果 */
+    verify: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        verifyHour: z.string(),
+        candidateBalls: z.array(z.number().min(1).max(80)),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return verifySuperPrizePrediction(dateStr, input.verifyHour, input.candidateBalls);
+      }),
+    /** 取得時段格式化數據（用於超級獎 AI 分析文本） */
+    getHourData: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+        copyRange: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return getFormattedHourData(dateStr, input.sourceHour, input.copyRange);
       }),
   }),
 

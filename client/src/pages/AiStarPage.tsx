@@ -166,6 +166,10 @@ function NumberDistributionBlock({
               <span className="inline-block w-2 h-2 rounded-sm bg-emerald-400 ring-1 ring-emerald-300" />
               <span className="text-muted-foreground">預測球</span>
             </span>
+            <span className="flex items-center gap-0.5">
+              <span className="inline-block w-2 h-2 rounded-sm border border-red-500" />
+              <span className="text-muted-foreground">超級獎</span>
+            </span>
           </div>
         </div>
         {isLoading ? (
@@ -202,8 +206,12 @@ function NumberDistributionBlock({
                       {NUMS.map(n => {
                         const isDrawn = !isPending && new Set(draw.numbers).has(n);
                         const isGolden = goldenSet.has(n);
+                        const isSuperNumber = !isPending && (draw as { superNumber?: number }).superNumber === n;
                         return (
-                          <td key={n} className="text-center p-0 w-[13px] border-r border-b border-white/10">
+                          <td key={n} className={cn(
+                            "text-center p-0 w-[13px] border-r border-b border-white/10",
+                            isSuperNumber && "ring-1 ring-red-500 ring-inset"
+                          )}>
                             {isDrawn ? (
                               <div
                                 className={cn(
@@ -213,6 +221,8 @@ function NumberDistributionBlock({
                                     : "bg-emerald-600/70"
                                 )}
                               />
+                            ) : isSuperNumber ? (
+                              <div className="mx-auto my-0.5 w-2 h-2 border border-red-500/60 rounded-sm" />
                             ) : (
                               <div className="mx-auto my-0.5 w-2 h-2" />
                             )}
@@ -242,6 +252,8 @@ function VerifyRow({ item }: {
     time: string;
     hits: number[];
     isHit: boolean;
+    superNumber?: number;
+    isSuperHit?: boolean;
     pending?: boolean;
   }
 }) {
@@ -268,12 +280,13 @@ function VerifyRow({ item }: {
   return (
     <div className={cn(
       "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs border overflow-x-auto scrollbar-none",
-      item.isHit ? "border-green-500/30 bg-green-500/5" : "border-border/20 bg-transparent"
+      item.isHit || item.isSuperHit ? "border-green-500/30 bg-green-500/5" : "border-border/20 bg-transparent"
     )}>
       <span className="font-mono text-muted-foreground/40 text-[9px] shrink-0 w-4 text-right">[{item.index}]</span>
       <span className="font-mono text-muted-foreground/60 text-[9px] shrink-0 w-9">{item.time}</span>
       <span className="font-mono text-muted-foreground/40 text-[9px] shrink-0">{item.term}</span>
-      <div className="flex items-center gap-0.5 min-w-0">
+      {/* 一般球驗證 */}
+      <div className="flex items-center gap-0.5 min-w-0 flex-1">
         {item.isHit ? (
           <>
             {item.hits.map(n => (
@@ -288,6 +301,28 @@ function VerifyRow({ item }: {
           <span className="text-muted-foreground/50 text-[9px]">未中獎</span>
         )}
       </div>
+      {/* 超級獎驗證（並排） */}
+      {item.superNumber !== undefined && item.superNumber > 0 && (
+        <div className={cn(
+          "flex items-center gap-0.5 shrink-0 px-1 py-0.5 rounded border text-[8px]",
+          item.isSuperHit
+            ? "border-red-500/40 bg-red-500/10"
+            : "border-border/20 bg-transparent"
+        )}>
+          <span className="text-muted-foreground/40 text-[7px]">超</span>
+          <span className={cn(
+            "font-mono font-bold text-[9px]",
+            item.isSuperHit ? "text-red-400" : "text-muted-foreground/50"
+          )}>
+            {String(item.superNumber).padStart(2, "0")}
+          </span>
+          {item.isSuperHit ? (
+            <CheckCircle2 className="h-2.5 w-2.5 text-red-400 shrink-0" />
+          ) : (
+            <XCircle className="h-2.5 w-2.5 text-muted-foreground/30 shrink-0" />
+          )}
+        </div>
+      )}
     </div>
   );
 }

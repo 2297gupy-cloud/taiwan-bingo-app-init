@@ -275,6 +275,7 @@ export async function getHourDraws(dateStr: string, targetHour: string) {
     term: d.drawNumber,
     time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
     numbers: d.numbers as number[],
+    superNumber: d.superNumber as number,
     pending: false,
   }));
 }
@@ -400,18 +401,21 @@ export async function verifyPrediction(
   }
 
   const goldenSetArr = goldenBalls;
-
   // 從舊到新排列（xx:00 → xx:55）——時間由小到大
   return timeSlots.map((timeSlot, idx) => {
     const draw = drawMap.get(timeSlot);
     if (draw) {
       const numbers = draw.numbers as number[];
       const hits = numbers.filter((n) => goldenSetArr.includes(n));
+      const superNum = draw.superNumber as number;
+      const isSuperHit = goldenSetArr.includes(superNum);
       return {
         term: draw.drawNumber,
         time: timeSlot,
         isHit: hits.length > 0,
         hits,
+        superNumber: superNum,
+        isSuperHit,
         index: idx + 1,
         pending: false,
       };
@@ -422,6 +426,8 @@ export async function verifyPrediction(
         time: timeSlot,
         isHit: false,
         hits: [] as number[],
+        superNumber: 0,
+        isSuperHit: false,
         index: idx + 1,
         pending: true,
       };
@@ -621,4 +627,189 @@ export async function getAnalysisRecords(days: number = 7): Promise<Array<{
   }
 
   return records;
+}
+
+// ============================================================
+// AI 超級獎分析服務
+// ============================================================
+import { aiSuperPrizePredictions } from "../../drizzle/schema";
+
+async function analyzeWithLLMSuperPrize(
+  superNumbers: number[],
+  sourceHour: string
+): Promise<{ candidateBalls: number[]; reasoning: string }> {
+  const dataText = superNumbers.map((n, i) => `第${i + 1}期: ${String(n).padStart(2, "0")}`).join("\n");
+  const prompt = `你是台灣賓果彩票超級獎分析專家。以下是台灣賓果 ${sourceHour}:00-${sourceHour}:55 時段最近 ${superNumbers.length} 期的超級獎號碼（bullEyeTop，1-80之間）：\n${dataText}\n請分析這些超級獎號碼的規律，推薦 10 顆最有可能在下一個時段出現的超級獎候選號碼（1-80之間的整數）。\n請以 JSON 格式回應：\n{\n  "candidateBalls": [數字1, 數字2, ..., 數字10],\n  "reasoning": "簡短分析說明（50字以內）"\n}`;
+  const response = await invokeLLM({
+    messages: [
+      { role: "system", content: "你是台灣賓果彩票超級獎數據分析專家。請用繁體中文回應，並嚴格按照 JSON 格式輸出。" },
+      { role: "user", content: prompt },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "super_prize_prediction",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            candidateBalls: { type: "array", items: { type: "integer" } },
+            reasoning: { type: "string" },
+          },
+          required: ["candidateBalls", "reasoning"],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+  const rawContent = response.choices?.[0]?.message?.content;
+  if (!rawContent) throw new Error("LLM 無回應");
+  const content = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
+  const parsed = JSON.parse(content);
+  const candidateBalls = (parsed.candidateBalls as number[])
+    .filter((n) => Number.isInteger(n) && n >= 1 && n <= 80)
+    .slice(0, 10);
+  if (candidateBalls.length < 1) throw new Error("LLM 未返回有效號碼");
+  return { candidateBalls: candidateBalls.sort((a, b) => a - b), reasoning: parsed.reasoning || "AI 智能分析完成" };
+}
+
+function analyzeWithStatsSuperPrize(superNumbers: number[]): { candidateBalls: number[]; reasoning: string } {
+  const frequency: Record<number, number> = {};
+  for (let i = 1; i <= 80; i++) frequency[i] = 0;
+  for (const n of superNumbers) frequency[n] = (frequency[n] || 0) + 1;
+  const sorted = Object.entries(frequency)
+    .map(([num, count]) => ({ num: parseInt(num), count }))
+    .sort((a, b) => b.count - a.count);
+  const hot = sorted.slice(0, 7).map(x => x.num);
+  const cold = sorted.slice(-10).sort(() => Math.random() - 0.5).slice(0, 3).map(x => x.num);
+  const combined = Array.from(new Set([...hot, ...cold])).slice(0, 10);
+  combined.sort((a, b) => a - b);
+  return { candidateBalls: combined, reasoning: `統計分析 ${superNumbers.length} 期超級獎：熱號混合冷號策略` };
+}
+
+export async function analyzeSuperPrizeSlot(dateStr: string, sourceHour: string): Promise<{
+  candidateBalls: number[];
+  reasoning: string;
+  sampleCount: number;
+  usedLLM: boolean;
+}> {
+  const database = await db();
+  const allDraws = await database
+    .select()
+    .from(drawRecords)
+    .where(like(drawRecords.drawTime, `%${sourceHour}:%`))
+    .orderBy(desc(drawRecords.drawNumber))
+    .limit(15);
+  if (allDraws.length === 0) {
+    return { candidateBalls: [7, 14, 21, 28, 35, 42, 49, 56, 63, 70], reasoning: "數據不足，使用預設推薦號碼", sampleCount: 0, usedLLM: false };
+  }
+  const superNumbers = allDraws.map(d => d.superNumber as number).filter(n => n >= 1 && n <= 80);
+  let usedLLM = false;
+  let result: { candidateBalls: number[]; reasoning: string };
+  try {
+    result = await analyzeWithLLMSuperPrize(superNumbers, sourceHour);
+    usedLLM = true;
+  } catch {
+    result = analyzeWithStatsSuperPrize(superNumbers);
+  }
+  return { ...result, sampleCount: allDraws.length, usedLLM };
+}
+
+export async function getAiSuperPrizePredictions(dateStr: string) {
+  const database = await db();
+  const predictions = await database
+    .select()
+    .from(aiSuperPrizePredictions)
+    .where(eq(aiSuperPrizePredictions.dateStr, dateStr))
+    .orderBy(aiSuperPrizePredictions.sourceHour);
+  return predictions.map(p => ({
+    id: p.id,
+    dateStr: p.dateStr,
+    sourceHour: p.sourceHour,
+    targetHour: p.targetHour,
+    candidateBalls: p.candidateBalls as number[],
+    isManual: p.isManual === 1,
+    reasoning: p.reasoning,
+  }));
+}
+
+export async function saveAiSuperPrizePrediction(
+  dateStr: string,
+  sourceHour: string,
+  targetHour: string,
+  candidateBalls: number[],
+  isManual: boolean,
+  reasoning?: string
+) {
+  const database = await db();
+  const existing = await database
+    .select()
+    .from(aiSuperPrizePredictions)
+    .where(and(eq(aiSuperPrizePredictions.dateStr, dateStr), eq(aiSuperPrizePredictions.sourceHour, sourceHour)))
+    .limit(1);
+  if (existing.length > 0) {
+    await database.update(aiSuperPrizePredictions)
+      .set({ targetHour, candidateBalls, isManual: isManual ? 1 : 0, reasoning: reasoning || null })
+      .where(eq(aiSuperPrizePredictions.id, existing[0].id));
+  } else {
+    await database.insert(aiSuperPrizePredictions).values({ dateStr, sourceHour, targetHour, candidateBalls, isManual: isManual ? 1 : 0, reasoning: reasoning || null });
+  }
+}
+
+export async function deleteAiSuperPrizePrediction(dateStr: string, sourceHour: string) {
+  const database = await db();
+  await database.delete(aiSuperPrizePredictions)
+    .where(and(eq(aiSuperPrizePredictions.dateStr, dateStr), eq(aiSuperPrizePredictions.sourceHour, sourceHour)));
+}
+
+export async function getHourDrawsWithSuper(dateStr: string, targetHour: string) {
+  const database = await db();
+  const draws = await database
+    .select()
+    .from(drawRecords)
+    .where(like(drawRecords.drawTime, `%${targetHour}:%`))
+    .orderBy(desc(drawRecords.drawNumber))
+    .limit(15);
+  return draws.map((d: DrawRecord) => ({
+    term: d.drawNumber,
+    time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
+    numbers: d.numbers as number[],
+    superNumber: d.superNumber as number,
+    pending: false,
+  }));
+}
+
+export async function verifySuperPrizePrediction(
+  dateStr: string,
+  verifyHour: string,
+  candidateBalls: number[]
+) {
+  const database = await db();
+  const rocDate = toROCDateStr(dateStr);
+  const hourNum = parseInt(verifyHour, 10);
+  const timeSlots: string[] = [];
+  for (let m = 0; m < 60; m += 5) {
+    timeSlots.push(`${String(hourNum).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+  const allDraws = await database
+    .select()
+    .from(drawRecords)
+    .where(and(like(drawRecords.drawTime, `${rocDate}%`), like(drawRecords.drawTime, `% ${verifyHour}:%`)))
+    .orderBy(desc(drawRecords.drawTime))
+    .limit(30);
+  const drawMap = new Map<string, typeof allDraws[0]>();
+  for (const d of allDraws) {
+    const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
+    if (!drawMap.has(timeKey)) drawMap.set(timeKey, d);
+  }
+  return timeSlots.map((timeSlot, idx) => {
+    const draw = drawMap.get(timeSlot);
+    if (draw) {
+      const superNum = draw.superNumber as number;
+      const isHit = candidateBalls.includes(superNum);
+      return { term: draw.drawNumber, time: timeSlot, superNumber: superNum, isHit, index: idx + 1, pending: false };
+    } else {
+      return { term: "---", time: timeSlot, superNumber: 0, isHit: false, index: idx + 1, pending: true };
+    }
+  });
 }

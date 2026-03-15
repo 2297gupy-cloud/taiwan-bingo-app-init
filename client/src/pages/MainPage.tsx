@@ -26,6 +26,7 @@ import {
 } from "recharts";
 import { Download, Share2, ChevronUp, Star } from "lucide-react";
 import AiStarPage from "./AiStarPage";
+import AiSuperPrizePage from "./AiSuperPrizePage";
 import NumberPredictModule from "@/components/NumberPredictModule";
 import { toast } from "sonner";
 
@@ -89,6 +90,7 @@ function SectionTabs({ active, onChange }: { active: string; onChange: (v: strin
     { key: "live", label: "即時開獎" },
     { key: "ai", label: "AI 預測" },
     { key: "aistar", label: "⭐ AI一星" },
+    { key: "aisuper", label: "🔴 AI超級獎" },
     { key: "history", label: "歷史號碼" },
   ];
   return (
@@ -778,10 +780,10 @@ function Footer() {
 
 // ============ Main Page ============
 export default function MainPage() {
-  const [activeTab, setActiveTab] = useState<"live" | "ai" | "aistar" | "history" | "stats">("live");
+  const [activeTab, setActiveTab] = useState<"live" | "ai" | "aistar" | "aisuper" | "history" | "stats">("live");
 
   const handleTabChange = (key: string) => {
-    setActiveTab(key as "live" | "ai" | "aistar" | "history" | "stats");
+    setActiveTab(key as "live" | "ai" | "aistar" | "aisuper" | "history" | "stats");
     // 切換標籤時回到頁面頂部
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -794,6 +796,11 @@ export default function MainPage() {
       {activeTab === "live" && <LiveDraw />}
       {activeTab === "history" && <HistorySection />}
       {activeTab === "ai" && <AiPredictionSection />}
+      {activeTab === "aisuper" && (
+        <div className="px-3">
+          <AiSuperPrizePage />
+        </div>
+      )}
       {activeTab === "aistar" && (
         <div className="px-3">
           <AiStarPage />

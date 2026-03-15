@@ -258,3 +258,29 @@ export const aiApiKeys = mysqlTable("ai_api_keys", {
 
 export type AiApiKey = typeof aiApiKeys.$inferSelect;
 export type InsertAiApiKey = typeof aiApiKeys.$inferInsert;
+
+/**
+ * AI 超級獎預測表
+ * 存儲各時段的超級獎候選球（10顆）
+ */
+export const aiSuperPrizePredictions = mysqlTable("ai_super_prize_predictions", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 日期，格式 YYYY-MM-DD */
+  dateStr: varchar("dateStr", { length: 10 }).notNull(),
+  /** 來源時段（分析此時段的開獎數據），格式 HH */
+  sourceHour: varchar("sourceHour", { length: 2 }).notNull(),
+  /** 目標時段（預測此時段的開獎），格式 HH */
+  targetHour: varchar("targetHour", { length: 2 }).notNull(),
+  /** 超級獎候選球號碼 JSON 陣列（最多 10 個） */
+  candidateBalls: json("candidateBalls").notNull().$type<number[]>(),
+  /** 是否手動輸入 */
+  isManual: int("isManual").default(0).notNull(),
+  /** AI 分析理由 */
+  reasoning: text("reasoning"),
+  /** 創建時間 */
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  /** 更新時間 */
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AiSuperPrizePrediction = typeof aiSuperPrizePredictions.$inferSelect;
+export type InsertAiSuperPrizePrediction = typeof aiSuperPrizePredictions.$inferInsert;
