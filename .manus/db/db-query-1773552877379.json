@@ -1,0 +1,15 @@
+{
+  "query": "SELECT drawNumber, drawTime, LENGTH(drawNumber) as len FROM draw_records WHERE LENGTH(drawNumber) != 9 ORDER BY drawTime DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, LENGTH(drawNumber) as len FROM draw_records WHERE LENGTH(drawNumber) != 9 ORDER BY drawTime DESC;",
+  "rows": [
+    {
+      "drawNumber": "1150315078",
+      "drawTime": "115/03/15 13:30:00",
+      "len": "10"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\tlen\n1150315078\t115/03/15 13:30:00\t10\n",
+  "stderr": "",
+  "execution_time_ms": 1607
+}

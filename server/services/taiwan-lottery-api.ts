@@ -202,6 +202,15 @@ export async function batchUpsertDraws(draws: ProcessedDraw[]): Promise<number> 
   const db = await getDb();
   if (!db || draws.length === 0) return 0;
   
+  // 最後防護：確保入庫的期號都是正確的 9 位數字
+  const validDraws = draws.filter(d => /^\d{9}$/.test(d.drawNumber));
+  const rejected = draws.length - validDraws.length;
+  if (rejected > 0) {
+    console.warn(`[TaiwanLottery] Rejected ${rejected} draws with invalid drawNumber format (must be 9 digits)`);
+  }
+  if (validDraws.length === 0) return 0;
+  draws = validDraws;
+  
   const BATCH_SIZE = 50;
   let totalInserted = 0;
   
