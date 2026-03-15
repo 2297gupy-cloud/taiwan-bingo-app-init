@@ -437,7 +437,8 @@ export async function getFormattedHourData(
   const rocDate = toROCDateStr(dateStr);
 
   // 查詢指定日期 + 指定時段的開獎記錄
-  const draws = await database
+  // 只取舊格式期號（9位數字，例: 115014843），排除新格式期號（10位，例: 1150315030）
+  const allDraws = await database
     .select()
     .from(drawRecords)
     .where(
@@ -447,27 +448,33 @@ export async function getFormattedHourData(
       )
     )
     .orderBy(desc(drawRecords.drawNumber))
-    .limit(12);
+    .limit(30); // 多取一些再過濾
+
+  // 只保留 9 位期號的舊格式資料
+  const draws = allDraws
+    .filter((d) => d.drawNumber.length === 9)
+    .slice(0, 12);
 
   if (draws.length === 0) {
     return { text: null };
   }
 
-  // 小時範圍標顔（例: 0700~0755）
+  // 小時範圍標顏（例: 0700~0755）
   const rangeLabel = copyRange || `${sourceHour}00~${sourceHour}55`;
 
-  // 標題列
+  // 標顏列
   const separator = "-".repeat(89);
   const header = `BINGO BINGO 專業數據演算報告 (${rangeLabel})
 報告日期：${rocDate.replace(/\//g, "/")}
 ${separator}`;
 
-  // 每期資料行（從最舊到最新）
+  // 每期資料行（從最新到最舊）
   const sortedDraws = [...draws].sort((a, b) =>
-    a.drawNumber.localeCompare(b.drawNumber)
+    b.drawNumber.localeCompare(a.drawNumber)
   );
 
   const lines = sortedDraws.map((draw: DrawRecord) => {
+    // 號碼加空格分隔
     const numbers = (draw.numbers as number[])
       .sort((a, b) => a - b)
       .map((n) => String(n).padStart(2, "0"))
