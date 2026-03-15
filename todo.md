@@ -477,3 +477,8 @@
 
 ## AI分析內容検視 (2026-03-15 v46)
 - [x] 前端：選中時段的黃金球顯示區加入 AI 分析推理說明展開框（顯示 reasoning 欄位）
+
+## API Key 自動模型切換 (2026-03-15 v47)
+- [x] 後端：修改 analyzeWithLLM 根據 API Key 格式自動判斷模型（sk-* = OpenAI，AIza* = Gemini）
+- [x] 後端：修改 analyzeHourSlot 和 routers.ts 的參數類型
+- [ ] 前端：合併 ApiKeyPanel 的 OpenAI 和 Gemini 欄位為統一的 API Key 欄位

@@ -77,7 +77,7 @@ export function getTodayDateStr(): string {
 async function analyzeWithLLM(
   draws: { term: string; time: string; numbers: number[] }[],
   sourceHour: string,
-  userApiKey?: { openaiKey?: string | null; geminiKey?: string | null }
+  userApiKey?: string | null
 ): Promise<{ goldenBalls: number[]; reasoning: string }> {
   // 格式化開獎數據
   const drawLines = draws.map((d, idx) => {
@@ -142,46 +142,51 @@ ${dataText}
 
   try {
     let response;
-    // 若用戶有儲存的 Gemini Key，將使用外部 Gemini API
-    if (userApiKey?.geminiKey) {
-      const geminiPayload = {
-        model: "gemini-2.0-flash",
-        messages: llmMessages,
-        response_format: llmResponseFormat,
-      };
-      const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${userApiKey.geminiKey}`,
-        },
-        body: JSON.stringify(geminiPayload),
-      });
-      if (!geminiRes.ok) {
-        const errText = await geminiRes.text();
-        throw new Error(`Gemini API 錯誤: ${geminiRes.status} ${errText}`);
+    // 根據 API Key 格式自動判斷模型
+    if (userApiKey) {
+      if (userApiKey.startsWith("sk-")) {
+        // OpenAI Key
+        const openaiPayload = {
+          model: "gpt-4o-mini",
+          messages: llmMessages,
+          response_format: llmResponseFormat,
+        };
+        const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userApiKey}`,
+          },
+          body: JSON.stringify(openaiPayload),
+        });
+        if (!openaiRes.ok) {
+          const errText = await openaiRes.text();
+          throw new Error(`OpenAI API 錯誤: ${openaiRes.status} ${errText}`);
+        }
+        response = await openaiRes.json();
+      } else if (userApiKey.startsWith("AIza")) {
+        // Gemini Key
+        const geminiPayload = {
+          model: "gemini-2.0-flash",
+          messages: llmMessages,
+          response_format: llmResponseFormat,
+        };
+        const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userApiKey}`,
+          },
+          body: JSON.stringify(geminiPayload),
+        });
+        if (!geminiRes.ok) {
+          const errText = await geminiRes.text();
+          throw new Error(`Gemini API 錯誤: ${geminiRes.status} ${errText}`);
+        }
+        response = await geminiRes.json();
+      } else {
+        throw new Error("無法識別的 API Key 格式（應為 sk-* 或 AIza*）");
       }
-      response = await geminiRes.json();
-    } else if (userApiKey?.openaiKey) {
-      // 若用戶有儲存的 OpenAI Key，將使用外部 OpenAI API
-      const openaiPayload = {
-        model: "gpt-4o-mini",
-        messages: llmMessages,
-        response_format: llmResponseFormat,
-      };
-      const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${userApiKey.openaiKey}`,
-        },
-        body: JSON.stringify(openaiPayload),
-      });
-      if (!openaiRes.ok) {
-        const errText = await openaiRes.text();
-        throw new Error(`OpenAI API 錯誤: ${openaiRes.status} ${errText}`);
-      }
-      response = await openaiRes.json();
     } else {
       // 使用系統內建 Key
       response = await invokeLLM({
@@ -259,7 +264,7 @@ function analyzeWithStats(
 export async function analyzeHourSlot(
   dateStr: string,
   sourceHour: string,
-  userApiKey?: { openaiKey?: string | null; geminiKey?: string | null }
+  userApiKey?: string | null
 ): Promise<{
   goldenBalls: number[];
   reasoning: string;
@@ -298,7 +303,7 @@ export async function analyzeHourSlot(
   try {
     result = await analyzeWithLLM(drawsForAnalysis, sourceHour, userApiKey);
     usedLLM = true;
-    const keyType = userApiKey?.geminiKey ? "Gemini Key" : userApiKey?.openaiKey ? "OpenAI Key" : "系統內建 Key";
+    const keyType = userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
     console.log(`[analyzeHourSlot] LLM 分析成功（${keyType}），時段 ${sourceHour}:`, result.goldenBalls);
   } catch (err) {
     console.log(`[analyzeHourSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}`);

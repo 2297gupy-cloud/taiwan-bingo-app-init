@@ -525,7 +525,6 @@ function ApiKeyPanel({ onClose }: { onClose: () => void }) {
         <div className="space-y-3">
           {/* OpenAI Key */}
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1 block">OpenAI API Key</label>
             {savedKeys?.openaiKey && !editingOpenai ? (
               <div className="flex items-center gap-1.5">
                 <div className="flex-1 h-8 px-2 rounded border border-green-500/30 bg-green-500/10 flex items-center gap-1.5 overflow-hidden">
@@ -551,7 +550,6 @@ function ApiKeyPanel({ onClose }: { onClose: () => void }) {
           </div>
           {/* Gemini Key */}
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1 block">Gemini API Key</label>
             {savedKeys?.geminiKey && !editingGemini ? (
               <div className="flex items-center gap-1.5">
                 <div className="flex-1 h-8 px-2 rounded border border-green-500/30 bg-green-500/10 flex items-center gap-1.5 overflow-hidden">

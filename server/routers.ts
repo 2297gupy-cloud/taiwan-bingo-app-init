@@ -277,11 +277,11 @@ export const appRouter = router({
         if (!slot) throw new Error("時段不存在");
         // 讀取用戶儲存的 APIKey
         const db = await getDb();
-        let userApiKey: { openaiKey?: string | null; geminiKey?: string | null } | undefined;
+        let userApiKey: string | null | undefined;
         if (db) {
           const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
           if (keyRows.length > 0) {
-            userApiKey = { openaiKey: keyRows[0].openaiKey, geminiKey: keyRows[0].geminiKey };
+            userApiKey = keyRows[0].openaiKey || keyRows[0].geminiKey || null;
           }
         }
         const result = await analyzeHourSlot(dateStr, input.sourceHour, userApiKey);
