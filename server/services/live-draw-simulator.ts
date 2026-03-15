@@ -8,6 +8,7 @@
 
 import { sql } from "drizzle-orm";
 import { getDb } from "../db";
+import { getLatestDraw } from "../db";
 import { getTaiwanDateStr, formatToROCDateTime, calcDrawTime, syncToday } from "./taiwan-lottery-api";
 
 // ============ 開獎時間表 ============
@@ -127,21 +128,16 @@ let lastGeneratedDrawNumber: string | null = null;
 let useRealAPI = true; // 優先嘗試真實 API
 
 /**
- * 根據當前時間計算應該生成的期號
- * 期號格式：YYMMDDIIII（民國年份 + 日期 + 序號）
- * 例如：115031500001 表示 115 年 03 月 15 日第 1 期
+ * 從資料庫取得最新期號（台彩官方 9 位格式）
+ * 不再自行產生假期號
  */
-function calcCurrentDrawNumber(): string | null {
-  const now = getTaiwanNow();
-  const index = getCurrentDrawIndex();
-  if (index < 0) return null;
-  
-  const year = now.getFullYear() - 1911; // 民國年份
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const seq = String(index + 1).padStart(3, '0');
-  
-  return `${year}${month}${day}${seq}`;
+async function getLatestDrawNumber(): Promise<string | null> {
+  try {
+    const latest = await getLatestDraw();
+    return latest?.drawNumber || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -153,11 +149,6 @@ async function tryRealAPIOrSimulate(): Promise<void> {
   if (index < 0) return; // 今天開獎尚未開始
   
   const dateStr = getTaiwanDateStr(); // 不傳 now，避免雙重 UTC+8 導致日期展到明天
-  const drawNumber = calcCurrentDrawNumber();
-  if (!drawNumber) return;
-  
-  // 避免重複生成
-  if (drawNumber === lastGeneratedDrawNumber) return;
   
   if (useRealAPI) {
     try {
@@ -165,7 +156,9 @@ async function tryRealAPIOrSimulate(): Promise<void> {
       const result = await syncToday();
       if (result.count > 0) {
         console.log(`[LiveDrawSimulator] Real API synced ${result.count} records`);
-        lastGeneratedDrawNumber = drawNumber;
+        // 從資料庫取得最新期號（台彩官方格式）
+        const latestDrawNumber = await getLatestDrawNumber();
+        if (latestDrawNumber) lastGeneratedDrawNumber = latestDrawNumber;
         return;
       }
       // API 返回 0 筆，切換到模擬模式
@@ -177,13 +170,9 @@ async function tryRealAPIOrSimulate(): Promise<void> {
     }
   }
   
-  // 使用模擬數據
-  const timeStr = calcDrawTime(index);
-  const drawTime = formatToROCDateTime(dateStr, timeStr);
-  const success = await generateAndSaveSimulatedDraw(drawNumber, drawTime);
-  if (success) {
-    lastGeneratedDrawNumber = drawNumber;
-  }
+  // 模擬模式：不再自行產生期號，等待下次輪詢時 API 再試
+  // （避免展示錯誤的期號格式）
+  console.log(`[LiveDrawSimulator] Waiting for real API data, skipping simulation`);
 }
 
 /**
