@@ -26,6 +26,7 @@ import {
 import { backupCsvRouter } from "./backup-csv-router";
 import { syncRecentDays, syncBingoDataForDate, getTaiwanDateStr } from "./services/taiwan-lottery-api";
 import { resetAPIMode, getTodayDrawSchedule, getCurrentDrawIndex } from "./services/live-draw-simulator";
+import { generateAIPrediction } from "./services/ai-predictor";
 
 export const appRouter = router({
   system: systemRouter,
@@ -82,6 +83,16 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().min(1).max(50).default(10) }))
       .query(async ({ input }) => {
         return getRecentPredictions(input.limit);
+      }),
+
+    /** 生成 AI 智能預測分析 */
+    analyze: publicProcedure
+      .input(z.object({
+        drawNumber: z.string(),
+        samplePeriods: z.number().min(10).max(200).default(30),
+      }))
+      .query(async ({ input }) => {
+        return generateAIPrediction(input.drawNumber, input.samplePeriods);
       }),
   }),
 
