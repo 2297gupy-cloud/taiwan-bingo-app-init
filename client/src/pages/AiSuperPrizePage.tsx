@@ -486,15 +486,24 @@ export default function AiSuperPrizePage() {
     onError: () => toast.error("儲存失敗"),
   });
 
-  // 刪除預測 mutation
+  // 删除預測 mutation
   const deleteMutation = trpc.aiSuperPrize.deletePrediction.useMutation({
     onSuccess: () => {
-      toast.success("預測已刪除");
+      toast.success("預測已删除");
       refetchPredictions();
     },
   });
-
-  // 取得格式化時段數據（用於複製）
+  // 批量分析 mutation
+  const batchAnalyzeMutation = trpc.aiSuperPrize.batchAnalyze.useMutation({
+    onSuccess: (data) => {
+      toast.success(`批量分析完成：${data.success} 個成功，${data.failed} 個失敗`);
+      refetchPredictions();
+    },
+    onError: (err) => {
+      toast.error(`批量分析失敗：${err.message}`);
+    },
+  });
+  // 取得格式化時段數據（用於複製））
   const { data: hourDataForCopy } = trpc.aiSuperPrize.getHourData.useQuery(
     { dateStr, sourceHour: effectiveSlot, copyRange: currentSlotInfo?.copyRange },
     { staleTime: 30000 }
@@ -568,11 +577,69 @@ export default function AiSuperPrizePage() {
       {/* ── 時段卡片列表 ── */}
       <Card className="border-border/30">
         <CardContent className="p-2.5">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Clock className="h-3.5 w-3.5 text-red-400" />
-            <span className="text-xs font-medium text-foreground">時段選擇</span>
-            <span className="text-[10px] text-muted-foreground ml-auto">點擊切換時段</span>
+          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+            <Clock className="h-3.5 w-3.5 text-red-400 shrink-0" />
+            <span className="text-xs font-medium text-foreground shrink-0">時段選擇</span>
+            <span className="text-[10px] text-muted-foreground">
+              {predictions?.length || 0} 個已分析
+            </span>
+            <div className="ml-auto flex items-center gap-1">
+              <a
+                href="https://gemini.google.com/app/a35bb8c4886f6949"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0 no-underline"
+              >
+                <Brain className="h-3 w-3" />
+                <span>AI手動計算</span>
+              </a>
+              <button
+                onClick={() => batchAnalyzeMutation.mutate({ dateStr })}
+                disabled={batchAnalyzeMutation.isPending}
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0"
+              >
+                {batchAnalyzeMutation.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                <span>一鍵全部分析</span>
+              </button>
+              <button
+                onClick={async () => {
+                  if (!window.confirm(`確定清除 ${dateStr} 所有時段的超級獎候選球？此操作無法撤銷。`)) return;
+                  try {
+                    if (predictions && predictions.length > 0) {
+                      await Promise.all(
+                        predictions.map(pred =>
+                          deleteMutation.mutateAsync({ dateStr, sourceHour: pred.sourceHour })
+                        )
+                      );
+                    }
+                    setManualText("");
+                    setParsedBalls([]);
+                    setSelectedSlot(null);
+                    setVerifySlot(null);
+                    toast.success(`已清除所有時段超級獎候選球`);
+                  } catch {
+                    toast.error("清除失敗");
+                  }
+                }}
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0"
+              >
+                <Trash2 className="h-3 w-3" />
+                <span>清除全部</span>
+              </button>
+            </div>
           </div>
+          {batchAnalyzeMutation.isPending && (
+            <div className="mb-2 p-2 rounded bg-red-500/10 border border-red-500/20">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin text-red-400" />
+                <span className="text-[10px] text-red-400">正在批量分析所有時段，請稍候...</span>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-5 gap-1">
             {slots.map((slot) => {
               const pred = predictions?.find(p => p.sourceHour === slot.source);

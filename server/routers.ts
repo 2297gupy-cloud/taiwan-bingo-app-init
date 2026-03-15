@@ -40,6 +40,7 @@ import {
   verifyPrediction,
   getFormattedHourData,
   batchAnalyzeAllSlots,
+  batchAnalyzeSuperPrizeSlots,
   getAnalysisRecords,
   analyzeSuperPrizeSlot,
   getAiSuperPrizePredictions,
@@ -497,6 +498,13 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const dateStr = input.dateStr || getTodayDateStr();
         return getFormattedHourData(dateStr, input.sourceHour, input.copyRange);
+      }),
+    /** 批量分析所有時段的超級獎候選球 */
+    batchAnalyze: publicProcedure
+      .input(z.object({ dateStr: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return batchAnalyzeSuperPrizeSlots(dateStr);
       }),
   }),
 

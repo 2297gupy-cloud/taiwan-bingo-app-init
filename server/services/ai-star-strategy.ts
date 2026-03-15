@@ -833,3 +833,53 @@ export async function verifySuperPrizePrediction(
     }
   });
 }
+
+/** 批量分析所有時段的超級獎候選球 */
+export async function batchAnalyzeSuperPrizeSlots(dateStr: string): Promise<{
+  total: number;
+  success: number;
+  failed: number;
+  results: Array<{
+    sourceHour: string;
+    success: boolean;
+    candidateBalls?: number[];
+    error?: string;
+  }>;
+}> {
+  const results = [];
+  let successCount = 0;
+  let failedCount = 0;
+  for (const slot of HOUR_SLOTS) {
+    try {
+      const result = await analyzeSuperPrizeSlot(dateStr, slot.source);
+      await saveAiSuperPrizePrediction(
+        dateStr,
+        slot.source,
+        slot.target,
+        result.candidateBalls,
+        false,
+        result.reasoning
+      );
+      results.push({
+        sourceHour: slot.source,
+        success: true,
+        candidateBalls: result.candidateBalls,
+      });
+      successCount++;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "未知錯誤";
+      results.push({
+        sourceHour: slot.source,
+        success: false,
+        error: errorMsg,
+      });
+      failedCount++;
+    }
+  }
+  return {
+    total: HOUR_SLOTS.length,
+    success: successCount,
+    failed: failedCount,
+    results,
+  };
+}
