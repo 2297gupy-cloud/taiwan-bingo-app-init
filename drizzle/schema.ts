@@ -210,3 +210,51 @@ export const playerStats = mysqlTable("player_stats", {
 
 export type PlayerStats = typeof playerStats.$inferSelect;
 export type InsertPlayerStats = typeof playerStats.$inferInsert;
+
+/**
+ * AI 一星策略預測表
+ * 存儲各時段的黃金球號碼預測
+ */
+export const aiStarPredictions = mysqlTable("ai_star_predictions", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 日期，格式 YYYY-MM-DD */
+  dateStr: varchar("dateStr", { length: 10 }).notNull(),
+  /** 來源時段（分析此時段的開獎數據），格式 HH */
+  sourceHour: varchar("sourceHour", { length: 2 }).notNull(),
+  /** 目標時段（預測此時段的開獎），格式 HH */
+  targetHour: varchar("targetHour", { length: 2 }).notNull(),
+  /** 黃金球號碼 JSON 陣列（1-6 個） */
+  goldenBalls: json("goldenBalls").notNull().$type<number[]>(),
+  /** 是否手動輸入 */
+  isManual: int("isManual").default(0).notNull(),
+  /** AI 分析理由 */
+  reasoning: text("reasoning"),
+  /** 創建時間 */
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  /** 更新時間 */
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AiStarPrediction = typeof aiStarPredictions.$inferSelect;
+export type InsertAiStarPrediction = typeof aiStarPredictions.$inferInsert;
+
+/**
+ * AI API Key 設定表
+ * 存儲用戶的 AI API Key
+ */
+export const aiApiKeys = mysqlTable("ai_api_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 用戶 ID */
+  userId: int("userId").notNull().unique(),
+  /** OpenAI API Key */
+  openaiKey: varchar("openaiKey", { length: 255 }),
+  /** Gemini API Key */
+  geminiKey: varchar("geminiKey", { length: 255 }),
+  /** 創建時間 */
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  /** 更新時間 */
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AiApiKey = typeof aiApiKeys.$inferSelect;
+export type InsertAiApiKey = typeof aiApiKeys.$inferInsert;

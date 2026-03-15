@@ -25,6 +25,7 @@ import {
   Cell,
 } from "recharts";
 import { Download, Share2, ChevronUp, Star } from "lucide-react";
+import AiStarPage from "./AiStarPage";
 import { toast } from "sonner";
 
 // ============ Section: Header ============
@@ -83,17 +84,19 @@ function Announcement() {
 
 // ============ Section: Tab Switcher ============
 function SectionTabs({ active, onChange }: { active: string; onChange: (v: string) => void }) {
+  const tabs = [
+    { key: "live", label: "即時開獎" },
+    { key: "ai", label: "AI 預測" },
+    { key: "aistar", label: "⭐ AI一星" },
+    { key: "history", label: "歷史號碼" },
+  ];
   return (
-    <div className="mx-3 mb-3 flex">
-      {[
-        { key: "live", label: "即時開獎" },
-        { key: "ai", label: "AI 預測" },
-        { key: "history", label: "歷史號碼" },
-      ].map((tab) => (
+    <div className="mx-3 mb-3 flex overflow-x-auto scrollbar-hide">
+      {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`flex-1 py-2 text-xs font-semibold border transition-colors ${
+          className={`flex-1 min-w-fit py-2 px-2 text-xs font-semibold border whitespace-nowrap transition-colors ${
             active === tab.key
               ? "bg-primary/10 border-primary text-primary"
               : "border-border text-muted-foreground hover:text-foreground"
@@ -726,10 +729,10 @@ function Footer() {
 
 // ============ Main Page ============
 export default function MainPage() {
-  const [activeTab, setActiveTab] = useState<"live" | "ai" | "history" | "stats">("live");
+  const [activeTab, setActiveTab] = useState<"live" | "ai" | "aistar" | "history" | "stats">("live");
 
   const handleTabChange = (key: string) => {
-    setActiveTab(key as "live" | "ai" | "history" | "stats");
+    setActiveTab(key as "live" | "ai" | "aistar" | "history" | "stats");
     // 切換標籤時回到頁面頂部
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -742,6 +745,11 @@ export default function MainPage() {
       {activeTab === "live" && <LiveDraw />}
       {activeTab === "history" && <HistorySection />}
       {activeTab === "ai" && <AiPredictionSection />}
+      {activeTab === "aistar" && (
+        <div className="px-3">
+          <AiStarPage />
+        </div>
+      )}
       {activeTab === "stats" && <StatsSection />}
       <Footer />
       <BackToTop />

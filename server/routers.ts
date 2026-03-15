@@ -27,6 +27,21 @@ import { backupCsvRouter } from "./backup-csv-router";
 import { syncRecentDays, syncBingoDataForDate, getTaiwanDateStr } from "./services/taiwan-lottery-api";
 import { resetAPIMode, getTodayDrawSchedule, getCurrentDrawIndex } from "./services/live-draw-simulator";
 import { generateAIPrediction } from "./services/ai-predictor";
+import {
+  HOUR_SLOTS,
+  getCurrentSlot,
+  getTodayDateStr,
+  analyzeHourSlot,
+  getHourDraws,
+  getAiStarPredictions,
+  saveAiStarPrediction,
+  deleteAiStarPrediction,
+  verifyPrediction,
+  getFormattedHourData,
+} from "./services/ai-star-strategy";
+import { getDb } from "./db";
+import { aiApiKeys } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export const appRouter = router({
   system: systemRouter,
@@ -218,6 +233,155 @@ export const appRouter = router({
   }),
 
   backup: backupCsvRouter,
+
+  /** AI 一星策略 */
+  aiStar: router({
+    /** 取得時段配置和當前時段 */
+    getSlots: publicProcedure.query(() => {
+      const currentSlotInfo = getCurrentSlot();
+      const dateStr = getTodayDateStr();
+      return {
+        slots: HOUR_SLOTS,
+        currentSlot: currentSlotInfo,
+        dateStr,
+      };
+    }),
+
+    /** 取得指定日期的所有預測 */
+    getPredictions: publicProcedure
+      .input(z.object({ dateStr: z.string().optional() }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return getAiStarPredictions(dateStr);
+      }),
+
+    /** AI 自動分析指定時段 */
+    analyze: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        const slot = HOUR_SLOTS.find(s => s.source === input.sourceHour);
+        if (!slot) throw new Error("時段不存在");
+        const result = await analyzeHourSlot(dateStr, input.sourceHour);
+        await saveAiStarPrediction(
+          dateStr,
+          input.sourceHour,
+          slot.target,
+          result.goldenBalls,
+          false,
+          result.reasoning
+        );
+        return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: slot.target };
+      }),
+
+    /** 手動輸入黃金球號碼 */
+    saveManual: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+        goldenBalls: z.array(z.number().min(1).max(80)).min(1).max(10),
+      }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        const slot = HOUR_SLOTS.find(s => s.source === input.sourceHour);
+        if (!slot) throw new Error("時段不存在");
+        await saveAiStarPrediction(
+          dateStr,
+          input.sourceHour,
+          slot.target,
+          input.goldenBalls,
+          true,
+          "手動輸入"
+        );
+        return { success: true };
+      }),
+
+    /** 刪除指定時段預測 */
+    deletePrediction: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        await deleteAiStarPrediction(dateStr, input.sourceHour);
+        return { success: true };
+      }),
+
+    /** 驗證預測結果 */
+    verify: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        targetHour: z.string(),
+        goldenBalls: z.array(z.number().min(1).max(80)),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return verifyPrediction(dateStr, input.targetHour, input.goldenBalls);
+      }),
+
+    /** 取得時段開獎數據（用於複製到 AI） */
+    getHourData: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        sourceHour: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return getFormattedHourData(dateStr, input.sourceHour);
+      }),
+
+    /** 取得時段開獎數據列表 */
+    getHourDraws: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        targetHour: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return getHourDraws(dateStr, input.targetHour);
+      }),
+
+    /** 取得用戶 API Key 設定 */
+    getApiKey: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { openaiKey: null, geminiKey: null };
+      const rows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
+      if (rows.length === 0) return { openaiKey: null, geminiKey: null };
+      return {
+        openaiKey: rows[0].openaiKey ? rows[0].openaiKey.substring(0, 10) + "..." : null,
+        geminiKey: rows[0].geminiKey ? rows[0].geminiKey.substring(0, 10) + "..." : null,
+      };
+    }),
+
+    /** 儲存用戶 API Key */
+    saveApiKey: protectedProcedure
+      .input(z.object({
+        openaiKey: z.string().optional(),
+        geminiKey: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("資料庫不可用");
+        const existing = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
+        if (existing.length > 0) {
+          await db.update(aiApiKeys).set({
+            openaiKey: input.openaiKey || null,
+            geminiKey: input.geminiKey || null,
+          }).where(eq(aiApiKeys.userId, ctx.user.id));
+        } else {
+          await db.insert(aiApiKeys).values({
+            userId: ctx.user.id,
+            openaiKey: input.openaiKey || null,
+            geminiKey: input.geminiKey || null,
+          });
+        }
+        return { success: true };
+      }),
+  }),
 
   /** 台彩數據同步管理 */
   sync: router({
