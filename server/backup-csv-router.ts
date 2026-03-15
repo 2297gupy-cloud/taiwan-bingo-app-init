@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { getBackupManager } from './services/backup-manager';
 import { getCSVExporter } from './services/csv-exporter';
 import { getDb } from './db';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { drawRecords, aiPredictions, playerStats, bingoGames } from '../drizzle/schema';
 
 export const backupCsvRouter = router({
@@ -66,27 +66,59 @@ export const backupCsvRouter = router({
 
   /**
    * 導出開獎記錄為 CSV
+   * @param days - 天數（不傳則全部）
+   * @param limit - 限制筆數（預設 0 = 不限制）
    */
   exportDrawRecordsCSV: publicProcedure
-    .input(z.object({ days: z.number().default(30) }))
+    .input(z.object({
+      days: z.number().optional(),
+      limit: z.number().min(1).max(10000).optional(),
+    }))
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error('Database not available');
 
-      // 計算開始日期
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - input.days);
-
-      // 查詢數據
-      const records = await db
+      // 查詢數據（降序，最新在前）
+      let query = db
         .select()
         .from(drawRecords)
-        .orderBy(drawRecords.drawTime);
+        .orderBy(desc(drawRecords.id));
 
-      // 導出為 CSV
-      const exporter = getCSVExporter({ dateFormat: 'roc' });
-      const csv = exporter.exportDrawRecords(records as any);
-      const fileName = exporter.generateFileName('draw_records');
+      // 如果指定 limit，取最新 N 筆
+      const records = input.limit
+        ? await query.limit(input.limit)
+        : await query;
+
+      // 導出為 CSV（修正 drawTime 格式）
+      const csvRows = records.map(r => {
+        // drawTime 格式：115/03/15 08:10:00 → 轉為正常日期顯示
+        const rawTime = r.drawTime || '';
+        const timeDisplay = rawTime.startsWith('-')
+          ? rawTime.replace(/^-\d+/, (m) => {
+              const rocYear = Math.abs(parseInt(m));
+              return String(rocYear + 1911);
+            })
+          : rawTime;
+
+        const nums = Array.isArray(r.numbers) ? (r.numbers as number[]).sort((a,b)=>a-b).join('|') : '';
+        return [
+          r.drawNumber,
+          timeDisplay,
+          nums,
+          r.superNumber,
+          r.total,
+          r.bigSmall === 'big' ? '大' : r.bigSmall === 'small' ? '小' : r.bigSmall,
+          r.oddEven === 'odd' ? '單' : r.oddEven === 'even' ? '雙' : r.oddEven,
+        ].join(',');
+      });
+
+      const header = '期數,開獎時間,號碼,超級獎號,總和,大小,單雙';
+      const csv = [header, ...csvRows].join('\n');
+
+      const suffix = input.limit ? `_最新${input.limit}期` : input.days ? `_${input.days}天` : '_全部';
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+      const fileName = `bingo_draws${suffix}_${dateStr}.csv`;
 
       return {
         fileName,
