@@ -242,11 +242,9 @@ function LiveDraw() {
                 ))}
               </div>
               <div className="flex items-center gap-2 text-[9px]">
-                <span className="text-muted-foreground">{draw.total}</span>
                 <span className={`font-bold ${getBigSmallClass(draw.bigSmall)}`}>{getBigSmallLabel(draw.bigSmall)}</span>
                 <span className={`font-bold ${getOddEvenClass(draw.oddEven)}`}>{getOddEvenLabel(draw.oddEven)}</span>
                 <span className="font-bold text-destructive">{padNumber(draw.superNumber)}</span>
-                <span className={`font-bold ${getPlateClass(draw.plate)}`}>{getPlateLabel(draw.plate)}</span>
               </div>
             </div>
           ))}
