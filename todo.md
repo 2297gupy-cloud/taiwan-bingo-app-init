@@ -417,3 +417,7 @@
 - [x] 前端：增加「下載 CSV」按鈕
 - [x] 前端：連接到後端 exportDrawRecordsCSV API（days 參數）
 - [x] 測試：下載最近 7/14/30 天 CSV 正常返回
+
+## CSV 總和欄位移除 (2026-03-15 v37)
+- [x] 後端：移除 backup-csv-router.ts 中的總和欄位
+- [x] 前端：MainPage.tsx HistorySection 的 CSV 不含總和（本來就沒有）

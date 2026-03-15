@@ -106,13 +106,12 @@ export const backupCsvRouter = router({
           timeDisplay,
           nums,
           r.superNumber,
-          r.total,
           r.bigSmall === 'big' ? '大' : r.bigSmall === 'small' ? '小' : r.bigSmall,
           r.oddEven === 'odd' ? '單' : r.oddEven === 'even' ? '雙' : r.oddEven,
         ].join(',');
       });
 
-      const header = '期數,開獎時間,號碼,超級獎號,總和,大小,單雙';
+      const header = '期數,開獎時間,號碼,超級獎號,大小,單雙';
       const csv = [header, ...csvRows].join('\n');
 
       const suffix = input.limit ? `_最新${input.limit}期` : input.days ? `_${input.days}天` : '_全部';
