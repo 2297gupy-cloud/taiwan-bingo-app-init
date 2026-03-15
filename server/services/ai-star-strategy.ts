@@ -22,21 +22,21 @@ async function db() {
  * 例：08時卡片 → 複製 07:00~07:55 的數據（source="07"）
  */
 export const HOUR_SLOTS = [
-  { source: "07", target: "08", label: "08時", copyRange: "0700~0755", draws: 12, verifyHour: "09", verifyRange: "0900~0955" },
-  { source: "08", target: "09", label: "09時", copyRange: "0800~0855", draws: 12, verifyHour: "10", verifyRange: "1000~1055" },
-  { source: "09", target: "10", label: "10時", copyRange: "0900~0955", draws: 12, verifyHour: "11", verifyRange: "1100~1155" },
-  { source: "10", target: "11", label: "11時", copyRange: "1000~1055", draws: 12, verifyHour: "12", verifyRange: "1200~1255" },
-  { source: "11", target: "12", label: "12時", copyRange: "1100~1155", draws: 12, verifyHour: "13", verifyRange: "1300~1355" },
-  { source: "12", target: "13", label: "13時", copyRange: "1200~1255", draws: 12, verifyHour: "14", verifyRange: "1400~1455" },
-  { source: "13", target: "14", label: "14時", copyRange: "1300~1355", draws: 12, verifyHour: "15", verifyRange: "1500~1555" },
-  { source: "14", target: "15", label: "15時", copyRange: "1400~1455", draws: 12, verifyHour: "16", verifyRange: "1600~1655" },
-  { source: "15", target: "16", label: "16時", copyRange: "1500~1555", draws: 12, verifyHour: "17", verifyRange: "1700~1755" },
-  { source: "16", target: "17", label: "17時", copyRange: "1600~1655", draws: 12, verifyHour: "18", verifyRange: "1800~1855" },
-  { source: "17", target: "18", label: "18時", copyRange: "1700~1755", draws: 12, verifyHour: "19", verifyRange: "1900~1955" },
-  { source: "18", target: "19", label: "19時", copyRange: "1800~1855", draws: 12, verifyHour: "20", verifyRange: "2000~2055" },
-  { source: "19", target: "20", label: "20時", copyRange: "1900~1955", draws: 12, verifyHour: "21", verifyRange: "2100~2155" },
-  { source: "20", target: "21", label: "21時", copyRange: "2000~2055", draws: 12, verifyHour: "22", verifyRange: "2200~2255" },
-  { source: "21", target: "22", label: "22時", copyRange: "2100~2155", draws: 12, verifyHour: "23", verifyRange: "2300~2355" },
+  { source: "07", target: "08", label: "08時", copyRange: "0700~0755", draws: 12, verifyHour: "08", verifyRange: "0800~0855" },
+  { source: "08", target: "09", label: "09時", copyRange: "0800~0855", draws: 12, verifyHour: "09", verifyRange: "0900~0955" },
+  { source: "09", target: "10", label: "10時", copyRange: "0900~0955", draws: 12, verifyHour: "10", verifyRange: "1000~1055" },
+  { source: "10", target: "11", label: "11時", copyRange: "1000~1055", draws: 12, verifyHour: "11", verifyRange: "1100~1155" },
+  { source: "11", target: "12", label: "12時", copyRange: "1100~1155", draws: 12, verifyHour: "12", verifyRange: "1200~1255" },
+  { source: "12", target: "13", label: "13時", copyRange: "1200~1255", draws: 12, verifyHour: "13", verifyRange: "1300~1355" },
+  { source: "13", target: "14", label: "14時", copyRange: "1300~1355", draws: 12, verifyHour: "14", verifyRange: "1400~1455" },
+  { source: "14", target: "15", label: "15時", copyRange: "1400~1455", draws: 12, verifyHour: "15", verifyRange: "1500~1555" },
+  { source: "15", target: "16", label: "16時", copyRange: "1500~1555", draws: 12, verifyHour: "16", verifyRange: "1600~1655" },
+  { source: "16", target: "17", label: "17時", copyRange: "1600~1655", draws: 12, verifyHour: "17", verifyRange: "1700~1755" },
+  { source: "17", target: "18", label: "18時", copyRange: "1700~1755", draws: 12, verifyHour: "18", verifyRange: "1800~1855" },
+  { source: "18", target: "19", label: "19時", copyRange: "1800~1855", draws: 12, verifyHour: "19", verifyRange: "1900~1955" },
+  { source: "19", target: "20", label: "20時", copyRange: "1900~1955", draws: 12, verifyHour: "20", verifyRange: "2000~2055" },
+  { source: "20", target: "21", label: "21時", copyRange: "2000~2055", draws: 12, verifyHour: "21", verifyRange: "2100~2155" },
+  { source: "21", target: "22", label: "22時", copyRange: "2100~2155", draws: 12, verifyHour: "22", verifyRange: "2200~2255" },
 ];
 
 /** 取得當前時段（台灣時間 UTC+8）
