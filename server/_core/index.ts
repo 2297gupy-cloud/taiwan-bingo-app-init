@@ -7,6 +7,8 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { getTaiwanLotteryScraper } from "../services/taiwan-lottery-scraper";
+import { getDb } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -60,6 +62,50 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+
+  // 初始化台灣彩券爬蟲並開始輪詢
+  initializeLotteryScraper();
+}
+
+/**
+ * 初始化台灣彩券爬蟲
+ */
+async function initializeLotteryScraper() {
+  try {
+    const scraper = getTaiwanLotteryScraper();
+    const db = await getDb();
+
+    if (!db) {
+      console.warn('[Scraper] Database not available, skipping scraper initialization');
+      return;
+    }
+
+    console.log('[Scraper] Starting lottery data sync...');
+
+    // 啟動輪詢，每 30 秒檢測一次新開獎
+    scraper.startPolling(
+      async (draw) => {
+        try {
+          console.log(`[Scraper] Detected new draw: ${draw.drawNumber}`);
+          
+          // 驗證開獎數據
+          if (!scraper.validateDraw(draw)) {
+            console.warn(`[Scraper] Invalid draw data: ${draw.drawNumber}`);
+            return;
+          }
+
+          console.log(`[Scraper] Draw synced successfully: ${draw.drawNumber}`);
+        } catch (error) {
+          console.error('[Scraper] Error syncing draw:', error);
+        }
+      },
+      30 // 每 30 秒檢測一次
+    );
+
+    console.log('[Scraper] Lottery scraper initialized and polling started');
+  } catch (error) {
+    console.error('[Scraper] Failed to initialize lottery scraper:', error);
+  }
 }
 
 startServer().catch(console.error);
