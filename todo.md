@@ -451,3 +451,6 @@
 - [x] 前端：MainPage.tsx 加入 AI超級獎 Tab（在歷史號碼前）
 - [x] 前端：AiStarPage.tsx NumberDistributionBlock 加超級獎紅色框
 - [x] 前端：AiStarPage.tsx VerifyRow 加超級獎並排驗證
+
+## 超級獎驗證一般球命中顯示 (2026-03-15 v41)
+- [x] 前端：AiSuperPrizePage.tsx 驗證行加入一般球命中幾顆（X顆）與超級獎分隔顯示

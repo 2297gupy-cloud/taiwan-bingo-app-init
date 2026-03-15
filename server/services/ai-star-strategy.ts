@@ -807,9 +807,29 @@ export async function verifySuperPrizePrediction(
     if (draw) {
       const superNum = draw.superNumber as number;
       const isHit = candidateBalls.includes(superNum);
-      return { term: draw.drawNumber, time: timeSlot, superNumber: superNum, isHit, index: idx + 1, pending: false };
+      const numbers = draw.numbers as number[];
+      const normalHits = numbers.filter(n => candidateBalls.includes(n));
+      return {
+        term: draw.drawNumber,
+        time: timeSlot,
+        superNumber: superNum,
+        isHit,
+        normalHits,
+        normalHitCount: normalHits.length,
+        index: idx + 1,
+        pending: false
+      };
     } else {
-      return { term: "---", time: timeSlot, superNumber: 0, isHit: false, index: idx + 1, pending: true };
+      return {
+        term: "---",
+        time: timeSlot,
+        superNumber: 0,
+        isHit: false,
+        normalHits: [] as number[],
+        normalHitCount: 0,
+        index: idx + 1,
+        pending: true
+      };
     }
   });
 }

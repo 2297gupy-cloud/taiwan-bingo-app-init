@@ -237,6 +237,8 @@ function SuperVerifyRow({ item }: {
     time: string;
     superNumber: number;
     isHit: boolean;
+    normalHits?: number[];
+    normalHitCount?: number;
     pending?: boolean;
   }
 }) {
@@ -249,30 +251,52 @@ function SuperVerifyRow({ item }: {
       </div>
     );
   }
+  const hitCount = item.normalHitCount ?? 0;
+  const hasNormalHit = hitCount > 0;
   return (
     <div className={cn(
       "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs border overflow-x-auto scrollbar-none",
-      item.isHit ? "border-red-500/30 bg-red-500/5" : "border-border/20 bg-transparent"
+      item.isHit ? "border-red-500/30 bg-red-500/5" : hasNormalHit ? "border-amber-500/20 bg-amber-500/5" : "border-border/20 bg-transparent"
     )}>
       <span className="font-mono text-muted-foreground/40 text-[9px] shrink-0 w-4 text-right">[{item.index}]</span>
       <span className="font-mono text-muted-foreground/60 text-[9px] shrink-0 w-9">{item.time}</span>
       <span className="font-mono text-muted-foreground/40 text-[9px] shrink-0">{item.term}</span>
-      <div className="flex items-center gap-0.5 min-w-0">
-        {item.isHit ? (
-          <>
-            <span className="font-mono font-bold text-red-400 text-[10px] shrink-0">
-              {String(item.superNumber).padStart(2, "0")}
-            </span>
-            <CheckCircle2 className="h-3 w-3 text-red-400 shrink-0" />
-            <span className="text-red-400 font-bold text-[9px] ml-0.5">【中超級獎】</span>
-          </>
+      {/* 一般球命中 */}
+      <div className={cn(
+        "flex items-center gap-0.5 shrink-0 px-1 py-0.5 rounded border text-[8px]",
+        hasNormalHit ? "border-amber-500/30 bg-amber-500/10" : "border-border/20 bg-transparent"
+      )}>
+        <span className="text-muted-foreground/40 text-[7px]">一般</span>
+        <span className={cn(
+          "font-mono font-bold text-[9px]",
+          hasNormalHit ? "text-amber-400" : "text-muted-foreground/40"
+        )}>
+          {hitCount}顆
+        </span>
+        {hasNormalHit ? (
+          <CheckCircle2 className="h-2.5 w-2.5 text-amber-400 shrink-0" />
         ) : (
-          <>
-            <span className="font-mono text-muted-foreground/50 text-[9px]">
-              超級獎：{item.superNumber > 0 ? String(item.superNumber).padStart(2, "0") : "?"}
-            </span>
-            <XCircle className="h-3 w-3 text-muted-foreground/30 shrink-0" />
-          </>
+          <XCircle className="h-2.5 w-2.5 text-muted-foreground/30 shrink-0" />
+        )}
+      </div>
+      {/* 分隔線 */}
+      <span className="text-muted-foreground/20 text-[9px] shrink-0">|</span>
+      {/* 超級獎驗證 */}
+      <div className={cn(
+        "flex items-center gap-0.5 shrink-0 px-1 py-0.5 rounded border text-[8px]",
+        item.isHit ? "border-red-500/40 bg-red-500/10" : "border-border/20 bg-transparent"
+      )}>
+        <span className="text-muted-foreground/40 text-[7px]">超</span>
+        <span className={cn(
+          "font-mono font-bold text-[9px]",
+          item.isHit ? "text-red-400" : "text-muted-foreground/50"
+        )}>
+          {item.superNumber > 0 ? String(item.superNumber).padStart(2, "0") : "?"}
+        </span>
+        {item.isHit ? (
+          <CheckCircle2 className="h-2.5 w-2.5 text-red-400 shrink-0" />
+        ) : (
+          <XCircle className="h-2.5 w-2.5 text-muted-foreground/30 shrink-0" />
         )}
       </div>
     </div>
