@@ -258,6 +258,12 @@ function LiveDraw() {
 function HistorySection() {
   const { data } = trpc.draw.history.useQuery({ page: 1, pageSize: 10 });
   const [sortMode, setSortMode] = useState<"draw" | "size">("draw");
+  const [csvDays, setCsvDays] = useState<7 | 14 | 30>(7);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const csvQuery = trpc.backup.exportDrawRecordsCSV.useQuery(
+    { days: csvDays },
+    { enabled: false }
+  );
 
   const handleExportCSV = () => {
     if (!data?.records.length) return;
@@ -301,6 +307,60 @@ function HistorySection() {
         </button>
         <button onClick={handleShare} className="text-[10px] px-2 py-1 rounded border border-border text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
           <Share2 className="w-3 h-3" /> 分享歷史連結
+        </button>
+      </div>
+
+      {/* CSV 下載區（7/14/30 天） */}
+      <div className="mb-3 p-2 rounded-lg bg-blue-500/5 border border-blue-500/30">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-medium text-blue-400 flex items-center gap-1">
+            <Download size={12} /> 下載 CSV
+          </span>
+        </div>
+        <div className="flex gap-1 mb-1.5">
+          {([7, 14, 30] as const).map((days) => (
+            <button
+              key={days}
+              onClick={() => setCsvDays(days)}
+              className={`flex-1 text-[10px] py-0.5 rounded border transition-colors ${
+                csvDays === days
+                  ? 'bg-blue-500/30 border-blue-500 text-blue-300'
+                  : 'border-slate-600 text-slate-500 hover:border-slate-500'
+              }`}
+            >
+              {days}天
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={async () => {
+            setIsDownloading(true);
+            try {
+              const result = await csvQuery.refetch();
+              const data = result.data;
+              if (data?.content && data?.fileName) {
+                const bom = '\uFEFF';
+                const blob = new Blob([bom + data.content], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = data.fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast.success(`✅ 已下載 ${data.recordCount} 筆：${data.fileName}`);
+              }
+            } catch (error: any) {
+              toast.error(`下載失敗: ${error.message}`);
+            } finally {
+              setIsDownloading(false);
+            }
+          }}
+          disabled={isDownloading}
+          className="w-full text-[10px] py-1 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/60 text-blue-300 transition-colors disabled:opacity-50"
+        >
+          {isDownloading ? '下載中...' : `下載最近 ${csvDays} 天 CSV`}
         </button>
       </div>
 
