@@ -369,3 +369,10 @@
 - [x] 加強邊框（border → border-2）
 - [x] 增加背景對比（bg-secondary/20 → bg-secondary/30）
 - [x] 增強陰影效果（shadow-sm → shadow-md）
+
+## 預測策略卡片緊湊化 (2026-03-15 v30)
+- [x] 減少內邊距（px-3 py-2.5 → px-2.5 py-1.5）
+- [x] 減少卡片間距（gap-3 → gap-2）
+- [x] 減小圖標大小（text-base → text-sm）
+- [x] 減小字體大小（text-[11px] → text-[10px]、text-[9px] → text-[8px]）
+- [x] 加入 leading-tight 減少行高
