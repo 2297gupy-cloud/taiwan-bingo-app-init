@@ -323,6 +323,19 @@ function SlotCard({
     { dateStr, sourceHour: slot.source, copyRange: slot.copyRange },
     { staleTime: 30000 }
   );
+  
+  // 查詢該時段（target）的即時開獎期數
+  const targetHour = parseInt(slot.target);
+  const { data: hourDraws } = trpc.draw.recent.useQuery(
+    { limit: 200 },
+    { staleTime: 10000 }
+  );
+  
+  // 計算該時段的開獎期數
+  const drawsInHour = hourDraws?.filter(draw => {
+    const drawHour = parseInt(draw.drawTime.split(' ')[1].split(':')[0]);
+    return drawHour === targetHour;
+  }).length || 0;
 
   const handleCopy = useCallback(() => {
     if (formattedData?.text) {
@@ -395,6 +408,10 @@ function SlotCard({
           <span className="text-[7px] text-muted-foreground/50 ml-0.5">
             {prediction.isManual ? "手動" : "AI"}
           </span>
+        </div>
+      ) : drawsInHour > 0 ? (
+        <div className="flex items-center justify-center py-0.5">
+          <span className="text-[10px] text-green-400/70 font-medium">{drawsInHour}期</span>
         </div>
       ) : (
         <div className="flex items-center justify-center py-0.5">
