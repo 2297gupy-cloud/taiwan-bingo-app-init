@@ -11,6 +11,7 @@ import {
   checkNumbers,
   getLatestPrediction,
   getRecentPredictions,
+  getDb,
 } from "./db";
 import { taiwanBingoV2Config, exportUIConfigAsJSON } from "./ui-config-export";
 import {
@@ -41,9 +42,8 @@ import {
   batchAnalyzeAllSlots,
   getAnalysisRecords,
 } from "./services/ai-star-strategy";
-import { getDb } from "./db";
 import { aiApiKeys, drawRecords } from "../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
 
 export const appRouter = router({
@@ -412,7 +412,7 @@ export const appRouter = router({
   /** 台彩數據同步管理 */
   sync: router({
     /** 手動同步今天數據 */
-    today: protectedProcedure.mutation(async () => {
+    today: publicProcedure.mutation(async () => {
       const dateStr = getTaiwanDateStr();
       const result = await syncBingoDataForDate(dateStr);
       resetAPIMode();
@@ -434,6 +434,46 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const result = await syncBingoDataForDate(input.date);
         return { success: true, ...result };
+      }),
+
+    /** 數據完整度檢查：列出最近 N 天每天的筆數 */
+    dataIntegrity: publicProcedure
+      .input(z.object({ days: z.number().min(1).max(30).default(30) }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { days: [] };
+
+        const results: Array<{ date: string; count: number; expected: number; missing: boolean }> = [];
+        const today = new Date();
+
+        for (let i = 0; i < input.days; i++) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const dateStr = getTaiwanDateStr(d);
+          // 民國年格式前綴，例如 115/03/15
+          const rocYear = d.getFullYear() - 1911;
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          const rocPrefix = `${rocYear}/${mm}/${dd}`;
+
+          // 計算當天資料庫中的筆數
+          const rows = await db
+            .select({ drawTime: drawRecords.drawTime })
+            .from(drawRecords)
+            .where(sql`${drawRecords.drawTime} LIKE ${rocPrefix + '%'}`);
+
+          const count = rows.length;
+          // 賓果賓果每天 204 期（07:05 ~ 23:55，每 5 分鐘一期）
+          const expected = 204;
+          results.push({
+            date: dateStr,
+            count,
+            expected,
+            missing: count < expected * 0.9, // 少於 90% 視為缺漏
+          });
+        }
+
+        return { days: results };
       }),
 
     /** 取得今日開獎時間表 */
