@@ -194,9 +194,6 @@ function LiveDraw() {
         {/* Stats row */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] bg-secondary/40 rounded px-2 py-1.5">
           <span className="text-muted-foreground">
-            總和 <span className="font-bold text-foreground">{latest.total}</span>
-          </span>
-          <span className="text-muted-foreground">
             大小 <span className={`font-bold ${getBigSmallClass(latest.bigSmall)}`}>
               {getBigSmallLabel(latest.bigSmall)}
             </span>
@@ -211,18 +208,13 @@ function LiveDraw() {
               {getBigSmallLabel(latest.bigSmall)}
             </span>
           </span>
-          <span className="text-muted-foreground">
-            盤面 <span className={`font-bold ${getPlateClass(latest.plate)}`}>
-              {getPlateLabel(latest.plate)}
-            </span>
-          </span>
         </div>
       </div>
 
       {/* Streak warning */}
       {stats?.streak && stats.streak.count >= 3 && (
         <div className="mx-3 mb-3 px-3 py-2 rounded bg-destructive/10 border border-destructive/20">
-          <p className="text-[10px] font-semibold text-destructive">⚠️ 總和大小連續</p>
+          <p className="text-[10px] font-semibold text-destructive">⚠️ 大小連續</p>
           <p className="text-[9px] text-muted-foreground">若連續走勢過長，請留意回補風險</p>
           <p className="text-right text-xs font-bold text-destructive">
             {getBigSmallLabel(stats.streak.type)} × {stats.streak.count}
@@ -271,11 +263,11 @@ function HistorySection() {
 
   const handleExportCSV = () => {
     if (!data?.records.length) return;
-    const headers = "期號,時間,開獎號碼,總和,大小,單雙,超級獎號,盤面\n";
+    const headers = "期號,時間,開獎號碼,大小,單雙,超級獎號\n";
     const rows = data.records.map((r) => {
       const nums = (r.numbers as number[]).join("-");
       const time = new Date(r.drawTime).toLocaleString("zh-TW");
-      return `${r.drawNumber},${time},${nums},${r.total},${getBigSmallLabel(r.bigSmall)},${getOddEvenLabel(r.oddEven)},${r.superNumber},${getPlateLabel(r.plate)}`;
+      return `${r.drawNumber},${time},${nums},${getBigSmallLabel(r.bigSmall)},${getOddEvenLabel(r.oddEven)},${r.superNumber}`;
     }).join("\n");
     const csv = "\uFEFF" + headers + rows;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -338,11 +330,9 @@ function HistorySection() {
             <tr className="bg-secondary/50 text-muted-foreground">
               <th className="py-1.5 px-2 text-left font-medium">期數/時間</th>
               <th className="py-1.5 px-2 text-left font-medium">開獎號碼</th>
-              <th className="py-1.5 px-1 text-center font-medium">總和</th>
               <th className="py-1.5 px-1 text-center font-medium">大小</th>
               <th className="py-1.5 px-1 text-center font-medium">單雙</th>
               <th className="py-1.5 px-1 text-center font-medium">超級</th>
-              <th className="py-1.5 px-1 text-center font-medium">盤面</th>
             </tr>
           </thead>
           <tbody>
@@ -378,7 +368,6 @@ function HistorySection() {
                       ))}
                     </div>
                   </td>
-                  <td className="py-1.5 px-1 text-center font-bold">{draw.total}</td>
                   <td className={`py-1.5 px-1 text-center font-bold ${getBigSmallClass(draw.bigSmall)}`}>
                     {getBigSmallLabel(draw.bigSmall)}
                   </td>
@@ -389,9 +378,6 @@ function HistorySection() {
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-destructive text-white text-[8px] font-bold">
                       {padNumber(draw.superNumber)}
                     </span>
-                  </td>
-                  <td className={`py-1.5 px-1 text-center font-bold ${getPlateClass(draw.plate)}`}>
-                    {getPlateLabel(draw.plate)}
                   </td>
                 </tr>
               );
