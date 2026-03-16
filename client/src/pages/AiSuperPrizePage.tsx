@@ -491,6 +491,25 @@ export default function AiSuperPrizePage() {
         const keyType = data.usedLLM ? "用戶 APIKey" : "系統 Key";
         toast.success(`${data.sourceHour}時段 AI 分析完成 (${keyType})，推薦 ${data.candidateBalls.length} 顓超級獎候選球`);
       }
+      // 設定 modal 結果並顯示
+      setModalResult({
+        goldenBalls: data.candidateBalls || [],
+        reasoning: data.reasoning || "",
+        usedLLM: data.usedLLM,
+        sampleCount: data.sampleCount,
+        hotAnalysis: (data as any).hotAnalysis,
+        streakAnalysis: (data as any).streakAnalysis,
+        diagonalAnalysis: (data as any).diagonalAnalysis,
+        deadNumbers: (data as any).deadNumbers,
+        coldAnalysis: (data as any).coldAnalysis,
+        trendAnalysis: (data as any).trendAnalysis,
+        coreConclusion: (data as any).coreConclusion,
+        strategy: (data as any).strategy,
+        tailResonance: (data as any).tailResonance,
+        sourceHour: data.sourceHour,
+        targetHour: data.targetHour,
+      });
+      setShowAnalysisModal(true);
       refetchPredictions();
     },
     onError: (err) => {
@@ -929,6 +948,30 @@ export default function AiSuperPrizePage() {
       <p className="text-[10px] text-muted-foreground/40 text-center px-4">
         AI 超級獎策略僅供參考，彩票開獎具有隨機性，請理性娛樂，切勿沉迷。
       </p>
+
+      {/* AI 分析結果 Modal */}
+      <AnalysisResultModal
+        open={showAnalysisModal}
+        onOpenChange={setShowAnalysisModal}
+        result={modalResult ? {
+          goldenBalls: modalResult.goldenBalls,
+          reasoning: modalResult.reasoning,
+          usedLLM: modalResult.usedLLM,
+          sampleCount: modalResult.sampleCount,
+          hotAnalysis: modalResult.hotAnalysis,
+          streakAnalysis: modalResult.streakAnalysis,
+          diagonalAnalysis: modalResult.diagonalAnalysis,
+          deadNumbers: modalResult.deadNumbers,
+          coldAnalysis: modalResult.coldAnalysis,
+          trendAnalysis: modalResult.trendAnalysis,
+          coreConclusion: modalResult.coreConclusion,
+          strategy: modalResult.strategy,
+          tailNote: modalResult.tailResonance,
+        } : null}
+        title="AI 超級獎分析報告"
+        sourceHour={modalResult?.sourceHour}
+        targetHour={modalResult?.targetHour}
+      />
     </div>
   );
 }

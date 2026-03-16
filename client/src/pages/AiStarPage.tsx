@@ -596,6 +596,9 @@ export default function AiStarPage() {
         const keyType = usedAI ? "AI 專業演算" : "統計方法";
         toast.success(`${data.sourceHour}時段分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顆黃金球`);
       }
+      // 設定 modal 結果並顯示
+      setModalResult(data);
+      setShowAnalysisModal(true);
       refetchPredictions();
     },
     onError: (err) => {
@@ -1157,6 +1160,32 @@ export default function AiStarPage() {
       <p className="text-[10px] text-muted-foreground/40 text-center px-4">
         AI 一星策略僅供參考，彩票開獎具有隨機性，請理性娛樂，切勿沉迷。
       </p>
+
+      {/* AI 分析結果 Modal */}
+      <AnalysisResultModal
+        open={showAnalysisModal}
+        onOpenChange={setShowAnalysisModal}
+        result={modalResult ? {
+          goldenBalls: modalResult.goldenBalls,
+          reasoning: modalResult.reasoning,
+          usedLLM: modalResult.usedLLM,
+          usedProfessionalAnalysis: modalResult.usedProfessionalAnalysis,
+          sampleCount: modalResult.sampleCount,
+          hotAnalysis: modalResult.hotAnalysis,
+          coldAnalysis: modalResult.coldAnalysis,
+          trendAnalysis: modalResult.trendAnalysis,
+          strategy: modalResult.strategy,
+          tailNote: modalResult.tailResonance,
+          streakAnalysis: modalResult.streakAnalysis,
+          diagonalAnalysis: modalResult.diagonalAnalysis,
+          deadNumbers: modalResult.deadNumbers,
+          coreConclusion: modalResult.coreConclusion,
+          parseErrors: modalResult.parseErrors,
+        } : null}
+        title="AI 一星分析報告"
+        sourceHour={modalResult?.sourceHour}
+        targetHour={modalResult?.targetHour}
+      />
     </div>
   );
 }

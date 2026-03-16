@@ -1,6 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import NumberBall from "@/components/NumberBall";
 import { Copy, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,11 +9,16 @@ interface AnalysisResult {
   usedLLM?: boolean;
   usedProfessionalAnalysis?: boolean;
   sampleCount?: number;
-  hotAnalysis?: string;
-  coldAnalysis?: string;
-  trendAnalysis?: string;
-  strategy?: string;
-  tailNote?: string;
+  // 7 項分析欄位（來自 analyzeCustomData）
+  hotAnalysis?: string;       // 1. 強勢熱號 + 尾數共振
+  streakAnalysis?: string;    // 2. 連莊號分析
+  diagonalAnalysis?: string;  // 3. 斜連交會點
+  deadNumbers?: string;       // 4. 死碼排除
+  coldAnalysis?: string;      // 5. 冷號回補
+  trendAnalysis?: string;     // 6. 區間趨勢
+  coreConclusion?: string;    // 7. 核心演算結論
+  strategy?: string;          // 整體策略
+  tailNote?: string;          // 尾數共振（額外欄位）
   parseErrors?: string[];
 }
 
@@ -44,31 +48,44 @@ export function AnalysisResultModal({
       `🎯 推薦黃金球: ${result.goldenBalls.join(", ")}`,
       `💡 ${result.reasoning}`,
     ];
-    if (result.tailNote) lines.push(`🔍 尾數共振：${result.tailNote}`);
-    if (result.hotAnalysis) lines.push(`🔥 強勢熱號：${result.hotAnalysis}`);
-    if (result.coldAnalysis) lines.push(`❄️ 冷號回補：${result.coldAnalysis}`);
-    if (result.trendAnalysis) lines.push(`📈 趨勢分析：${result.trendAnalysis}`);
-    if (result.strategy) lines.push(`🎯 整體策略：${result.strategy}`);
+    if (result.hotAnalysis) lines.push(`1. 強勢熱號：${result.hotAnalysis}`);
+    if (result.streakAnalysis) lines.push(`2. 連莊號：${result.streakAnalysis}`);
+    if (result.diagonalAnalysis) lines.push(`3. 斜連交會點：${result.diagonalAnalysis}`);
+    if (result.deadNumbers) lines.push(`4. 死碼排除：${result.deadNumbers}`);
+    if (result.coldAnalysis) lines.push(`5. 冷號回補：${result.coldAnalysis}`);
+    if (result.trendAnalysis) lines.push(`6. 趨勢分析：${result.trendAnalysis}`);
+    if (result.coreConclusion) lines.push(`7. 核心結論：${result.coreConclusion}`);
+    if (result.strategy) lines.push(`整體策略：${result.strategy}`);
     navigator.clipboard.writeText(lines.join("\n"));
     toast.success("分析報告已複製");
   };
 
-  // 組合所有分析內容為一段連續文字
-  const analysisLines: { icon: string; label: string; content: string }[] = [];
-  if (result.tailNote) {
-    analysisLines.push({ icon: "🔍", label: "尾數共振", content: result.tailNote });
-  }
+  // 組合 7 項分析內容
+  const analysisLines: { label: string; content: string }[] = [];
   if (result.hotAnalysis) {
-    analysisLines.push({ icon: "🔥", label: "強勢熱號", content: result.hotAnalysis });
+    analysisLines.push({ label: "1. 強勢熱號 + 尾數共振", content: result.hotAnalysis });
+  }
+  if (result.streakAnalysis) {
+    analysisLines.push({ label: "2. 連莊號分析", content: result.streakAnalysis });
+  }
+  if (result.diagonalAnalysis) {
+    analysisLines.push({ label: "3. 斜連交會點", content: result.diagonalAnalysis });
+  }
+  if (result.deadNumbers) {
+    analysisLines.push({ label: "4. 死碼排除", content: result.deadNumbers });
   }
   if (result.coldAnalysis) {
-    analysisLines.push({ icon: "❄️", label: "冷號回補", content: result.coldAnalysis });
+    analysisLines.push({ label: "5. 冷號回補", content: result.coldAnalysis });
   }
   if (result.trendAnalysis) {
-    analysisLines.push({ icon: "📈", label: "趨勢分析", content: result.trendAnalysis });
+    analysisLines.push({ label: "6. 區間分布趨勢", content: result.trendAnalysis });
   }
-  if (result.strategy) {
-    analysisLines.push({ icon: "🎯", label: "整體策略", content: result.strategy });
+  if (result.coreConclusion) {
+    analysisLines.push({ label: "7. 核心演算結論（5期策略）", content: result.coreConclusion });
+  }
+  // 若無 7 項分析（舊版統計方法），顯示 tailNote
+  if (analysisLines.length === 0 && result.tailNote) {
+    analysisLines.push({ label: "尾數共振", content: result.tailNote });
   }
 
   return (
@@ -116,17 +133,19 @@ export function AnalysisResultModal({
             </p>
           </div>
 
-          {/* 7項分析 - 一個框連續顯示 */}
+          {/* 7 項分析 - 一個框連續顯示 */}
           {analysisLines.length > 0 && (
             <div className="border border-border/40 rounded-lg overflow-hidden">
               <div className="px-3 py-2 bg-secondary/30 border-b border-border/30">
-                <p className="text-[10px] font-semibold text-muted-foreground">詳細演算分析</p>
+                <p className="text-[10px] font-semibold text-muted-foreground">
+                  詳細演算分析{analysisLines.length >= 7 ? "（7項）" : ""}
+                </p>
               </div>
               <div className="divide-y divide-border/20">
                 {analysisLines.map((item, idx) => (
                   <div key={idx} className="px-3 py-2">
                     <span className="text-[10px] font-semibold text-primary/80">
-                      {item.icon} {item.label}
+                      {item.label}
                     </span>
                     <p className="text-xs text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
                       {item.content}
@@ -134,6 +153,14 @@ export function AnalysisResultModal({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* 整體策略（若有） */}
+          {result.strategy && (
+            <div className="border border-yellow-500/20 rounded-lg px-3 py-2 bg-yellow-500/5">
+              <p className="text-[10px] font-semibold text-yellow-400 mb-1">整體選號策略</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{result.strategy}</p>
             </div>
           )}
 
