@@ -631,3 +631,10 @@
 - [x] 驗證通過後才顯示紅色閃爍小球（在 API Key 按鈕旁）
 - [x] 後端路由已支援新格式（不需修改）
 - [x] 撰寫 23 個 Vitest 測試驗證新設計功能，全部通過
+
+
+## API Key 驗證邏輯修復 (2026-03-16 v65)
+- [x] 查看 validateApiKey 函數和 saveApiKey 路由的完整邏輯
+- [x] 修正驗證邏輯： sk- Key 無 customBaseUrl 時跳過驗證直接儲存（第三方代理 Key）
+- [x] 修正 routers.ts 引入 validateCustomApiKey 和 validateGeminiKey
+- [x] 撰寫 14 個 Vitest 測試驗證修復邏輯，全部通過

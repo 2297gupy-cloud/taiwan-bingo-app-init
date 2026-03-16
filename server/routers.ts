@@ -52,7 +52,7 @@ import {
 import { aiApiKeys, drawRecords } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
-import { validateApiKey } from "./api-key-validator";
+import { validateApiKey, validateCustomApiKey, validateGeminiKey } from "./api-key-validator";
 import { manualCheckUserApiKey } from "./api-key-monitor";
 
 
@@ -433,21 +433,41 @@ export const appRouter = router({
         // 驗證 API Key
         const validationErrors: string[] = [];
         
-        // 如果有自定義 Base URL，使用它來驗證 Key
+        // 如果有自定義 Base URL，使用代理端點驗證 Key
         const customBaseUrl = input.customBaseUrl || undefined;
         const customModel = input.customModel || undefined;
         
         if (input.openaiKey) {
-          const validation = await validateApiKey(input.openaiKey, customBaseUrl, customModel);
-          if (!validation.valid) {
-            validationErrors.push(`API Key 驗證失敗：${validation.error}`);
+          if (customBaseUrl) {
+            // 有自訂 Base URL 時，使用代理端點驗證
+            const validation = await validateCustomApiKey(input.openaiKey, customBaseUrl, customModel);
+            if (!validation.valid) {
+              validationErrors.push(`API Key 驗證失敗：${validation.error}`);
+            }
+          } else if (input.openaiKey.startsWith("AIza")) {
+            // AIza 格式但放入 openaiKey 欄位（不應發生，但防御）
+            const validation = await validateGeminiKey(input.openaiKey);
+            if (!validation.valid) {
+              validationErrors.push(`API Key 驗證失敗：${validation.error}`);
+            }
           }
+          // 沒有 customBaseUrl 且是 sk- 格式：跳過驗證，直接儲存
+          // （第三方代理 Key 可能是 sk- 格式但不能用 OpenAI 端點驗證）
         }
         
         if (input.geminiKey) {
-          const validation = await validateApiKey(input.geminiKey, customBaseUrl, customModel);
-          if (!validation.valid) {
-            validationErrors.push(`Gemini Key 驗證失敗：${validation.error}`);
+          if (customBaseUrl) {
+            // 有自訂 Base URL 時，使用代理端點驗證
+            const validation = await validateCustomApiKey(input.geminiKey, customBaseUrl, customModel);
+            if (!validation.valid) {
+              validationErrors.push(`Gemini Key 驗證失敗：${validation.error}`);
+            }
+          } else {
+            // 沒有 customBaseUrl，用原生 Gemini API 驗證
+            const validation = await validateGeminiKey(input.geminiKey);
+            if (!validation.valid) {
+              validationErrors.push(`Gemini Key 驗證失敗：${validation.error}`);
+            }
           }
         }
         
