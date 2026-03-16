@@ -550,8 +550,18 @@ export default function AiStarPage() {
   // AI 分析 mutation
   const analyzeMutation = trpc.aiStar.analyze.useMutation({
     onSuccess: (data) => {
-      const keyType = data.usedLLM ? "用戶 APIKey" : "系統 Key";
-      toast.success(`${data.sourceHour}時段 AI 分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顆黃金球`);
+      if (data.llmError && !data.usedLLM) {
+        // LLM 失敗，回退到統計方法
+        const isApiKeyError = data.llmError.includes("401") || data.llmError.includes("invalid_api_key") || data.llmError.includes("Incorrect API key");
+        if (isApiKeyError) {
+          toast.warning(`⚠️ API Key 無效！已回退到統計方法分析。請到 API Key 設定更换有效的 Key。`);
+        } else {
+          toast.warning(`⚠️ AI 分析失敗，已回退到統計方法。錯誤：${data.llmError.substring(0, 60)}`);
+        }
+      } else {
+        const keyType = data.usedLLM ? "用戶 APIKey" : "系統 Key";
+        toast.success(`${data.sourceHour}時段 AI 分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顓黃金球`);
+      }
       refetchPredictions();
     },
     onError: (err) => {

@@ -310,6 +310,7 @@ export async function analyzeHourSlot(
   reasoning: string;
   sampleCount: number;
   usedLLM: boolean;
+  llmError?: string;
 }> {
   const database = await db();
 
@@ -339,6 +340,7 @@ export async function analyzeHourSlot(
   // 嘗試 LLM 分析
   let usedLLM = false;
   let result: { goldenBalls: number[]; reasoning: string };
+  let llmError: string | undefined;
 
   try {
     result = await analyzeWithLLM(drawsForAnalysis, sourceHour, userApiKey);
@@ -346,7 +348,9 @@ export async function analyzeHourSlot(
     const keyType = userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
     console.log(`[analyzeHourSlot] LLM 分析成功（${keyType}），時段 ${sourceHour}:`, result.goldenBalls);
   } catch (err) {
-    console.log(`[analyzeHourSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}`);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    llmError = errMsg;
+    console.log(`[analyzeHourSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}:`, errMsg);
     result = analyzeWithStats(drawsForAnalysis, sourceHour);
   }
 
@@ -354,6 +358,7 @@ export async function analyzeHourSlot(
     ...result,
     sampleCount: allDraws.length,
     usedLLM,
+    llmError,
   };
 }
 
@@ -849,6 +854,7 @@ export async function analyzeSuperPrizeSlot(dateStr: string, sourceHour: string,
   reasoning: string;
   sampleCount: number;
   usedLLM: boolean;
+  llmError?: string;
 }> {
   const database = await db();
   const allDraws = await database
@@ -862,16 +868,20 @@ export async function analyzeSuperPrizeSlot(dateStr: string, sourceHour: string,
   }
   const superNumbers = allDraws.map(d => d.superNumber as number).filter(n => n >= 1 && n <= 80);
   let usedLLM = false;
+  let llmError: string | undefined;
   let result: { candidateBalls: number[]; reasoning: string };
   try {
     result = await analyzeWithLLMSuperPrize(superNumbers, sourceHour, userApiKey);
     const keyType = userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
     console.log(`[analyzeSuperPrizeSlot] LLM 分析成功（${keyType}），時段 ${sourceHour}:`, result.candidateBalls);
     usedLLM = true;
-  } catch {
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    llmError = errMsg;
+    console.log(`[analyzeSuperPrizeSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}:`, errMsg);
     result = analyzeWithStatsSuperPrize(superNumbers);
   }
-  return { ...result, sampleCount: allDraws.length, usedLLM };
+  return { ...result, sampleCount: allDraws.length, usedLLM, llmError };
 }
 
 export async function getAiSuperPrizePredictions(dateStr: string) {
