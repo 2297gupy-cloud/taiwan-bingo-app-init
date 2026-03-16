@@ -90,9 +90,10 @@ export function getCountdown(): { minutes: number; seconds: number } {
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
   
-  // 開獎時間：07:05 ~ 23:55，每 5 分鐘一期
-  // 如果當前時間在 23:55 之後或 07:05 之前，倒數到隔天 07:05
-  if (hours < 7 || (hours === 7 && minutes < 5) || hours > 23 || (hours === 23 && minutes >= 55)) {
+  // 開獎時間：07:05 ~ 23:50，每 5 分鐘一期（共 204 期）
+  // 23:50 是最後一次開獎，之後倒數到隔天 07:05
+  // 如果當前時間在 23:50 之後或 07:05 之前，倒數到隔天 07:05
+  if (hours < 7 || (hours === 7 && minutes < 5) || hours > 23 || (hours === 23 && minutes >= 50)) {
     // 計算距離下一個開獎時間的秒數
     let targetDate = new Date();
     
