@@ -7,8 +7,9 @@ import { ApiKeyPanel } from "@/components/ApiKeyPanel";
 import {
   Loader2, Sparkles, Copy, CheckCircle2, XCircle, ChevronLeft, ChevronRight,
   CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, Settings,
-  BarChart3
+  BarChart3, Share2
 } from "lucide-react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -368,6 +369,7 @@ function SlotCard({
   dateStr: string;
   userApiKey?: { openaiKey: string | null; geminiKey: string | null };
 }) {
+  const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   // 每個卡片複製的是 source 時段的數據（前一個時段）
@@ -401,6 +403,16 @@ function SlotCard({
       toast.error("此時段尚無數據可複製");
     }
   }, [formattedData, slot.source, slot.target, slot.copyRange]);
+
+  const handleCopyToAnalyze = useCallback(() => {
+    if (formattedData?.text) {
+      const encodedData = encodeURIComponent(formattedData.text);
+      setLocation(`/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`);
+      toast.success("已複製到 AI演算，自動分析中...");
+    } else {
+      toast.error("此時段尚無數據可複製");
+    }
+  }, [formattedData, setLocation]);
 
   const longPress = useLongPress(handleCopy, 300);
 
@@ -447,6 +459,13 @@ function SlotCard({
               <Trash2 className="h-2.5 w-2.5" />
             </button>
           )}
+          <button
+            onClick={e => { e.stopPropagation(); handleCopyToAnalyze(); }}
+            className="h-3.5 w-3.5 flex items-center justify-center rounded hover:bg-blue-500/20 text-muted-foreground/30 hover:text-blue-400 transition-colors"
+            title="複製到 AI演算"
+          >
+            <Share2 className="h-2.5 w-2.5" />
+          </button>
           <div className="relative flex items-center">
             {copied ? (
               <ClipboardCheck className="h-3 w-3 text-green-400" />

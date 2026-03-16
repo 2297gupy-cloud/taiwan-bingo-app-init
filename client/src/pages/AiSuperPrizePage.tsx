@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { ApiKeyPanel } from "@/components/ApiKeyPanel";
 import {
   Loader2, Sparkles, Copy, CheckCircle2, XCircle, ChevronLeft, ChevronRight,
-  CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, BarChart3
+  CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, BarChart3, Share2
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
 // ============================================================
@@ -328,6 +329,7 @@ function SuperSlotCard({
   onDelete?: () => void;
   dateStr: string;
 }) {
+  const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
   const { data: formattedData } = trpc.aiSuperPrize.getHourData.useQuery(
     { dateStr, sourceHour: slot.source, copyRange: slot.copyRange },

@@ -782,6 +782,7 @@ function Footer() {
 
 // ============ Main Page ============
 export default function MainPage() {
+  type ActiveTab = 'live' | 'aipredict' | 'history' | 'aistar' | 'aisuperpri' | 'aianalyze';
   const [activeTab, setActiveTab] = useState<"live" | "ai" | "aistar" | "aisuper" | "aianalyze" | "history" | "stats">("live");
 
   const handleTabChange = (key: string) => {

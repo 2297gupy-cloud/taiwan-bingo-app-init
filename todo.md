@@ -659,3 +659,12 @@
 - [x] 前端新增 AiCustomAnalyzePage：貧入文字框 + AI 演算按鈕 + 7 項分析結果顯示
 - [x] 在 MainPage SectionTabs 新增「🧠 AI演算」標籤
 - [x] 撰寫 15 個 Vitest 測試驗證解析功能，全部通過
+
+
+## 時段卡片一鍵複製到 AI演算 (2026-03-16 v69)
+- [x] 在 AiStarPage 時段卡片上新增「複製到 AI演算」按鈕（Share2 icon）
+- [x] 在 AiSuperPrizePage 時段卡片上新增「複製到 AI演算」按鈕
+- [x] 修改 AiCustomAnalyzePage，支援 URL query 參數（rawData）自動貧入
+- [x] 修改 AiCustomAnalyzePage，支援 autoAnalyze query 參數自動分析
+- [x] 修改 MainPage，支援從其他標籤跳轉到 AI演算標籤並傳遞參數
+- [x] TypeScript 編譯無誤，開發伺器正常運作

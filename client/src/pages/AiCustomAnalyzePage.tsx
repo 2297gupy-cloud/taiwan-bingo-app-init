@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Brain, Sparkles, ChevronDown, ChevronUp, Copy, ClipboardPaste } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "wouter";
 import NumberBall from "@/components/NumberBall";
 
 const SAMPLE_DATA = `115014950
@@ -51,6 +52,7 @@ interface AnalysisResult {
 }
 
 export default function AiCustomAnalyzePage() {
+  const [searchParams] = useSearchParams();
   const [rawText, setRawText] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
@@ -68,6 +70,23 @@ export default function AiCustomAnalyzePage() {
       toast.error(`演算失敗：${err.message}`);
     },
   });
+
+  // 自動載入 URL 參數中的數據
+  useEffect(() => {
+    const data = searchParams.get("rawData");
+    const autoAnalyze = searchParams.get("autoAnalyze");
+    if (data) {
+      const decodedData = decodeURIComponent(data);
+      setRawText(decodedData);
+      if (autoAnalyze === "1") {
+        setTimeout(() => {
+          if (decodedData.trim()) {
+            analyzeMutation.mutate({ rawText: decodedData.trim() });
+          }
+        }, 800);
+      }
+    }
+  }, [searchParams]);
 
   const handleAnalyze = () => {
     if (!rawText.trim()) {
