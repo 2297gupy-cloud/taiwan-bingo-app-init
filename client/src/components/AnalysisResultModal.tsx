@@ -60,103 +60,119 @@ export function AnalysisResultModal({
     toast.success("分析報告已複製");
   };
 
-  // 組合 7 項分析內容
-  const analysisLines: { label: string; content: string }[] = [];
-  if (result.hotAnalysis) {
-    analysisLines.push({ label: "1. 強勢熱號 + 尾數共振", content: result.hotAnalysis });
-  }
-  if (result.streakAnalysis) {
-    analysisLines.push({ label: "2. 連莊號分析", content: result.streakAnalysis });
-  }
-  if (result.diagonalAnalysis) {
-    analysisLines.push({ label: "3. 斜連交會點", content: result.diagonalAnalysis });
-  }
-  if (result.deadNumbers) {
-    analysisLines.push({ label: "4. 死碼排除", content: result.deadNumbers });
-  }
-  if (result.coldAnalysis) {
-    analysisLines.push({ label: "5. 冷號回補", content: result.coldAnalysis });
-  }
-  if (result.trendAnalysis) {
-    analysisLines.push({ label: "6. 區間分布趨勢", content: result.trendAnalysis });
-  }
-  if (result.coreConclusion) {
-    analysisLines.push({ label: "7. 核心演算結論（5期策略）", content: result.coreConclusion });
-  }
-  // 若無 7 項分析（舊版統計方法），顯示 tailNote
-  if (analysisLines.length === 0 && result.tailNote) {
-    analysisLines.push({ label: "尾數共振", content: result.tailNote });
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-3">
         {/* 標題 */}
-        <DialogHeader className="mb-2 space-y-1.5">
+        <DialogHeader className="mb-2 space-y-1">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
             <DialogTitle className="text-sm font-bold">
               {title || "AI 分析報告"}
             </DialogTitle>
           </div>
-          <div className="space-y-1">
-            <p className="text-[10px] text-muted-foreground">
-              {sourceHour && targetHour && `${sourceHour}時 → ${targetHour}時`}
-              {result.sampleCount ? ` • ${result.sampleCount}期` : ""}
-            </p>
-            <div className="flex items-center gap-1.5">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold ${
-                usedAI 
-                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
-                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-              }`}>
-                {usedAI ? "🤖 AI 演算" : "📊 統計方法"}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 text-[10px]">
+            {sourceHour && targetHour && (
+              <span className="text-muted-foreground">{sourceHour}時 → {targetHour}時</span>
+            )}
+            {result.sampleCount && (
+              <span className="text-muted-foreground">• {result.sampleCount}期</span>
+            )}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold ${
+              usedAI 
+                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
+                : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+            }`}>
+              {usedAI ? "🤖 AI 演算" : "📊 統計方法"}
+            </span>
           </div>
         </DialogHeader>
 
-        {/* 單一框內容 */}
-        <div className="border border-border/40 rounded-lg overflow-hidden">
+        {/* 單一框內容 - 所有內容緊排 */}
+        <div className="border border-border/40 rounded-lg p-2.5 space-y-1.5 bg-background/50">
           {/* 黃金球 */}
-          <div className="px-3 py-2 bg-gradient-to-r from-yellow-500/15 to-amber-500/10 border-b border-border/30">
-            <p className="text-[10px] text-yellow-400 font-semibold mb-1.5">🎯 推薦黃金球</p>
-            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+          <div>
+            <p className="text-[10px] text-yellow-400 font-semibold mb-1">🎯 推薦黃金球</p>
+            <div className="flex items-center gap-1 flex-wrap mb-1">
               {result.goldenBalls.map((ball) => (
                 <div
                   key={ball}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 border border-yellow-300 shadow-sm"
+                  className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 border border-yellow-300 shadow-sm"
                 >
                   <span className="text-xs font-bold text-white">{ball}</span>
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-muted-foreground leading-relaxed">
+            <p className="text-[10px] text-muted-foreground leading-tight">
               {result.reasoning}
             </p>
           </div>
 
-          {/* 7 項分析 - 預設全部展開 */}
-          {analysisLines.length > 0 && (
-            <div className="divide-y divide-border/20">
-              {analysisLines.map((item, idx) => (
-                <div key={idx} className="px-3 py-1.5">
-                  <span className="text-[10px] font-semibold text-primary/80">
-                    {item.label}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
-                    {item.content}
-                  </p>
-                </div>
-              ))}
+          {/* 分隔線 */}
+          <div className="h-px bg-border/20" />
+
+          {/* 7 項分析 - 緊排顯示 */}
+          {result.hotAnalysis && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">1. 強勢熱號</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.hotAnalysis}</p>
             </div>
           )}
 
-          {/* 整體策略 */}
+          {result.streakAnalysis && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">2. 連莊號</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.streakAnalysis}</p>
+            </div>
+          )}
+
+          {result.diagonalAnalysis && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">3. 斜連交會點</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.diagonalAnalysis}</p>
+            </div>
+          )}
+
+          {result.deadNumbers && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">4. 死碼排除</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.deadNumbers}</p>
+            </div>
+          )}
+
+          {result.coldAnalysis && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">5. 冷號回補</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.coldAnalysis}</p>
+            </div>
+          )}
+
+          {result.trendAnalysis && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">6. 區間趨勢</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.trendAnalysis}</p>
+            </div>
+          )}
+
+          {result.coreConclusion && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">7. 核心演算結論</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.coreConclusion}</p>
+            </div>
+          )}
+
           {result.strategy && (
-            <div className="px-3 py-1.5 border-t border-border/20 bg-yellow-500/5">
-              <p className="text-[10px] font-semibold text-yellow-400 mb-0.5">整體策略</p>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">{result.strategy}</p>
+            <div>
+              <span className="text-[10px] font-semibold text-yellow-400">整體策略</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.strategy}</p>
+            </div>
+          )}
+
+          {/* 若無 7 項分析（舊版統計方法），顯示 tailNote */}
+          {!result.hotAnalysis && result.tailNote && (
+            <div>
+              <span className="text-[10px] font-semibold text-primary/80">尾數共振</span>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{result.tailNote}</p>
             </div>
           )}
         </div>
