@@ -92,18 +92,28 @@ export function AnalysisResultModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-3">
         {/* 標題 */}
-        <DialogHeader className="mb-2 space-y-1">
+        <DialogHeader className="mb-2 space-y-1.5">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
             <DialogTitle className="text-sm font-bold">
               {title || "AI 分析報告"}
             </DialogTitle>
           </div>
-          <p className="text-[10px] text-muted-foreground">
-            {sourceHour && targetHour && `${sourceHour}時 → ${targetHour}時`}
-            {result.sampleCount ? ` • ${result.sampleCount}期` : ""}
-            {" • "}{usedAI ? "AI演算" : "統計方法"}
-          </p>
+          <div className="space-y-1">
+            <p className="text-[10px] text-muted-foreground">
+              {sourceHour && targetHour && `${sourceHour}時 → ${targetHour}時`}
+              {result.sampleCount ? ` • ${result.sampleCount}期` : ""}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold ${
+                usedAI 
+                  ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
+                  : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+              }`}>
+                {usedAI ? "🤖 AI 演算" : "📊 統計方法"}
+              </span>
+            </div>
+          </div>
         </DialogHeader>
 
         {/* 單一框內容 */}
