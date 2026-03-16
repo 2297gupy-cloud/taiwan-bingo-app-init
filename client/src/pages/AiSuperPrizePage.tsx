@@ -503,6 +503,11 @@ export default function AiSuperPrizePage() {
       toast.error(`批量分析失敗：${err.message}`);
     },
   });
+  // 查詢用戶已儲存的 APIKey
+  const { data: userApiKey, refetch: refetchApiKey } = trpc.aiStar.getApiKey.useQuery(undefined, {
+    staleTime: 30000,
+  });
+
   // 取得格式化時段數據（用於複製））
   const { data: hourDataForCopy } = trpc.aiSuperPrize.getHourData.useQuery(
     { dateStr, sourceHour: effectiveSlot, copyRange: currentSlotInfo?.copyRange },
@@ -682,32 +687,42 @@ export default function AiSuperPrizePage() {
             </div>
             <div className="flex gap-2">
               {hourDataForCopy?.text && (
-                <button
-                  onClick={handleCopyData}
-                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
-                >
-                  <Copy className="h-3 w-3" />
-                  複製數據
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={handleCopyData}
+                    className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-red-400 transition-colors"
+                  >
+                    <Copy className="h-3 w-3" />
+                    複製數據
+                  </button>
+                  {userApiKey?.openaiKey || userApiKey?.geminiKey ? (
+                    <div className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 6px rgba(239, 68, 68, 0.8)" }} />
+                  ) : null}
+                </div>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => analyzeMutation.mutate({
-                  dateStr,
-                  sourceHour: effectiveSlot,
-                  targetHour: currentSlotInfo?.target || effectiveSlot,
-                })}
-                disabled={analyzeMutation.isPending}
-                className="gap-1 border border-red-500 text-xs px-2 py-1 h-7 hover:bg-red-500/10 font-semibold"
-              >
-                {analyzeMutation.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Brain className="h-3 w-3" />
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => analyzeMutation.mutate({
+                    dateStr,
+                    sourceHour: effectiveSlot,
+                    targetHour: currentSlotInfo?.target || effectiveSlot,
+                  })}
+                  disabled={analyzeMutation.isPending}
+                  className="gap-1 border border-red-500 text-xs px-2 py-1 h-7 hover:bg-red-500/10 font-semibold"
+                >
+                  {analyzeMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Brain className="h-3 w-3" />
+                  )}
+                  AI分析
+                </Button>
+                {currentPrediction && !currentPrediction.isManual && (userApiKey?.openaiKey || userApiKey?.geminiKey) && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }} />
                 )}
-                AI分析
-              </Button>
+              </div>
             </div>
           </div>
           {/* 超級獎候選球展示（10顆緊排） */}

@@ -490,3 +490,11 @@
 - [x] 後端：修改 batchAnalyzeSuperPrizeSlots 接受 userApiKey 參數
 - [x] 後端：修改 aiSuperPrize.batchAnalyze 路由使用 protectedProcedure 並讀取用戶 API Key
 - [x] 測試：撰寫 13 個單元測試驗證 API Key 格式檢測、類型判斷、函數簽名等，全部測試通過
+
+## AI 超級獎頁面 API Key 指示器 (2026-03-16 v49)
+- [x] 前端：檢查 AiSuperPrizePage 組件結構
+- [x] 前端：添加 useQuery 查詢用戶 API Key 狀態
+- [x] 前端：在「複製數據」按鈕旁添加紅色閃爍指示器
+- [x] 前端：在「AI 分析」按鈕旁添加紅色閃爍指示器
+- [x] 前端：當 API Key 存在時顯示指示器，清除時自動隱藏
+- [x] 測試：撰寫 20 個單元測試驗證指示器顯示邏輯、樣式、位置等，全部測試通過
