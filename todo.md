@@ -482,3 +482,11 @@
 - [x] 後端：修改 analyzeWithLLM 根據 API Key 格式自動判斷模型（sk-* = OpenAI，AIza* = Gemini）
 - [x] 後端：修改 analyzeHourSlot 和 routers.ts 的參數類型
 - [ ] 前端：合併 ApiKeyPanel 的 OpenAI 和 Gemini 欄位為統一的 API Key 欄位
+
+## AI 超級獎 API Key 自動模型切換 (2026-03-16 v48)
+- [x] 後端：修改 analyzeWithLLMSuperPrize 根據 API Key 格式自動判斷模型
+- [x] 後端：修改 analyzeSuperPrizeSlot 接受 userApiKey 參數
+- [x] 後端：修改 aiSuperPrize.analyze 路由使用 protectedProcedure 並讀取用戶 API Key
+- [x] 後端：修改 batchAnalyzeSuperPrizeSlots 接受 userApiKey 參數
+- [x] 後端：修改 aiSuperPrize.batchAnalyze 路由使用 protectedProcedure 並讀取用戶 API Key
+- [x] 測試：撰寫 13 個單元測試驗證 API Key 格式檢測、類型判斷、函數簽名等，全部測試通過

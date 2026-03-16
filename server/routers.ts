@@ -450,15 +450,24 @@ export const appRouter = router({
         return getAiSuperPrizePredictions(dateStr);
       }),
     /** AI 分析超級獎候選球（10顆） */
-    analyze: publicProcedure
+    analyze: protectedProcedure
       .input(z.object({
         dateStr: z.string().optional(),
         sourceHour: z.string(),
         targetHour: z.string(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour);
+        // 讀取用戶儲存的 APIKey
+        const db = await getDb();
+        let userApiKey: string | null | undefined;
+        if (db) {
+          const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
+          if (keyRows.length > 0) {
+            userApiKey = keyRows[0].openaiKey || keyRows[0].geminiKey || null;
+          }
+        }
+        const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, userApiKey);
         await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
         return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
       }),
@@ -509,11 +518,20 @@ export const appRouter = router({
         return getFormattedHourData(dateStr, input.sourceHour, input.copyRange);
       }),
     /** 批量分析所有時段的超級獎候選球 */
-    batchAnalyze: publicProcedure
+    batchAnalyze: protectedProcedure
       .input(z.object({ dateStr: z.string().optional() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        return batchAnalyzeSuperPrizeSlots(dateStr);
+        // 讀取用戶儲存的 APIKey
+        const db = await getDb();
+        let userApiKey: string | null | undefined;
+        if (db) {
+          const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
+          if (keyRows.length > 0) {
+            userApiKey = keyRows[0].openaiKey || keyRows[0].geminiKey || null;
+          }
+        }
+        return batchAnalyzeSuperPrizeSlots(dateStr, userApiKey);
       }),
   }),
 
