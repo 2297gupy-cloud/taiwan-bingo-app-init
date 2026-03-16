@@ -466,7 +466,7 @@ function SlotCard({
         </div>
       ) : drawsInHour > 0 ? (
         <div className="flex items-center justify-center py-0.5">
-          <span className="text-[10px] text-green-400/70 font-medium">{drawsInHour}期</span>
+          <span className="text-[10px] text-muted-foreground/50 font-medium">{drawsInHour}期</span>
         </div>
       ) : (
         <div className="flex items-center justify-center py-0.5">
