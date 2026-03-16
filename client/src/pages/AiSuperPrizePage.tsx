@@ -47,7 +47,7 @@ function parseNumbersFromText(text: string): number[] {
       result.push(n);
     }
   }
-  return result.slice(0, 10);
+  return result.slice(0, 20);
 }
 
 // ============================================================
