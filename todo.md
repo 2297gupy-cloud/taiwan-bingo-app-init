@@ -638,3 +638,24 @@
 - [x] 修正驗證邏輯： sk- Key 無 customBaseUrl 時跳過驗證直接儲存（第三方代理 Key）
 - [x] 修正 routers.ts 引入 validateCustomApiKey 和 validateGeminiKey
 - [x] 撰寫 14 個 Vitest 測試驗證修復邏輯，全部通過
+
+## AI 分析詳細資料增強 (2026-03-16 v66)
+- [ ] 查看目前 AI 分析的 prompt 和回傳格式
+- [ ] 增強 AI 分析 prompt，要求更詳細的統計資料和分析說明
+- [ ] 更新前端顯示，展示豐富的 AI 分析結果
+- [ ] 撰寫測試並儲存 Checkpoint
+
+## 專業賓果演算報告導入 AI 分析 (2026-03-16 v67)
+- [ ] 將 7 個專業演算要點寫入 analyzeWithLLM 的 prompt
+- [ ] 擴展 JSON schema：增加尾數共振、連莊號、斜連交會點、死碼排除、核心演算結論等欄位
+- [ ] 增強統計方法備用方案，支援尾數共振、連莊號、斜連交會點等演算
+- [ ] 更新前端顯示，展示完整的 7 項演算分析結果
+- [ ] 撰寫測試並儲存 Checkpoint
+
+## 貧入數據 AI 演算功能 (2026-03-16 v68)
+- [x] 設計資料輸入格式解析邏輯（支援複製的開獎數據格式）
+- [x] 後端新增 analyzeCustomDataFull 路由，執行 7 項專業演算
+- [x] 新增 parseRawDrawData 函數，支援台灣賓果演算報告格式
+- [x] 前端新增 AiCustomAnalyzePage：貧入文字框 + AI 演算按鈕 + 7 項分析結果顯示
+- [x] 在 MainPage SectionTabs 新增「🧠 AI演算」標籤
+- [x] 撰寫 15 個 Vitest 測試驗證解析功能，全部通過

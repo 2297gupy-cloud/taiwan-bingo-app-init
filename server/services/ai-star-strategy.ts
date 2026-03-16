@@ -88,10 +88,64 @@ function buildFrequencyAnalysis(
     .map(([num, count]) => ({ num: parseInt(num), count }))
     .sort((a, b) => b.count - a.count);
 
-  const topHot = sorted.slice(0, 5).map(item => `${String(item.num).padStart(2, "0")}(${item.count}次)`).join(", ");
-  const topCold = sorted.slice(-5).reverse().map(item => `${String(item.num).padStart(2, "0")}(${item.count}次)`).join(", ");
+  const topHot = sorted.slice(0, 8).map(item => `${String(item.num).padStart(2, "0")}(${item.count}次)`).join(", ");
+  const topCold = sorted.slice(-8).reverse().map(item => `${String(item.num).padStart(2, "0")}(${item.count}次)`).join(", ");
 
-  return `📊 頻率統計（${draws.length}期）\n熱號：${topHot}\n冷號：${topCold}`;
+  // 計算近 5 期趨勢
+  const recent5 = draws.slice(0, 5);
+  const recent5Freq: Record<number, number> = {};
+  for (const draw of recent5) {
+    for (const num of draw.numbers) {
+      recent5Freq[num] = (recent5Freq[num] || 0) + 1;
+    }
+  }
+  const recentHot = Object.entries(recent5Freq)
+    .map(([num, count]) => ({ num: parseInt(num), count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map(item => `${String(item.num).padStart(2, "0")}(${item.count}次)`).join(", ");
+
+  // 號碼區間分布（1-20, 21-40, 41-60, 61-80）
+  const zones = [0, 0, 0, 0];
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      if (num <= 20) zones[0]++;
+      else if (num <= 40) zones[1]++;
+      else if (num <= 60) zones[2]++;
+      else zones[3]++;
+    }
+  }
+  const totalNums = draws.length * 20;
+  const zonePct = zones.map(z => Math.round(z / totalNums * 100));
+
+  // 奇偶比例
+  let oddCount = 0, evenCount = 0;
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      if (num % 2 === 1) oddCount++; else evenCount++;
+    }
+  }
+  const oddPct = Math.round(oddCount / totalNums * 100);
+  const evenPct = 100 - oddPct;
+
+  // 追蹤期數（連續出現的號碼）
+  const streakNums: string[] = [];
+  for (const item of sorted.slice(0, 20)) {
+    const streak = draws.filter(d => d.numbers.includes(item.num)).length;
+    if (streak >= Math.ceil(draws.length * 0.6)) {
+      streakNums.push(`${String(item.num).padStart(2, "0")}(連續${streak}期)`);
+    }
+  }
+
+  return [
+    `📊 頻率統計（${draws.length}期樣本）`,
+    `熱號 TOP8：${topHot}`,
+    `冷號 BOTTOM8：${topCold}`,
+    `近 5 期熱號：${recentHot}`,
+    streakNums.length > 0 ? `高頻連續號：${streakNums.join(", ")}` : "",
+    `區間分布：1-20區(${zonePct[0]}%) | 21-40區(${zonePct[1]}%) | 41-60區(${zonePct[2]}%) | 61-80區(${zonePct[3]}%)`,
+    `奇偶比例：奇號 ${oddPct}% | 偶號 ${evenPct}%`,
+  ].filter(Boolean).join("\n");
 }
 
 /** 使用 LLM 智能分析開獎數據，推薦黃金球 */
@@ -108,25 +162,73 @@ async function analyzeWithLLM(
     return `第${idx + 1}期 [${d.time}]: ${nums}`;
   });
 
-  const dataText = drawLines.join("\n");
+  const dataText = drawLines.join("\n");  // 預先計算統計資料，將其嵌入 prompt
+  const freqMap: Record<number, number> = {};
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      freqMap[num] = (freqMap[num] || 0) + 1;
+    }
+  }
+  const sortedFreq = Object.entries(freqMap)
+    .map(([n, c]) => ({ num: parseInt(n), count: c }))
+    .sort((a, b) => b.count - a.count);
+  const hot8 = sortedFreq.slice(0, 8).map(x => `${String(x.num).padStart(2,'0')}(${x.count}次)`).join(', ');
+  const cold8 = sortedFreq.slice(-8).reverse().map(x => `${String(x.num).padStart(2,'0')}(${x.count}次)`).join(', ');
+  const recent5Freq: Record<number, number> = {};
+  for (const draw of draws.slice(0, 5)) {
+    for (const num of draw.numbers) {
+      recent5Freq[num] = (recent5Freq[num] || 0) + 1;
+    }
+  }
+  const recent5Hot = Object.entries(recent5Freq)
+    .map(([n, c]) => ({ num: parseInt(n), count: c }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map(x => `${String(x.num).padStart(2,'0')}(${x.count}次)`).join(', ');
+  const totalNums = draws.length * 20;
+  const zones = [0,0,0,0];
+  let oddCount = 0;
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      if (num <= 20) zones[0]++;
+      else if (num <= 40) zones[1]++;
+      else if (num <= 60) zones[2]++;
+      else zones[3]++;
+      if (num % 2 === 1) oddCount++;
+    }
+  }
+  const zonePct = zones.map(z => Math.round(z / totalNums * 100));
+  const oddPct = Math.round(oddCount / totalNums * 100);
 
   const prompt = `你是台灣賓果彩票分析專家。以下是台灣賓果 ${sourceHour}:00-${sourceHour}:55 時段最近 ${draws.length} 期開獎數據（每期從1-80中開出20個號碼）：
 
 ${dataText}
 
-請分析這些數據，找出規律，推薦 3 顆最有可能在下一個時段出現的「黃金球」號碼（1-80之間的整數）。
+預計統計資料：
+- 熱號 TOP8：${hot8}
+- 冷號 BOTTOM8：${cold8}
+- 近 5 期熱號：${recent5Hot}
+- 區間分布：1-20區(${zonePct[0]}%) | 21-40區(${zonePct[1]}%) | 41-60區(${zonePct[2]}%) | 61-80區(${zonePct[3]}%)
+- 奇偶比例：奇號 ${oddPct}% | 偶號 ${100-oddPct}%
+
+請分析這些數據，找出規律，推薦 3 顏最有可能在下一個時段出現的「黃金球」號碼（1-80之間的整數）。
 
 分析要點：
-1. 統計各號碼出現頻率
-2. 觀察近期趨勢（最近幾期的熱號）
-3. 考慮冷號回補可能性
-4. 注意號碼分布（大小、奇偶、區間分布）
+1. 統計各號碼出現頻率（熱號代表高機率）
+2. 觀察近 5 期趨勢（近期熱號更重要）
+3. 考慮冷號回補可能性（長期未出的號碼）
+4. 區間平衡度（小號區與大號區的平衡）
+5. 奇偶平衡
 
-請以 JSON 格式回應：
-{
+請以 JSON 格式回應，提供詳細分析：
+\{
   "goldenBalls": [數字1, 數字2, 數字3],
-  "reasoning": "簡短分析說明（50字以內）"
-}`;
+  "reasoning": "簡短結論（不超過 80 字）",
+  "hotAnalysis": "熱號分析：說明為何選擇熱號",
+  "coldAnalysis": "冷號分析：說明為何選擇冷號回補",
+  "trendAnalysis": "趨勢分析：近 5 期趨勢說明",
+  "strategy": "策略說明：整體選號策略"
+\}`;
 
   // 準備 LLM 請求參數
   const llmMessages = [
@@ -150,14 +252,30 @@ ${dataText}
           goldenBalls: {
             type: "array",
             items: { type: "integer" },
-            description: "推薦的3顆黃金球號碼，每個號碼在1-80之間",
+            description: "推薦的3顏黃金球號碼，每個號碼在1-80之間",
           },
           reasoning: {
             type: "string",
-            description: "分析說明",
+            description: "簡短結論（不超過 80 字）",
+          },
+          hotAnalysis: {
+            type: "string",
+            description: "熱號分析：說明為何選擇熱號",
+          },
+          coldAnalysis: {
+            type: "string",
+            description: "冷號分析：說明為何選擇冷號回補",
+          },
+          trendAnalysis: {
+            type: "string",
+            description: "趨勢分析：近 5 期趨勢說明",
+          },
+          strategy: {
+            type: "string",
+            description: "策略說明：整體選號策略",
           },
         },
-        required: ["goldenBalls", "reasoning"],
+        required: ["goldenBalls", "reasoning", "hotAnalysis", "coldAnalysis", "trendAnalysis", "strategy"],
         additionalProperties: false,
       },
     },
@@ -1126,4 +1244,417 @@ export async function batchAnalyzeSuperPrizeSlots(
     failed: failedCount,
     results,
   };
+}
+
+/**
+ * 解析複製的開獎數據文字
+ * 支援格式：
+ * 115014950
+ * 17:55  06 18 25 31 33 37 40 44 52 55 60 61 62 64 67 69 74 75 77 79  超級獎67  大  單
+ */
+export function parseRawDrawData(rawText: string): {
+  draws: { term: string; time: string; numbers: number[]; superNumber?: number }[];
+  parseErrors: string[];
+} {
+  const lines = rawText.split("\n").map(l => l.trim()).filter(Boolean);
+  const draws: { term: string; time: string; numbers: number[]; superNumber?: number }[] = [];
+  const parseErrors: string[] = [];
+
+  let currentTerm = "";
+  for (const line of lines) {
+    // 跳過分隔線
+    if (line.startsWith("---") || line.startsWith("===")) continue;
+    // 跳過標題行
+    if (line.includes("演算報告") || line.includes("報告日期") || line.includes("1.") || line.includes("2.") || line.includes("3.") || line.includes("4.") || line.includes("5.") || line.includes("6.") || line.includes("7.")) continue;
+
+    // 嘗試識別期號行（純數字，如 115014950）
+    if (/^\d{9,12}$/.test(line)) {
+      currentTerm = line;
+      continue;
+    }
+
+    // 嘗試識別開獎數據行（以時間開頭，如 17:55 或 17:55\t）
+    const timeMatch = line.match(/^(\d{1,2}:\d{2})\s+(.+)/);
+    if (timeMatch) {
+      const time = timeMatch[1];
+      const rest = timeMatch[2];
+
+      // 提取所有數字（1-80 範圍）
+      const allNums = rest.match(/\b(\d{1,2})\b/g)?.map(Number) || [];
+      const numbers = allNums.filter(n => n >= 1 && n <= 80);
+
+      // 嘗試提取超級獎號碼（「超級獎XX」格式）
+      const superMatch = rest.match(/超級獎(\d{1,2})/);
+      const superNumber = superMatch ? parseInt(superMatch[1]) : undefined;
+
+      if (numbers.length >= 10) {
+        draws.push({
+          term: currentTerm || `${time}`,
+          time,
+          numbers: numbers.slice(0, 20), // 最多取 20 個
+          superNumber,
+        });
+      } else {
+        parseErrors.push(`無法解析行：${line.substring(0, 50)}`);
+      }
+      continue;
+    }
+
+    // 嘗試識別純數字行（空格分隔的號碼）
+    const numsOnly = line.match(/^[\d\s]+$/);
+    if (numsOnly) {
+      const numbers = line.split(/\s+/).map(Number).filter(n => n >= 1 && n <= 80);
+      if (numbers.length >= 10) {
+        draws.push({
+          term: currentTerm || `row${draws.length + 1}`,
+          time: "",
+          numbers: numbers.slice(0, 20),
+        });
+      }
+    }
+  }
+
+  return { draws, parseErrors };
+}
+
+/**
+ * 分析自訂貼入的開獎數據，執行 7 項專業演算
+ * 1. 強勢熱門號 + 尾數共振偵測
+ * 2. 穩定連莊號（連續出現的號碼）
+ * 3. 斜連交會點（相鄰期的共同號碼趨勢）
+ * 4. 斜連跨度縮小 + 死碼排除
+ * 5. 冷號回補分析
+ * 6. 區間分布平衡
+ * 7. 核心演算結論（5期策略）
+ */
+export async function analyzeCustomData(
+  rawText: string,
+  userApiKey?: string | null,
+  customBaseUrl?: string | null,
+  customModel?: string | null
+): Promise<{
+  goldenBalls: number[];
+  reasoning: string;
+  hotAnalysis: string;
+  coldAnalysis: string;
+  trendAnalysis: string;
+  tailResonance: string;
+  streakAnalysis: string;
+  diagonalAnalysis: string;
+  deadNumbers: string;
+  coreConclusion: string;
+  strategy: string;
+  sampleCount: number;
+  usedLLM: boolean;
+  parseErrors: string[];
+}> {
+  // 解析原始數據
+  const { draws, parseErrors } = parseRawDrawData(rawText);
+
+  if (draws.length === 0) {
+    return {
+      goldenBalls: [],
+      reasoning: "無法解析輸入的數據，請確認格式正確",
+      hotAnalysis: "",
+      coldAnalysis: "",
+      trendAnalysis: "",
+      tailResonance: "",
+      streakAnalysis: "",
+      diagonalAnalysis: "",
+      deadNumbers: "",
+      coreConclusion: "",
+      strategy: "",
+      sampleCount: 0,
+      usedLLM: false,
+      parseErrors,
+    };
+  }
+
+  // 預計算統計資料
+  const freqMap: Record<number, number> = {};
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      freqMap[num] = (freqMap[num] || 0) + 1;
+    }
+  }
+  const sortedFreq = Object.entries(freqMap)
+    .map(([n, c]) => ({ num: parseInt(n), count: c }))
+    .sort((a, b) => b.count - a.count);
+
+  const hot8 = sortedFreq.slice(0, 8).map(x => `${String(x.num).padStart(2,'0')}(${x.count}次)`).join(', ');
+  const cold8 = sortedFreq.slice(-8).reverse().map(x => `${String(x.num).padStart(2,'0')}(${x.count}次)`).join(', ');
+
+  // 近 5 期熱號
+  const recent5 = draws.slice(0, 5);
+  const recent5Freq: Record<number, number> = {};
+  for (const draw of recent5) {
+    for (const num of draw.numbers) {
+      recent5Freq[num] = (recent5Freq[num] || 0) + 1;
+    }
+  }
+  const recent5Hot = Object.entries(recent5Freq)
+    .map(([n, c]) => ({ num: parseInt(n), count: c }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    .map(x => `${String(x.num).padStart(2,'0')}(${x.count}次)`).join(', ');
+
+  // 尾數共振（相同尾數的號碼出現頻率）
+  const tailFreq: Record<number, number> = {};
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      const tail = num % 10;
+      tailFreq[tail] = (tailFreq[tail] || 0) + 1;
+    }
+  }
+  const hotTails = Object.entries(tailFreq)
+    .sort((a, b) => parseInt(b[1].toString()) - parseInt(a[1].toString()))
+    .slice(0, 3)
+    .map(([tail, count]) => `尾數${tail}(${count}次)`)
+    .join(', ');
+
+  // 連莊號（在最近 3 期都出現的號碼）
+  const streakNums: number[] = [];
+  if (draws.length >= 3) {
+    const sets = draws.slice(0, 3).map(d => new Set(d.numbers));
+    for (let n = 1; n <= 80; n++) {
+      if (sets.every(s => s.has(n))) streakNums.push(n);
+    }
+  }
+  const streakDisplay = streakNums.length > 0
+    ? streakNums.map(n => String(n).padStart(2,'0')).join(', ')
+    : "無三連莊號";
+
+  // 二連莊（最近 2 期共同號碼）
+  const twoStreak: number[] = [];
+  if (draws.length >= 2) {
+    const set0 = new Set(draws[0].numbers);
+    const set1 = new Set(draws[1].numbers);
+    for (let n = 1; n <= 80; n++) {
+      if (set0.has(n) && set1.has(n)) twoStreak.push(n);
+    }
+  }
+  const twoStreakDisplay = twoStreak.length > 0
+    ? twoStreak.map(n => String(n).padStart(2,'0')).join(', ')
+    : "無二連莊號";
+
+  // 斜連交會點（相鄰期共同號碼的交叉趨勢）
+  const diagonalPoints: number[] = [];
+  if (draws.length >= 3) {
+    const pairFreq: Record<number, number> = {};
+    for (let i = 0; i < Math.min(draws.length - 1, 4); i++) {
+      const setA = new Set(draws[i].numbers);
+      const setB = new Set(draws[i+1].numbers);
+      for (let n = 1; n <= 80; n++) {
+        if (setA.has(n) && setB.has(n)) {
+          pairFreq[n] = (pairFreq[n] || 0) + 1;
+        }
+      }
+    }
+    Object.entries(pairFreq)
+      .filter(([, c]) => c >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .forEach(([n]) => diagonalPoints.push(parseInt(n)));
+  }
+  const diagonalDisplay = diagonalPoints.length > 0
+    ? diagonalPoints.map(n => String(n).padStart(2,'0')).join(', ')
+    : "無明顯斜連交會點";
+
+  // 死碼（最近 5 期都未出現的號碼）
+  const deadNums: number[] = [];
+  const recent5Set = new Set(recent5.flatMap(d => d.numbers));
+  for (let n = 1; n <= 80; n++) {
+    if (!recent5Set.has(n)) deadNums.push(n);
+  }
+  const deadDisplay = deadNums.slice(0, 10).map(n => String(n).padStart(2,'0')).join(', ');
+
+  // 區間分布
+  const totalNums = draws.length * 20;
+  const zones = [0,0,0,0];
+  let oddCount = 0;
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      if (num <= 20) zones[0]++;
+      else if (num <= 40) zones[1]++;
+      else if (num <= 60) zones[2]++;
+      else zones[3]++;
+      if (num % 2 === 1) oddCount++;
+    }
+  }
+  const zonePct = zones.map(z => Math.round(z / totalNums * 100));
+  const oddPct = Math.round(oddCount / totalNums * 100);
+
+  // 格式化開獎數據文字
+  const dataText = draws.map((d, idx) => {
+    const nums = d.numbers.map(n => String(n).padStart(2,'0')).join(' ');
+    const superStr = d.superNumber ? ` 超級獎${String(d.superNumber).padStart(2,'0')}` : '';
+    return `第${idx+1}期 [${d.time || d.term}]: ${nums}${superStr}`;
+  }).join('\n');
+
+  const prompt = `你是台灣賓果彩票專業數據演算專家。以下是用戶提供的開獎數據（${draws.length}期，每期從1-80中開出20個號碼）：
+
+${dataText}
+
+預計統計資料：
+- 熱號 TOP8：${hot8}
+- 冷號 BOTTOM8：${cold8}
+- 近 5 期熱號：${recent5Hot}
+- 熱尾數：${hotTails}
+- 三連莊號：${streakDisplay}
+- 二連莊號（最近2期共同）：${twoStreakDisplay}
+- 斜連交會點：${diagonalDisplay}
+- 近5期死碼（未出現）：${deadDisplay}
+- 區間分布：1-20區(${zonePct[0]}%) | 21-40區(${zonePct[1]}%) | 41-60區(${zonePct[2]}%) | 61-80區(${zonePct[3]}%)
+- 奇偶比例：奇號 ${oddPct}% | 偶號 ${100-oddPct}%
+
+請按照以下 7 個專業演算要點分析，推薦 3 顆最有可能在下一期出現的「黃金球」號碼（1-80之間的整數）：
+
+1. 強勢熱門號 + 尾數共振偵測（熱號中尾數相同的號碼有共振效應）
+2. 穩定連莊號（連續多期出現的號碼，捕捉剛起步的二連莊趨勢）
+3. 斜連交會點（相鄰期共同號碼的交叉趨勢，鎖定高機率落球區）
+4. 斜連跨度縮小 + 精準死碼排除（避開近期完全未出現的號碼）
+5. 冷號回補分析（長期未出現但統計上應該回補的號碼）
+6. 區間分布平衡（考慮各區間的比例平衡）
+7. 核心演算結論（5期策略：預計期數/推薦組合重點/策略邏輯）
+
+請以 JSON 格式回應，提供完整的 7 項分析：
+{
+  "goldenBalls": [數字1, 數字2, 數字3],
+  "reasoning": "核心結論（不超過 100 字）",
+  "hotAnalysis": "1. 強勢熱門號 + 尾數共振分析",
+  "streakAnalysis": "2. 連莊號分析（二連莊/三連莊趨勢）",
+  "diagonalAnalysis": "3. 斜連交會點分析",
+  "deadNumbers": "4. 死碼排除說明",
+  "coldAnalysis": "5. 冷號回補分析",
+  "trendAnalysis": "6. 區間分布趨勢分析",
+  "coreConclusion": "7. 核心演算結論（5期策略）：預計期數/推薦組合/策略邏輯",
+  "strategy": "整體選號策略說明"
+}`;
+
+  const llmMessages = [
+    {
+      role: "system" as const,
+      content: "你是台灣賓果彩票專業數據演算專家，擅長尾數共振、連莊號、斜連交會點等進階演算技術。請用繁體中文回應，並嚴格按照 JSON 格式輸出。",
+    },
+    { role: "user" as const, content: prompt },
+  ];
+
+  const llmResponseFormat = {
+    type: "json_schema" as const,
+    json_schema: {
+      name: "bingo_custom_analysis",
+      strict: true,
+      schema: {
+        type: "object",
+        properties: {
+          goldenBalls: { type: "array", items: { type: "integer" }, description: "推薦的3顆黃金球號碼" },
+          reasoning: { type: "string", description: "核心結論" },
+          hotAnalysis: { type: "string", description: "強勢熱門號 + 尾數共振分析" },
+          streakAnalysis: { type: "string", description: "連莊號分析" },
+          diagonalAnalysis: { type: "string", description: "斜連交會點分析" },
+          deadNumbers: { type: "string", description: "死碼排除說明" },
+          coldAnalysis: { type: "string", description: "冷號回補分析" },
+          trendAnalysis: { type: "string", description: "區間分布趨勢分析" },
+          coreConclusion: { type: "string", description: "核心演算結論（5期策略）" },
+          strategy: { type: "string", description: "整體選號策略" },
+        },
+        required: ["goldenBalls", "reasoning", "hotAnalysis", "streakAnalysis", "diagonalAnalysis", "deadNumbers", "coldAnalysis", "trendAnalysis", "coreConclusion", "strategy"],
+        additionalProperties: false,
+      },
+    },
+  };
+
+  try {
+    let response;
+    if (userApiKey) {
+      if (customBaseUrl) {
+        const cleanBaseUrl = customBaseUrl.replace(/\/+$/, "");
+        let endpoint = cleanBaseUrl;
+        if (!endpoint.endsWith("/chat/completions")) {
+          if (!endpoint.endsWith("/v1")) endpoint = endpoint + "/v1";
+          endpoint = endpoint + "/chat/completions";
+        }
+        const modelName = customModel || "gemini-2.0-flash-lite";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${userApiKey}` },
+          body: JSON.stringify({ model: modelName, messages: llmMessages, response_format: llmResponseFormat }),
+        });
+        if (!res.ok) throw new Error(`第三方 API 錯誤: ${res.status} ${await res.text()}`);
+        response = await res.json();
+      } else if (userApiKey.startsWith("sk-")) {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${userApiKey}` },
+          body: JSON.stringify({ model: "gpt-4o-mini", messages: llmMessages, response_format: llmResponseFormat }),
+        });
+        if (!res.ok) throw new Error(`OpenAI API 錯誤: ${res.status} ${await res.text()}`);
+        response = await res.json();
+      } else if (userApiKey.startsWith("AIza")) {
+        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${userApiKey}` },
+          body: JSON.stringify({ model: "gemini-2.0-flash", messages: llmMessages, response_format: llmResponseFormat }),
+        });
+        if (!res.ok) throw new Error(`Gemini API 錯誤: ${res.status} ${await res.text()}`);
+        response = await res.json();
+      } else {
+        throw new Error("無法識別的 API Key 格式");
+      }
+    } else {
+      response = await invokeLLM({ messages: llmMessages, response_format: llmResponseFormat });
+    }
+
+    const rawContent = response.choices?.[0]?.message?.content;
+    if (!rawContent) throw new Error("LLM 無回應");
+    const content = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
+    const parsed = JSON.parse(content);
+
+    const goldenBalls = (parsed.goldenBalls as number[])
+      .filter((n) => Number.isInteger(n) && n >= 1 && n <= 80)
+      .slice(0, 3)
+      .sort((a, b) => a - b);
+
+    return {
+      goldenBalls,
+      reasoning: parsed.reasoning || "AI 智能分析完成",
+      hotAnalysis: parsed.hotAnalysis || "",
+      coldAnalysis: parsed.coldAnalysis || "",
+      trendAnalysis: parsed.trendAnalysis || "",
+      tailResonance: hotTails,
+      streakAnalysis: parsed.streakAnalysis || "",
+      diagonalAnalysis: parsed.diagonalAnalysis || "",
+      deadNumbers: parsed.deadNumbers || "",
+      coreConclusion: parsed.coreConclusion || "",
+      strategy: parsed.strategy || "",
+      sampleCount: draws.length,
+      usedLLM: true,
+      parseErrors,
+    };
+  } catch (err) {
+    // 回退到統計方法
+    const hot3 = sortedFreq.slice(0, 2).map(x => x.num);
+    const cold1 = sortedFreq.slice(-5)[Math.floor(Math.random() * 5)].num;
+    const combined = [...hot3, cold1];
+    const unique: number[] = [];
+    for (const n of combined) { if (!unique.includes(n)) unique.push(n); }
+    const goldenBalls = unique.slice(0, 3).sort((a, b) => a - b);
+
+    return {
+      goldenBalls,
+      reasoning: `統計分析 ${draws.length} 期：熱號混合冷號策略（AI 分析失敗）`,
+      hotAnalysis: `熱號 TOP8：${hot8}`,
+      coldAnalysis: `冷號 BOTTOM8：${cold8}`,
+      trendAnalysis: `近 5 期熱號：${recent5Hot}`,
+      tailResonance: hotTails,
+      streakAnalysis: `三連莊：${streakDisplay}；二連莊：${twoStreakDisplay}`,
+      diagonalAnalysis: `斜連交會點：${diagonalDisplay}`,
+      deadNumbers: `近5期死碼：${deadDisplay}`,
+      coreConclusion: "AI 分析失敗，使用統計備用方案",
+      strategy: "混合冷熱號碼策略",
+      sampleCount: draws.length,
+      usedLLM: false,
+      parseErrors,
+    };
+  }
 }

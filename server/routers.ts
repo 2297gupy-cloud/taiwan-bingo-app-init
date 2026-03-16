@@ -48,6 +48,8 @@ import {
   deleteAiSuperPrizePrediction,
   getHourDrawsWithSuper,
   verifySuperPrizePrediction,
+  analyzeCustomData,
+  parseRawDrawData,
 } from "./services/ai-star-strategy";
 import { aiApiKeys, drawRecords } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
@@ -504,6 +506,34 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const dateStr = input.dateStr || getTodayDateStr();
         return getHourDrawsWithSuper(dateStr, input.targetHour);
+      }),
+    /** 貧入開獎數據進行 AI 演算（支援自訂數據） */
+    /** 貧入開獎數據進行 AI 演算（完整實現） */
+    analyzeCustomDataFull: publicProcedure
+      .input(z.object({
+        rawText: z.string().min(10, "請輸入開獎數據"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // 取得用戶 API Key
+        let userApiKey: string | null = null;
+        let customBaseUrl: string | null = null;
+        let customModel: string | null = null;
+        if (ctx.user) {
+          const database = await getDb();
+          if (database) {
+            const keyRecord = await database
+              .select()
+              .from(aiApiKeys)
+              .where(eq(aiApiKeys.userId, ctx.user.id))
+              .limit(1);
+            if (keyRecord.length > 0) {
+              userApiKey = keyRecord[0].openaiKey || keyRecord[0].geminiKey || null;
+              customBaseUrl = keyRecord[0].customBaseUrl || null;
+              customModel = keyRecord[0].customModel || null;
+            }
+          }
+        }
+        return analyzeCustomData(input.rawText, userApiKey, customBaseUrl, customModel);
       }),
   }),
   /** AI 超級獎預測 */
