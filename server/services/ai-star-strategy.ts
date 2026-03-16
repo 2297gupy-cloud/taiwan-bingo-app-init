@@ -155,7 +155,7 @@ async function analyzeWithLLM(
   userApiKey?: string | null,
   customBaseUrl?: string | null,
   customModel?: string | null
-): Promise<{ goldenBalls: number[]; reasoning: string; fullAnalysis?: string }> {
+): Promise<{ goldenBalls: number[]; reasoning: string; fullAnalysis?: string; hotAnalysis?: string; streakAnalysis?: string; diagonalAnalysis?: string; deadNumbers?: string; coldAnalysis?: string; trendAnalysis?: string; coreConclusion?: string; strategy?: string }> {
   // 格式化開獎數據
   const drawLines = draws.map((d, idx) => {
     const nums = d.numbers.map((n) => String(n).padStart(2, "0")).join(" ");
@@ -219,15 +219,21 @@ ${dataText}
 3. 考慮冷號回補可能性（長期未出的號碼）
 4. 區間平衡度（小號區與大號區的平衡）
 5. 奇偶平衡
+6. 連莊號（相鄰期數出現的號碼）
+7. 斜連交會點（對角線相鄰的號碼）
 
-請以 JSON 格式回應，提供詳細分析：
+請以 JSON 格式回應，提供詳細分析（7 項完整分析）：
 \{
   "goldenBalls": [數字1, 數字2, 數字3],
   "reasoning": "簡短結論（不超過 80 字）",
-  "hotAnalysis": "熱號分析：說明為何選擇熱號",
-  "coldAnalysis": "冷號分析：說明為何選擇冷號回補",
-  "trendAnalysis": "趨勢分析：近 5 期趨勢說明",
-  "strategy": "策略說明：整體選號策略"
+  "hotAnalysis": "1. 強勢熱號分析：說明 TOP3 熱號及其出現頻率",
+  "streakAnalysis": "2. 連莊號分析：相鄰期數出現的號碼及其規律",
+  "diagonalAnalysis": "3. 斜連交會點：對角線相鄰的號碼組合",
+  "deadNumbers": "4. 死碼排除：長期未出現的號碼（應避免）",
+  "coldAnalysis": "5. 冷號回補分析：說明為何選擇冷號回補",
+  "trendAnalysis": "6. 區間趨勢分析：近 5 期趨勢說明及區間分布",
+  "coreConclusion": "7. 核心演算結論（5期策略）：綜合上述 6 項分析，給出最終推薦策略",
+  "strategy": "整體選號策略：簡述選號邏輯"
 \}`;
 
   // 準備 LLM 請求參數
@@ -260,22 +266,38 @@ ${dataText}
           },
           hotAnalysis: {
             type: "string",
-            description: "熱號分析：說明為何選擇熱號",
+            description: "1. 強勢熱號分析",
+          },
+          streakAnalysis: {
+            type: "string",
+            description: "2. 連莊號分析",
+          },
+          diagonalAnalysis: {
+            type: "string",
+            description: "3. 斜連交會點",
+          },
+          deadNumbers: {
+            type: "string",
+            description: "4. 死碼排除",
           },
           coldAnalysis: {
             type: "string",
-            description: "冷號分析：說明為何選擇冷號回補",
+            description: "5. 冷號回補分析",
           },
           trendAnalysis: {
             type: "string",
-            description: "趨勢分析：近 5 期趨勢說明",
+            description: "6. 區間趨勢分析",
+          },
+          coreConclusion: {
+            type: "string",
+            description: "7. 核心演算結論（5期策略）",
           },
           strategy: {
             type: "string",
-            description: "策略說明：整體選號策略",
+            description: "整體選號策略",
           },
         },
-        required: ["goldenBalls", "reasoning", "hotAnalysis", "coldAnalysis", "trendAnalysis", "strategy"],
+        required: ["goldenBalls", "reasoning", "hotAnalysis", "streakAnalysis", "diagonalAnalysis", "deadNumbers", "coldAnalysis", "trendAnalysis", "coreConclusion", "strategy"],
         additionalProperties: false,
       },
     },
@@ -378,12 +400,25 @@ ${dataText}
 
     // 構建完整分析說明
     const frequencyAnalysis = buildFrequencyAnalysis(draws);
-    const fullAnalysis = `【完整分析過程】\n\n${frequencyAnalysis}\n\n【AI 推理結論】\n${parsed.reasoning || "AI 智能分析完成"}`;
+    const fullAnalysis = `【完整分析過程】
+
+${frequencyAnalysis}
+
+【AI 推理結論】
+${parsed.reasoning || "AI 智能分析完成"}`;
 
     return {
       goldenBalls: goldenBalls.sort((a, b) => a - b),
       reasoning: parsed.reasoning || "AI 智能分析完成",
       fullAnalysis: fullAnalysis,
+      hotAnalysis: parsed.hotAnalysis || "",
+      streakAnalysis: parsed.streakAnalysis || "",
+      diagonalAnalysis: parsed.diagonalAnalysis || "",
+      deadNumbers: parsed.deadNumbers || "",
+      coldAnalysis: parsed.coldAnalysis || "",
+      trendAnalysis: parsed.trendAnalysis || "",
+      coreConclusion: parsed.coreConclusion || "",
+      strategy: parsed.strategy || "",
     };
   } catch (err) {
     console.error("[analyzeWithLLM] LLM 分析失敗，回退到統計方法:", err instanceof Error ? err.message : String(err));
@@ -504,9 +539,9 @@ export async function analyzeHourSlot(
     numbers: d.numbers as number[],
   }));
 
-  // 嘗試 LLM 分析
+  // 試試 LLM 分析
   let usedLLM = false;
-  let result: { goldenBalls: number[]; reasoning: string };
+  let result: any = { goldenBalls: [], reasoning: "" };
   let llmError: string | undefined;
 
   try {
@@ -518,21 +553,23 @@ export async function analyzeHourSlot(
     const errMsg = err instanceof Error ? err.message : String(err);
     llmError = errMsg;
     console.log(`[analyzeHourSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}:`, errMsg);
-    result = analyzeWithStats(drawsForAnalysis, sourceHour);
+    const statsResult = analyzeWithStats(drawsForAnalysis, sourceHour);
+    result = { ...result, ...statsResult };
+    usedLLM = false;
   }
 
   let analysis7Items = {
-    hotAnalysis: "",
-    streakAnalysis: "",
-    diagonalAnalysis: "",
-    deadNumbers: "",
-    coldAnalysis: "",
-    trendAnalysis: "",
-    coreConclusion: "",
-    strategy: "",
+    hotAnalysis: result.hotAnalysis || "",
+    streakAnalysis: result.streakAnalysis || "",
+    diagonalAnalysis: result.diagonalAnalysis || "",
+    deadNumbers: result.deadNumbers || "",
+    coldAnalysis: result.coldAnalysis || "",
+    trendAnalysis: result.trendAnalysis || "",
+    coreConclusion: result.coreConclusion || "",
+    strategy: result.strategy || "",
   };
 
-  if (!usedLLM) {
+  if (!usedLLM && !analysis7Items.hotAnalysis) {
     const frequency: Record<number, number> = {};
     for (const draw of drawsForAnalysis) {
       for (const num of draw.numbers) {
