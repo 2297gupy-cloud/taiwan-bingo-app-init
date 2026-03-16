@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiKeyPanel } from "@/components/ApiKeyPanel";
+import { AnalysisResultModal } from "@/components/AnalysisResultModal";
 import {
   Loader2, Sparkles, Copy, CheckCircle2, XCircle, ChevronLeft, ChevronRight,
   CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, BarChart3, Share2
@@ -429,6 +430,8 @@ export default function AiSuperPrizePage() {
   const [manualText, setManualText] = useState("");
   const [parsedBalls, setParsedBalls] = useState<number[]>([]);
   const [showApiKeyPanel, setShowApiKeyPanel] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [modalResult, setModalResult] = useState<any>(null);
 
   // 查詢時段配置
   const { data: slotsData } = trpc.aiSuperPrize.getSlots.useQuery(undefined, {
