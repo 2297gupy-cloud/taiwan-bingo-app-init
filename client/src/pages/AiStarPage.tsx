@@ -407,12 +407,14 @@ function SlotCard({
       onClick={onSelect}
       {...longPress.handlers}
       className={cn(
-        "relative cursor-pointer rounded border p-1 transition-all select-none",
+        "relative cursor-pointer rounded transition-all select-none",
         isSelected
-          ? "border-amber-400/60 bg-amber-400/10 ring-1 ring-amber-400/30"
+          ? "border-2 border-amber-400/60 bg-amber-400/10 ring-1 ring-amber-400/30 p-1 shadow-md"
           : prediction
-            ? "border-green-500/20 bg-green-500/5 hover:border-green-500/40"
-            : "border-border/20 bg-secondary/20 hover:border-border/40"
+            ? "border-2 border-green-500/40 bg-green-500/10 hover:border-green-500/60 p-1 shadow-sm"
+            : drawsInHour > 0
+              ? "border border-border/40 bg-secondary/30 hover:border-border/60 p-1 shadow-sm"
+              : "border border-border/20 bg-secondary/10 hover:border-border/40 p-1"
       )}
     >
       {longPress.pressing && (
