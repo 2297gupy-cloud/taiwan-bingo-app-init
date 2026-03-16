@@ -596,9 +596,16 @@ export const appRouter = router({
             customModel = keyRows[0].customModel || null;
           }
         }
-        const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, userApiKey, customBaseUrl, customModel);
-        await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
-        return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
+        try {
+          const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, userApiKey, customBaseUrl, customModel);
+          await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
+          return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
+        } catch (err) {
+          console.error('[aiSuperPrize.analyze] Error:', err);
+          const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, null, null, null);
+          await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
+          return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
+        }
       }),
     /** 手動儲存超級獎候選球 */
     saveManual: publicProcedure
