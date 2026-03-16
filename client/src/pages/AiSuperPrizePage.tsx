@@ -491,7 +491,7 @@ export default function AiSuperPrizePage() {
         const keyType = data.usedLLM ? "用戶 APIKey" : "系統 Key";
         toast.success(`${data.sourceHour}時段 AI 分析完成 (${keyType})，推薦 ${data.candidateBalls.length} 顓超級獎候選球`);
       }
-      // 設定 modal 結果並顯示
+      // 只儲存結果，不自動彈出（用戶點擊「AI 推理說明」時才彈出）
       setModalResult({
         goldenBalls: data.candidateBalls || [],
         reasoning: data.reasoning || "",
@@ -509,7 +509,6 @@ export default function AiSuperPrizePage() {
         sourceHour: data.sourceHour,
         targetHour: data.targetHour,
       });
-      setShowAnalysisModal(true);
       refetchPredictions();
     },
     onError: (err) => {
@@ -786,9 +785,12 @@ export default function AiSuperPrizePage() {
                 </div>
               </div>
               {currentPrediction.reasoning && (
-                <p className="text-[10px] text-muted-foreground/70 text-center px-2">
-                  {currentPrediction.reasoning}
-                </p>
+                <button
+                  onClick={() => setShowAnalysisModal(true)}
+                  className="text-[10px] text-red-400/70 hover:text-red-400 text-center px-2 py-1 rounded hover:bg-red-500/5 transition-colors"
+                >
+                  📋 AI 推理說明
+                </button>
               )}
               <p className="text-[10px] text-muted-foreground/50 text-center">
                 數據 {currentSlotInfo?.copyRange || (effectiveSlot.padStart(2, "0") + "00~" + effectiveSlot.padStart(2, "0") + "55")} → 預測 {currentSlotInfo?.target.padStart(2, "0") || "??"}:00~{currentSlotInfo?.target.padStart(2, "0") || "??"}:55

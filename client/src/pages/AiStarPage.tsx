@@ -596,9 +596,8 @@ export default function AiStarPage() {
         const keyType = usedAI ? "AI 專業演算" : "統計方法";
         toast.success(`${data.sourceHour}時段分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顆黃金球`);
       }
-      // 設定 modal 結果並顯示
+      // 只儲存結果，不自動彈出（用戶點擊「AI 推理說明」時才彈出）
       setModalResult(data);
-      setShowAnalysisModal(true);
       refetchPredictions();
     },
     onError: (err) => {
@@ -900,16 +899,12 @@ export default function AiStarPage() {
                 </div>
               </div>
               {currentPrediction.reasoning && (
-                <details className="w-full">
-                  <summary className="cursor-pointer text-[10px] text-amber-400/70 hover:text-amber-400 text-center px-2 py-1 rounded hover:bg-amber-500/5 transition-colors">
-                    📋 AI 分析推理說明
-                  </summary>
-                  <div className="mt-2 p-2.5 rounded bg-secondary/30 border border-amber-500/20">
-                    <p className="text-[9px] text-muted-foreground/80 leading-relaxed whitespace-pre-wrap">
-                      {currentPrediction.reasoning}
-                    </p>
-                  </div>
-                </details>
+                <button
+                  onClick={() => setShowAnalysisModal(true)}
+                  className="w-full text-[10px] text-amber-400/70 hover:text-amber-400 text-center px-2 py-1 rounded hover:bg-amber-500/5 transition-colors"
+                >
+                  📋 AI 推理說明
+                </button>
               )}
               <p className="text-[10px] text-muted-foreground/50 text-center">
                 數據 {currentSlotInfo?.copyRange || (effectiveSlot.padStart(2, "0") + "00~" + effectiveSlot.padStart(2, "0") + "55")} → 預測 {currentSlotInfo?.target.padStart(2, "0") || "??"}:00~{currentSlotInfo?.target.padStart(2, "0") || "??"}:55
