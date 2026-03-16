@@ -467,10 +467,6 @@ function SlotCard({
             {prediction.isManual ? "手動" : "AI"}
           </span>
         </div>
-      ) : drawsInHour > 0 ? (
-        <div className="flex items-center justify-center py-0.5">
-          <span className="text-[10px] text-muted-foreground/50 font-medium">{drawsInHour}期</span>
-        </div>
       ) : (
         <div className="flex items-center justify-center py-0.5">
           <span className="text-[10px] text-muted-foreground/40">尚未分析</span>
