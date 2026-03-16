@@ -547,14 +547,48 @@ export async function analyzeHourSlot(
     const cold8 = sorted.slice(-8).reverse().map(x => `${String(x.num).padStart(2, "0")}(${x.count}次)`).join(", ");
     const recent5Hot = drawsForAnalysis.slice(0, 5).flatMap(d => d.numbers).filter((n, i, arr) => arr.indexOf(n) === i).slice(0, 5).join(", ");
     
+    const recent5Draws = drawsForAnalysis.slice(0, 5);
+    const recent5Freq: Record<number, number> = {};
+    for (const draw of recent5Draws) {
+      for (const num of draw.numbers) {
+        recent5Freq[num] = (recent5Freq[num] || 0) + 1;
+      }
+    }
+    const recent5Sorted = Object.entries(recent5Freq)
+      .map(([num, count]) => ({ num: parseInt(num), count }))
+      .sort((a, b) => b.count - a.count);
+    const recent5TopHot = recent5Sorted.slice(0, 3).map(x => String(x.num).padStart(2, "0")).join(", ");
+    
+    const streakMap: Record<number, number> = {};
+    for (let i = 0; i < recent5Draws.length - 1; i++) {
+      for (const num of recent5Draws[i].numbers) {
+        if (recent5Draws[i + 1].numbers.includes(num)) {
+          streakMap[num] = (streakMap[num] || 0) + 1;
+        }
+      }
+    }
+    const streakNums = Object.entries(streakMap)
+      .filter(([_, count]) => count > 0)
+      .map(([num, count]) => `${String(num).padStart(2, "0")}(${count}連)`)
+      .join(", ") || "無連莊";
+    
+    const allNums = new Set<number>();
+    for (let i = 1; i <= 80; i++) allNums.add(i);
+    for (const draw of recent5Draws) {
+      for (const num of draw.numbers) {
+        allNums.delete(num);
+      }
+    }
+    const deadNums = Array.from(allNums).slice(0, 5).map(n => String(n).padStart(2, "0")).join(", ");
+    
     analysis7Items = {
       hotAnalysis: `熱號 TOP8：${hot8}`,
-      streakAnalysis: "統計方法無連莊分析",
+      streakAnalysis: `5期連莊：${streakNums}`,
       diagonalAnalysis: "統計方法無斜連分析",
-      deadNumbers: "統計方法無死碼分析",
+      deadNumbers: `5期死碼（前5個）：${deadNums}`,
       coldAnalysis: `冷號 BOTTOM8：${cold8}`,
-      trendAnalysis: `近 5 期熱號：${recent5Hot}`,
-      coreConclusion: "統計分析完成，使用熱冷號混合策略",
+      trendAnalysis: `近 5 期熱號：${recent5Hot}\n5期TOP3熱號：${recent5TopHot}`,
+      coreConclusion: `5期策略：優先推薦 ${recent5TopHot}，搭配連莊號 ${streakNums.split("(")[0].trim()}，避開死碼 ${deadNums.split(",")[0]}`,
       strategy: "混合冷熱號碼策略",
     };
   }
