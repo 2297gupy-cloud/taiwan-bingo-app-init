@@ -1,7 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Copy, Sparkles } from "lucide-react";
+import { Copy, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface AnalysisResult {
   goldenBalls: number[];
@@ -39,6 +41,8 @@ export function AnalysisResultModal({
   sourceHour,
   targetHour,
 }: AnalysisResultModalProps) {
+  const [expanded, setExpanded] = useState(false);
+
   if (!result) return null;
 
   const usedAI = result.usedProfessionalAnalysis || result.usedLLM;
@@ -93,12 +97,9 @@ export function AnalysisResultModal({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-3">
         {/* 標題 */}
         <DialogHeader className="mb-2 space-y-1">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-            <DialogTitle className="text-sm font-bold">
-              {title || "AI 分析報告"}
-            </DialogTitle>
-          </div>
+          <DialogTitle className="text-sm font-bold">
+            {title || "AI 分析報告"}
+          </DialogTitle>
           <p className="text-[10px] text-muted-foreground">
             {sourceHour && targetHour && `${sourceHour}時 → ${targetHour}時`}
             {result.sampleCount ? ` • ${result.sampleCount}期` : ""}
@@ -106,9 +107,8 @@ export function AnalysisResultModal({
           </p>
         </DialogHeader>
 
-        {/* 單一框內容 */}
+        {/* 預設顯示：黃金球 + 推理說明 */}
         <div className="border border-border/40 rounded-lg overflow-hidden">
-          {/* 黃金球 */}
           <div className="px-3 py-2 bg-gradient-to-r from-yellow-500/15 to-amber-500/10 border-b border-border/30">
             <p className="text-[10px] text-yellow-400 font-semibold mb-1.5">🎯 推薦黃金球</p>
             <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
@@ -121,30 +121,55 @@ export function AnalysisResultModal({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* 推理說明 */}
+          <div className="px-3 py-2 border-b border-border/20">
+            <p className="text-[10px] font-semibold text-primary/80 mb-1">推理說明</p>
             <p className="text-[10px] text-muted-foreground leading-relaxed">
               {result.reasoning}
             </p>
           </div>
 
-          {/* 7 項分析 - 緊排在同一框 */}
+          {/* 展開/折疊詳細分析 */}
           {analysisLines.length > 0 && (
-            <div className="divide-y divide-border/20">
-              {analysisLines.map((item, idx) => (
-                <div key={idx} className="px-3 py-1.5">
-                  <span className="text-[10px] font-semibold text-primary/80">
-                    {item.label}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
-                    {item.content}
-                  </p>
+            <>
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full px-3 py-2 flex items-center justify-between hover:bg-secondary/20 transition-colors border-b border-border/20"
+              >
+                <span className="text-[10px] font-semibold text-primary/80">
+                  詳細演算分析 ({analysisLines.length}項)
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 text-muted-foreground transition-transform",
+                    expanded && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {/* 詳細分析內容 - 條件展開 */}
+              {expanded && (
+                <div className="divide-y divide-border/20">
+                  {analysisLines.map((item, idx) => (
+                    <div key={idx} className="px-3 py-1.5">
+                      <span className="text-[10px] font-semibold text-primary/80">
+                        {item.label}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
+                        {item.content}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
 
           {/* 整體策略 */}
           {result.strategy && (
-            <div className="px-3 py-1.5 border-t border-border/20 bg-yellow-500/5">
+            <div className="px-3 py-1.5 bg-yellow-500/5 border-t border-border/20">
               <p className="text-[10px] font-semibold text-yellow-400 mb-0.5">整體策略</p>
               <p className="text-[10px] text-muted-foreground leading-relaxed">{result.strategy}</p>
             </div>
