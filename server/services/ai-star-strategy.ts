@@ -462,6 +462,14 @@ export async function analyzeHourSlot(
   sampleCount: number;
   usedLLM: boolean;
   llmError?: string;
+  hotAnalysis?: string;
+  streakAnalysis?: string;
+  diagonalAnalysis?: string;
+  deadNumbers?: string;
+  coldAnalysis?: string;
+  trendAnalysis?: string;
+  coreConclusion?: string;
+  strategy?: string;
 }> {
   const database = await db();
 
@@ -479,6 +487,14 @@ export async function analyzeHourSlot(
       reasoning: "數據不足，使用預設推薦號碼",
       sampleCount: 0,
       usedLLM: false,
+      hotAnalysis: "無數據",
+      streakAnalysis: "無數據",
+      diagonalAnalysis: "無數據",
+      deadNumbers: "無數據",
+      coldAnalysis: "無數據",
+      trendAnalysis: "無數據",
+      coreConclusion: "無數據",
+      strategy: "無數據",
     };
   }
 
@@ -505,8 +521,47 @@ export async function analyzeHourSlot(
     result = analyzeWithStats(drawsForAnalysis, sourceHour);
   }
 
+  let analysis7Items = {
+    hotAnalysis: "",
+    streakAnalysis: "",
+    diagonalAnalysis: "",
+    deadNumbers: "",
+    coldAnalysis: "",
+    trendAnalysis: "",
+    coreConclusion: "",
+    strategy: "",
+  };
+
+  if (!usedLLM) {
+    const frequency: Record<number, number> = {};
+    for (const draw of drawsForAnalysis) {
+      for (const num of draw.numbers) {
+        frequency[num] = (frequency[num] || 0) + 1;
+      }
+    }
+    const sorted = Object.entries(frequency)
+      .map(([num, count]) => ({ num: parseInt(num), count }))
+      .sort((a, b) => b.count - a.count);
+    
+    const hot8 = sorted.slice(0, 8).map(x => `${String(x.num).padStart(2, "0")}(${x.count}次)`).join(", ");
+    const cold8 = sorted.slice(-8).reverse().map(x => `${String(x.num).padStart(2, "0")}(${x.count}次)`).join(", ");
+    const recent5Hot = drawsForAnalysis.slice(0, 5).flatMap(d => d.numbers).filter((n, i, arr) => arr.indexOf(n) === i).slice(0, 5).join(", ");
+    
+    analysis7Items = {
+      hotAnalysis: `熱號 TOP8：${hot8}`,
+      streakAnalysis: "統計方法無連莊分析",
+      diagonalAnalysis: "統計方法無斜連分析",
+      deadNumbers: "統計方法無死碼分析",
+      coldAnalysis: `冷號 BOTTOM8：${cold8}`,
+      trendAnalysis: `近 5 期熱號：${recent5Hot}`,
+      coreConclusion: "統計分析完成，使用熱冷號混合策略",
+      strategy: "混合冷熱號碼策略",
+    };
+  }
+
   return {
     ...result,
+    ...analysis7Items,
     sampleCount: allDraws.length,
     usedLLM,
     llmError,
