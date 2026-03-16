@@ -498,3 +498,14 @@
 - [x] 前端：在「AI 分析」按鈕旁添加紅色閃爍指示器
 - [x] 前端：當 API Key 存在時顯示指示器，清除時自動隱藏
 - [x] 測試：撰寫 20 個單元測試驗證指示器顯示邏輯、樣式、位置等，全部測試通過
+
+
+## API Key 設定面板統一化 (2026-03-16 v50)
+- [x] 前端：檢查 AiStarPage 中的 API Key 設定面板實現
+- [x] 前端：檢查 AiSuperPrizePage 中的 API Key 設定面板實現
+- [x] 前端：建立共用 ApiKeyPanel 元件（支持 OpenAI 和 Gemini Key）
+- [x] 前端：修改 AiStarPage 使用共用 ApiKeyPanel 元件
+- [x] 前端：修改 AiSuperPrizePage 使用共用 ApiKeyPanel 元件
+- [x] 前端：移除重複代碼，確保兩個頁面共用同一元件
+- [x] 測試：撰寫 38 個單元測試驗證元件結構、API Key 輸入、狀態管理、UI 狀態、按鈕功能、共用性等，全部測試通過
+- [x] 測試：驗證兩個頁面的 API Key 狀態同步

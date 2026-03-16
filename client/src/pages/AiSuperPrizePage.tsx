@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ApiKeyPanel } from "@/components/ApiKeyPanel";
 import {
   Loader2, Sparkles, Copy, CheckCircle2, XCircle, ChevronLeft, ChevronRight,
   CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, BarChart3
@@ -425,6 +426,7 @@ export default function AiSuperPrizePage() {
   const [verifySlot, setVerifySlot] = useState<string | null>(null);
   const [manualText, setManualText] = useState("");
   const [parsedBalls, setParsedBalls] = useState<number[]>([]);
+  const [showApiKeyPanel, setShowApiKeyPanel] = useState(false);
 
   // 查詢時段配置
   const { data: slotsData } = trpc.aiSuperPrize.getSlots.useQuery(undefined, {
@@ -589,6 +591,11 @@ export default function AiSuperPrizePage() {
               {predictions?.length || 0} 個已分析
             </span>
             <div className="ml-auto flex items-center gap-1">
+              <button
+                onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0">
+                API Key
+              </button>
               <a
                 href="https://gemini.google.com/app/a35bb8c4886f6949"
                 target="_blank"
