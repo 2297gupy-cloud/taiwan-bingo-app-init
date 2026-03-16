@@ -602,3 +602,15 @@
 - [x] 修正 API Key 讀取邏輯（確保讀取最新 Key）
 - [x] 修正 LLM 呼叫邏輯（確保使用新 Key）
 - [x] 測試修正結果
+
+
+## 第三方 API 代理服務支持 (2026-03-16 v62)
+- [x] 修改資料庫 schema 儲存自定義 API 端點和模型名稱（apiBaseUrl, modelName 欄位）
+- [x] 修改 analyzeWithLLM 和 analyzeWithLLMSuperPrize 支持 customBaseUrl 和 customModel 參數
+- [x] 修改 analyzeHourSlot 和 analyzeSuperPrizeSlot 函數傳遞自訂參數
+- [x] 修改 batchAnalyzeSuperPrizeSlots 函數支持自訂參數
+- [x] 修改 routers.ts 中 aiStar.analyze 路由讀取並傳遞 customBaseUrl 和 customModel
+- [x] 修改 routers.ts 中 aiSuperPrize.analyze 路由讀取並傳遞 customBaseUrl 和 customModel
+- [x] 修改 routers.ts 中 aiSuperPrize.batchAnalyze 路由讀取並傳遞 customBaseUrl 和 customModel
+- [x] 更新前端 ApiKeyPanel 添加 API Base URL 和模型名稱輸入欄位（進階設定展開區塊）
+- [x] 撰寫 22 個 Vitest 測試驗證第三方 API 代理功能，全部通過

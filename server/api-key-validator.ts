@@ -143,18 +143,84 @@ export async function validateGeminiKey(apiKey: string): Promise<{
 }
 
 /**
- * 驗證 API Key（自動判斷類型）
+ * 驗證自定義 Base URL 的 API Key（第三方代理服務）
  */
-export async function validateApiKey(apiKey: string): Promise<{
+export async function validateCustomApiKey(apiKey: string, baseUrl: string, model?: string): Promise<{
   valid: boolean;
   error?: string;
-  keyType?: "openai" | "gemini";
+  keyType?: "openai" | "gemini" | "custom";
+}> {
+  if (!apiKey) {
+    return { valid: false, error: "API Key 不能為空" };
+  }
+
+  // 清理 Base URL，確保不以 / 結尾
+  const cleanBaseUrl = baseUrl.replace(/\/+$/, "");
+  // 確保端點包含 /v1/chat/completions
+  let endpoint = cleanBaseUrl;
+  if (!endpoint.endsWith("/chat/completions")) {
+    if (!endpoint.endsWith("/v1")) {
+      endpoint = endpoint + "/v1";
+    }
+    endpoint = endpoint + "/chat/completions";
+  }
+
+  const testModel = model || "gemini-2.0-flash-lite";
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: testModel,
+        messages: [{ role: "user", content: "Say 'ok' in one word." }],
+        max_tokens: 10,
+      }),
+    });
+
+    if (response.ok) {
+      return { valid: true, keyType: "custom" };
+    } else if (response.status === 401 || response.status === 403) {
+      return { valid: false, error: "API Key 無效或已過期" };
+    } else if (response.status === 429) {
+      return { valid: false, error: "API 請求過於頻繁，請稍後再試" };
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        valid: false,
+        error: `API 驗證失敗 (${response.status}): ${errorData.error?.message || "未知錯誤"}`,
+      };
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return {
+      valid: false,
+      error: `連線失敗：${errorMessage.substring(0, 100)}`,
+    };
+  }
+}
+
+/**
+ * 驗證 API Key（自動判斷類型）
+ */
+export async function validateApiKey(apiKey: string, customBaseUrl?: string, customModel?: string): Promise<{
+  valid: boolean;
+  error?: string;
+  keyType?: "openai" | "gemini" | "custom";
 }> {
   if (!apiKey) {
     return {
       valid: false,
       error: "API Key 不能為空",
     };
+  }
+
+  // 如果有自定義 Base URL，使用第三方代理驗證
+  if (customBaseUrl) {
+    return validateCustomApiKey(apiKey, customBaseUrl, customModel);
   }
 
   // 判斷 Key 類型

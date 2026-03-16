@@ -288,16 +288,20 @@ export const appRouter = router({
         const dateStr = input.dateStr || getTodayDateStr();
         const slot = HOUR_SLOTS.find(s => s.source === input.sourceHour);
         if (!slot) throw new Error("時段不存在");
-        // 讀取用戶儲存的 APIKey
+        // 讀取用戶儲存的 APIKey 和自訂設定
         const db = await getDb();
         let userApiKey: string | null | undefined;
+        let customBaseUrl: string | null | undefined;
+        let customModel: string | null | undefined;
         if (db) {
           const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
           if (keyRows.length > 0) {
             userApiKey = keyRows[0].openaiKey || keyRows[0].geminiKey || null;
+            customBaseUrl = keyRows[0].customBaseUrl || null;
+            customModel = keyRows[0].customModel || null;
           }
         }
-        const result = await analyzeHourSlot(dateStr, input.sourceHour, userApiKey);
+        const result = await analyzeHourSlot(dateStr, input.sourceHour, userApiKey, customBaseUrl, customModel);
         await saveAiStarPrediction(
           dateStr,
           input.sourceHour,
@@ -384,12 +388,14 @@ export const appRouter = router({
     /** 取得用戶 API Key 設定 */
     getApiKey: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
-      if (!db) return { openaiKey: null, geminiKey: null };
+      if (!db) return { openaiKey: null, geminiKey: null, customBaseUrl: null, customModel: null };
       const rows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
-      if (rows.length === 0) return { openaiKey: null, geminiKey: null };
+      if (rows.length === 0) return { openaiKey: null, geminiKey: null, customBaseUrl: null, customModel: null };
       return {
         openaiKey: rows[0].openaiKey ? rows[0].openaiKey.substring(0, 10) + "..." : null,
         geminiKey: rows[0].geminiKey ? rows[0].geminiKey.substring(0, 10) + "..." : null,
+        customBaseUrl: rows[0].customBaseUrl || null,
+        customModel: rows[0].customModel || null,
       };
     }),
 
@@ -417,6 +423,8 @@ export const appRouter = router({
       .input(z.object({
         openaiKey: z.string().optional(),
         geminiKey: z.string().optional(),
+        customBaseUrl: z.string().url().optional().or(z.literal("")),
+        customModel: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = await getDb();
@@ -425,15 +433,19 @@ export const appRouter = router({
         // 驗證 API Key
         const validationErrors: string[] = [];
         
+        // 如果有自定義 Base URL，使用它來驗證 Key
+        const customBaseUrl = input.customBaseUrl || undefined;
+        const customModel = input.customModel || undefined;
+        
         if (input.openaiKey) {
-          const validation = await validateApiKey(input.openaiKey);
+          const validation = await validateApiKey(input.openaiKey, customBaseUrl, customModel);
           if (!validation.valid) {
-            validationErrors.push(`OpenAI Key 驗證失敗：${validation.error}`);
+            validationErrors.push(`API Key 驗證失敗：${validation.error}`);
           }
         }
         
         if (input.geminiKey) {
-          const validation = await validateApiKey(input.geminiKey);
+          const validation = await validateApiKey(input.geminiKey, customBaseUrl, customModel);
           if (!validation.valid) {
             validationErrors.push(`Gemini Key 驗證失敗：${validation.error}`);
           }
@@ -449,12 +461,16 @@ export const appRouter = router({
           await db.update(aiApiKeys).set({
             openaiKey: input.openaiKey || null,
             geminiKey: input.geminiKey || null,
+            customBaseUrl: input.customBaseUrl || null,
+            customModel: input.customModel || null,
           }).where(eq(aiApiKeys.userId, ctx.user.id));
         } else {
           await db.insert(aiApiKeys).values({
             userId: ctx.user.id,
             openaiKey: input.openaiKey || null,
             geminiKey: input.geminiKey || null,
+            customBaseUrl: input.customBaseUrl || null,
+            customModel: input.customModel || null,
           });
         }
         return { success: true };
@@ -494,16 +510,20 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        // 讀取用戶儲存的 APIKey
+        // 讀取用戶儲存的 APIKey 和自訂設定
         const db = await getDb();
         let userApiKey: string | null | undefined;
+        let customBaseUrl: string | null | undefined;
+        let customModel: string | null | undefined;
         if (db) {
           const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
           if (keyRows.length > 0) {
             userApiKey = keyRows[0].openaiKey || keyRows[0].geminiKey || null;
+            customBaseUrl = keyRows[0].customBaseUrl || null;
+            customModel = keyRows[0].customModel || null;
           }
         }
-        const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, userApiKey);
+        const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, userApiKey, customBaseUrl, customModel);
         await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
         return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
       }),
@@ -558,16 +578,20 @@ export const appRouter = router({
       .input(z.object({ dateStr: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        // 讀取用戶儲存的 APIKey
+        // 讀取用戶儲存的 APIKey 和自訂設定
         const db = await getDb();
         let userApiKey: string | null | undefined;
+        let customBaseUrl: string | null | undefined;
+        let customModel: string | null | undefined;
         if (db) {
           const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
           if (keyRows.length > 0) {
             userApiKey = keyRows[0].openaiKey || keyRows[0].geminiKey || null;
+            customBaseUrl = keyRows[0].customBaseUrl || null;
+            customModel = keyRows[0].customModel || null;
           }
         }
-        return batchAnalyzeSuperPrizeSlots(dateStr, userApiKey);
+        return batchAnalyzeSuperPrizeSlots(dateStr, userApiKey, customBaseUrl, customModel);
       }),
   }),
 

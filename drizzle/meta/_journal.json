@@ -43,6 +43,13 @@
       "when": 1773569520476,
       "tag": "0005_majestic_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1773647618694,
+      "tag": "0006_grey_sphinx",
+      "breakpoints": true
     }
   ]
 }

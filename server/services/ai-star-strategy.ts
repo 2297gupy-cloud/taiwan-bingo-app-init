@@ -98,7 +98,9 @@ function buildFrequencyAnalysis(
 async function analyzeWithLLM(
   draws: { term: string; time: string; numbers: number[] }[],
   sourceHour: string,
-  userApiKey?: string | null
+  userApiKey?: string | null,
+  customBaseUrl?: string | null,
+  customModel?: string | null
 ): Promise<{ goldenBalls: number[]; reasoning: string; fullAnalysis?: string }> {
   // 格式化開獎數據
   const drawLines = draws.map((d, idx) => {
@@ -165,7 +167,36 @@ ${dataText}
     let response;
     // 根據 API Key 格式自動判斷模型
     if (userApiKey) {
-      if (userApiKey.startsWith("sk-")) {
+      if (customBaseUrl) {
+        // 第三方 API 代理服務（如向量引擎），使用自訂 Base URL
+        const cleanBaseUrl = customBaseUrl.replace(/\/+$/, "");
+        let endpoint = cleanBaseUrl;
+        if (!endpoint.endsWith("/chat/completions")) {
+          if (!endpoint.endsWith("/v1")) {
+            endpoint = endpoint + "/v1";
+          }
+          endpoint = endpoint + "/chat/completions";
+        }
+        const modelName = customModel || "gemini-2.0-flash-lite";
+        const customPayload = {
+          model: modelName,
+          messages: llmMessages,
+          response_format: llmResponseFormat,
+        };
+        const customRes = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userApiKey}`,
+          },
+          body: JSON.stringify(customPayload),
+        });
+        if (!customRes.ok) {
+          const errText = await customRes.text();
+          throw new Error(`第三方 API 錯誤: ${customRes.status} ${errText}`);
+        }
+        response = await customRes.json();
+      } else if (userApiKey.startsWith("sk-")) {
         // OpenAI Key
         const openaiPayload = {
           model: "gpt-4o-mini",
@@ -304,7 +335,9 @@ function analyzeWithStats(
 export async function analyzeHourSlot(
   dateStr: string,
   sourceHour: string,
-  userApiKey?: string | null
+  userApiKey?: string | null,
+  customBaseUrl?: string | null,
+  customModel?: string | null
 ): Promise<{
   goldenBalls: number[];
   reasoning: string;
@@ -343,9 +376,9 @@ export async function analyzeHourSlot(
   let llmError: string | undefined;
 
   try {
-    result = await analyzeWithLLM(drawsForAnalysis, sourceHour, userApiKey);
+    result = await analyzeWithLLM(drawsForAnalysis, sourceHour, userApiKey, customBaseUrl, customModel);
     usedLLM = true;
-    const keyType = userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
+    const keyType = customBaseUrl ? `第三方代理(${customModel || 'gemini-2.0-flash-lite'})` : userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
     console.log(`[analyzeHourSlot] LLM 分析成功（${keyType}），時段 ${sourceHour}:`, result.goldenBalls);
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -738,7 +771,9 @@ import { aiSuperPrizePredictions } from "../../drizzle/schema";
 async function analyzeWithLLMSuperPrize(
   superNumbers: number[],
   sourceHour: string,
-  userApiKey?: string | null
+  userApiKey?: string | null,
+  customBaseUrl?: string | null,
+  customModel?: string | null
 ): Promise<{ candidateBalls: number[]; reasoning: string }> {
   const dataText = superNumbers.map((n, i) => `第${i + 1}期: ${String(n).padStart(2, "0")}`).join("\n");
   const prompt = `你是台灣賓果彩票超級獎分析專家。以下是台灣賓果 ${sourceHour}:00-${sourceHour}:55 時段最近 ${superNumbers.length} 期的超級獎號碼（bullEyeTop，1-80之間）：\n${dataText}\n請分析這些超級獎號碼的規律，推薦 10 顆最有可能在下一個時段出現的超級獎候選號碼（1-80之間的整數）。\n請以 JSON 格式回應：\n{\n  "candidateBalls": [數字1, 數字2, ..., 數字10],\n  "reasoning": "簡短分析說明（50字以內）"\n}`;
@@ -769,7 +804,36 @@ async function analyzeWithLLMSuperPrize(
     let response;
     // 根據 API Key 格式自動判斷模型
     if (userApiKey) {
-      if (userApiKey.startsWith("sk-")) {
+      if (customBaseUrl) {
+        // 第三方 API 代理服務（如向量引擎），使用自訂 Base URL
+        const cleanBaseUrl = customBaseUrl.replace(/\/+$/, "");
+        let endpoint = cleanBaseUrl;
+        if (!endpoint.endsWith("/chat/completions")) {
+          if (!endpoint.endsWith("/v1")) {
+            endpoint = endpoint + "/v1";
+          }
+          endpoint = endpoint + "/chat/completions";
+        }
+        const modelName = customModel || "gemini-2.0-flash-lite";
+        const customPayload = {
+          model: modelName,
+          messages: llmMessages,
+          response_format: llmResponseFormat,
+        };
+        const customRes = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${userApiKey}`,
+          },
+          body: JSON.stringify(customPayload),
+        });
+        if (!customRes.ok) {
+          const errText = await customRes.text();
+          throw new Error(`第三方 API 錯誤: ${customRes.status} ${errText}`);
+        }
+        response = await customRes.json();
+      } else if (userApiKey.startsWith("sk-")) {
         // OpenAI Key
         const openaiPayload = {
           model: "gpt-4o-mini",
@@ -849,7 +913,13 @@ function analyzeWithStatsSuperPrize(superNumbers: number[]): { candidateBalls: n
   return { candidateBalls: combined, reasoning: `統計分析 ${superNumbers.length} 期超級獎：熱號混合冷號策略` };
 }
 
-export async function analyzeSuperPrizeSlot(dateStr: string, sourceHour: string, userApiKey?: string | null): Promise<{
+export async function analyzeSuperPrizeSlot(
+  dateStr: string,
+  sourceHour: string,
+  userApiKey?: string | null,
+  customBaseUrl?: string | null,
+  customModel?: string | null
+): Promise<{
   candidateBalls: number[];
   reasoning: string;
   sampleCount: number;
@@ -871,8 +941,8 @@ export async function analyzeSuperPrizeSlot(dateStr: string, sourceHour: string,
   let llmError: string | undefined;
   let result: { candidateBalls: number[]; reasoning: string };
   try {
-    result = await analyzeWithLLMSuperPrize(superNumbers, sourceHour, userApiKey);
-    const keyType = userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
+    result = await analyzeWithLLMSuperPrize(superNumbers, sourceHour, userApiKey, customBaseUrl, customModel);
+    const keyType = customBaseUrl ? `第三方代理(${customModel || 'gemini-2.0-flash-lite'})` : userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
     console.log(`[analyzeSuperPrizeSlot] LLM 分析成功（${keyType}），時段 ${sourceHour}:`, result.candidateBalls);
     usedLLM = true;
   } catch (err) {
@@ -1004,7 +1074,12 @@ export async function verifySuperPrizePrediction(
 }
 
 /** 批量分析所有時段的超級獎候選球 */
-export async function batchAnalyzeSuperPrizeSlots(dateStr: string, userApiKey?: string | null): Promise<{
+export async function batchAnalyzeSuperPrizeSlots(
+  dateStr: string,
+  userApiKey?: string | null,
+  customBaseUrl?: string | null,
+  customModel?: string | null
+): Promise<{
   total: number;
   success: number;
   failed: number;
@@ -1020,7 +1095,7 @@ export async function batchAnalyzeSuperPrizeSlots(dateStr: string, userApiKey?: 
   let failedCount = 0;
   for (const slot of HOUR_SLOTS) {
     try {
-      const result = await analyzeSuperPrizeSlot(dateStr, slot.source, userApiKey);
+      const result = await analyzeSuperPrizeSlot(dateStr, slot.source, userApiKey, customBaseUrl, customModel);
       await saveAiSuperPrizePrediction(
         dateStr,
         slot.source,

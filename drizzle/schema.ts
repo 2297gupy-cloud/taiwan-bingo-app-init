@@ -250,6 +250,10 @@ export const aiApiKeys = mysqlTable("ai_api_keys", {
   openaiKey: varchar("openaiKey", { length: 255 }),
   /** Gemini API Key */
   geminiKey: varchar("geminiKey", { length: 255 }),
+  /** 自定義 API 端點（第三方代理服務 Base URL） */
+  customBaseUrl: varchar("customBaseUrl", { length: 512 }),
+  /** 自定義模型名稱（如 gemini-2.0-flash-lite） */
+  customModel: varchar("customModel", { length: 255 }),
   /** 創建時間 */
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   /** 更新時間 */
