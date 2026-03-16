@@ -171,30 +171,9 @@ async function tryRealAPIOrSimulate(): Promise<void> {
     }
   }
   
-  // 模擬模式：使用 MockLotteryScraper 生成新期數
-  // 確保即使 API 失敗也能持續顯示新期開獎
-  try {
-    const mockScraper = new MockLotteryScraper();
-    const mockDraw = mockScraper.generateNewDraw();
-    console.log(`[LiveDrawSimulator] Generated mock draw: ${mockDraw.drawNumber}`);
-    
-    // 轉換為 DrawRecord 格式並存入數據庫
-    const drawRecord: DrawRecord = {
-      drawNumber: mockDraw.drawNumber,
-      drawTime: mockDraw.drawTime,
-      numbers: mockDraw.numbers,
-      total: mockDraw.total,
-      bigSmall: mockDraw.bigSmall,
-      oddEven: mockDraw.oddEven,
-      superNumber: mockDraw.superNumber,
-      plate: mockDraw.plate,
-    };
-    
-    await insertDrawRecord(drawRecord);
-    lastGeneratedDrawNumber = mockDraw.drawNumber;
-  } catch (err) {
-    console.error(`[LiveDrawSimulator] Failed to generate mock draw:`, err);
-  }
+  // 模擬模式已停用，等待真實 API 數據
+  console.log(`[LiveDrawSimulator] Waiting for real API data, skipping simulation`);
+  // 不再使用模擬數據，確保顯示的都是真實台彩開獎數據
 }
 
 /**
