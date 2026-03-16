@@ -687,10 +687,13 @@ export default function AiStarPage() {
             </p>
             <button
               onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-amber-400 transition-colors"
+              className="relative flex items-center gap-1 text-[10px] text-muted-foreground hover:text-amber-400 transition-colors"
             >
               <Settings className="h-3 w-3" />
               API Key
+              {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 5px rgba(239,68,68,0.8)" }} />
+              )}
             </button>
           </div>
         </CardContent>

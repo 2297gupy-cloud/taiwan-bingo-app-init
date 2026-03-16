@@ -603,8 +603,11 @@ export default function AiSuperPrizePage() {
             <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0">
+                className="relative flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0">
                 API Key
+                {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 5px rgba(239,68,68,0.8)" }} />
+                )}
               </button>
               <a
                 href="https://gemini.google.com/app/a35bb8c4886f6949"

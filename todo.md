@@ -621,3 +621,13 @@
 - [x] 驗證後端 aiSuperPrize.analyze 和 aiSuperPrize.batchAnalyze 路由正確傳遞參數（已確認）
 - [x] 撰寫 21 個 Vitest 測試驗證 AI 超級獎第三方代理功能，全部通過
 - [x] 確認上游应用已支援第三方代理（後端已完整実現）
+
+
+## API Key 設定介面重新設計 (2026-03-16 v64)
+- [x] 查看現有 ApiKeyPanel 和相關後端路由
+- [x] 重新設計 ApiKeyPanel：單一輸入框支援所有類型 Key（sk-/AIza-/第三方代理）
+- [x] 新增更換 Key 功能（點擊「更換 Key」按鈕）
+- [x] 新增刪除 Key 功能（點擊「刪除 Key」按鈕）
+- [x] 驗證通過後才顯示紅色閃爍小球（在 API Key 按鈕旁）
+- [x] 後端路由已支援新格式（不需修改）
+- [x] 撰寫 23 個 Vitest 測試驗證新設計功能，全部通過
