@@ -369,6 +369,7 @@ function SlotCard({
   userApiKey?: { openaiKey: string | null; geminiKey: string | null };
 }) {
   const [copied, setCopied] = useState(false);
+  const [showFullAnalysis, setShowFullAnalysis] = useState(false);
   // 每個卡片複製的是 source 時段的數據（前一個時段）
   const { data: formattedData } = trpc.aiStar.getHourData.useQuery(
     { dateStr, sourceHour: slot.source, copyRange: slot.copyRange },
