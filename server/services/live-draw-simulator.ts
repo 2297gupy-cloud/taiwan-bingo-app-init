@@ -7,9 +7,10 @@
  */
 
 import { sql } from "drizzle-orm";
-import { getDb } from "../db";
-import { getLatestDraw } from "../db";
+import { getDb, getLatestDraw, insertDrawRecord } from "../db";
 import { getTaiwanDateStr, formatToROCDateTime, calcDrawTime, syncToday } from "./taiwan-lottery-api";
+import { MockLotteryScraper } from "./mock-lottery-scraper";
+import type { DrawRecord } from "./taiwan-lottery-scraper";
 
 // ============ 開獎時間表 ============
 
@@ -170,9 +171,30 @@ async function tryRealAPIOrSimulate(): Promise<void> {
     }
   }
   
-  // 模擬模式：不再自行產生期號，等待下次輪詢時 API 再試
-  // （避免展示錯誤的期號格式）
-  console.log(`[LiveDrawSimulator] Waiting for real API data, skipping simulation`);
+  // 模擬模式：使用 MockLotteryScraper 生成新期數
+  // 確保即使 API 失敗也能持續顯示新期開獎
+  try {
+    const mockScraper = new MockLotteryScraper();
+    const mockDraw = mockScraper.generateNewDraw();
+    console.log(`[LiveDrawSimulator] Generated mock draw: ${mockDraw.drawNumber}`);
+    
+    // 轉換為 DrawRecord 格式並存入數據庫
+    const drawRecord: DrawRecord = {
+      drawNumber: mockDraw.drawNumber,
+      drawTime: mockDraw.drawTime,
+      numbers: mockDraw.numbers,
+      total: mockDraw.total,
+      bigSmall: mockDraw.bigSmall,
+      oddEven: mockDraw.oddEven,
+      superNumber: mockDraw.superNumber,
+      plate: mockDraw.plate,
+    };
+    
+    await insertDrawRecord(drawRecord);
+    lastGeneratedDrawNumber = mockDraw.drawNumber;
+  } catch (err) {
+    console.error(`[LiveDrawSimulator] Failed to generate mock draw:`, err);
+  }
 }
 
 /**
