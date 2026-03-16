@@ -281,7 +281,21 @@ function analyzeWithStats(
   goldenBalls.sort((a, b) => a - b);
 
   const topHot = hotNumbers.map((n) => String(n).padStart(2, "0")).join(", ");
-  const reasoning = `統計分析 ${draws.length} 期 ${sourceHour}時段：熱號 ${topHot}，混合冷熱策略`;
+  const coldNumbers_display = coldNumbers.map((n) => String(n).padStart(2, "0")).join(", ");
+  
+  // 計算熱號的出現頻率
+  const hotFreqs = hotNumbers.map(n => frequency[n]);
+  const avgFreq = Math.round(hotFreqs.reduce((a, b) => a + b, 0) / hotFreqs.length);
+  
+  // 計算冷號的出現頻率
+  const coldFreqs = coldNumbers.map(n => frequency[n]);
+  const coldAvgFreq = coldFreqs.length > 0 ? Math.round(coldFreqs.reduce((a, b) => a + b, 0) / coldFreqs.length) : 0;
+  
+  const reasoning = `統計分析 ${draws.length} 期 ${sourceHour}時段：
+熱號：${topHot}（平均出現 ${avgFreq} 次）
+冷號：${coldNumbers_display}（平均出現 ${coldAvgFreq} 次）
+策略：混合冷熱號碼，熱號代表高概率，冷號代表回補機會
+推薦球號：${goldenBalls.map(n => String(n).padStart(2, "0")).join(", ")}`;
 
   return { goldenBalls, reasoning };
 }
