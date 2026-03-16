@@ -569,3 +569,12 @@
 - [x] 改進統計分析的詳細說明（添加熱號出現頻率、冷號出現頻率、推薦球號等信息）
 - [x] 改進超級獎統計分析說明（analyzeWithStatsSuperPrize 函數）
 - [x] 測試改進統計分析效果（開發伺服器正常運行，編譯無誤）
+
+
+## 用戶 API Key 時 AI 文案問題修復 (2026-03-16 v58)
+- [x] 查找使用用戶 API Key 時 AI 文案的問題（fullAnalysis 中缺少 API Key 類型信息）
+- [x] 檢查 AI 分析的文案生成邏輯（analyzeWithLLM 函數第 230-238 行）
+- [x] 檢查是否正確使用用戶 API Key 進行 LLM 分析（已確認正確使用）
+- [x] 修正 AI 分析文案（添加使用模型、分析時段、數據樣本等信息）
+- [x] 修正超級獎 AI 分析文案（analyzeWithLLMSuperPrize 函數）
+- [x] 測試 AI 分析效果（開發伺服器正常運行，編譯無誤）
