@@ -575,9 +575,12 @@ export default function AiStarPage() {
   // AI 分析 mutation
   const analyzeMutation = trpc.aiStar.analyze.useMutation({
     onSuccess: (data) => {
-      if (data.llmError && !data.usedLLM) {
+      // 檢查是否使用了專業演算或 LLM
+      const usedAI = (data as any).usedProfessionalAnalysis || (data as any).usedLLM;
+      const llmErr = (data as any).llmError;
+      if (llmErr && !usedAI) {
         // LLM 失敗，回退到統計方法
-        const isApiKeyError = data.llmError.includes("401") || data.llmError.includes("invalid_api_key") || data.llmError.includes("Incorrect API key");
+        const isApiKeyError = llmErr.includes("401") || llmErr.includes("invalid_api_key") || llmErr.includes("Incorrect API key");
         if (isApiKeyError) {
           toast.error(`❌ API Key 無效！已回退到統計方法分析。`, {
             action: {
@@ -587,11 +590,11 @@ export default function AiStarPage() {
             duration: 5000,
           });
         } else {
-          toast.warning(`⚠️ AI 分析失敗，已回退到統計方法。錯誤：${data.llmError.substring(0, 60)}`);
+          toast.warning(`⚠️ AI 分析失敗，已回退到統計方法。錯誤：${llmErr.substring(0, 60)}`);
         }
       } else {
-        const keyType = data.usedLLM ? "用戶 APIKey" : "系統 Key";
-        toast.success(`${data.sourceHour}時段 AI 分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顓黃金球`);
+        const keyType = usedAI ? "AI 專業演算" : "統計方法";
+        toast.success(`${data.sourceHour}時段分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顆黃金球`);
       }
       refetchPredictions();
     },

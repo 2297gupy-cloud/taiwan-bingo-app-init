@@ -705,3 +705,24 @@
 - [x] 在 AiStarPage 中集成 AnalysisResultModal
 - [x] 在 AiSuperPrizePage 中集成 AnalysisResultModal
 - [x] TypeScript 編譯無誤，開發伺服器正常運作
+
+
+## AI一星框架重新設計 (2026-03-16 v75)
+- [ ] 查看 AI一星頁面的現有分析流程和後端路由
+- [ ] 修改後端 aiStar.analyze 路由：有 API Key 時自動執行 7 項專業演算
+- [ ] 修改前端：有 API Key 時顯示完整分析報告（三顆黃金球 + 7 項說明）
+- [ ] 無 API Key 時使用原有統計方法
+- [ ] 測試並儲存 Checkpoint
+
+
+## AI 推理說明改為 7 項詳細分析 (2026-03-16 v76)
+- [ ] 查看 AI一星時段卡片中 AI 推理說明的現有顯示邏輯
+- [ ] 修改 AI 推理說明區塊，顯示 7 項詳細分析內容
+- [ ] 測試並儲存 Checkpoint
+
+
+## 7 項分析合併為一個框顯示 (2026-03-16 v77)
+- [ ] 修正 TypeScript 錯誤：移除 llmError 屬性引用
+- [ ] 修改 AnalysisResultModal：7 項分析合併為一個框連續顯示
+- [ ] 修改 AiCustomAnalyzePage：7 項分析合併為一個框連續顯示
+- [ ] 測試並儲存 Checkpoint

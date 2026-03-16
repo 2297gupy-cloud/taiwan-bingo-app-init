@@ -1,14 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import NumberBall from "@/components/NumberBall";
-import { Copy, ChevronUp, ChevronDown, X, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Copy, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface AnalysisResult {
   goldenBalls: number[];
   reasoning: string;
   usedLLM?: boolean;
+  usedProfessionalAnalysis?: boolean;
   sampleCount?: number;
   hotAnalysis?: string;
   coldAnalysis?: string;
@@ -35,160 +35,124 @@ export function AnalysisResultModal({
   sourceHour,
   targetHour,
 }: AnalysisResultModalProps) {
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    hotAnalysis: true,
-    coldAnalysis: false,
-    trendAnalysis: false,
-    strategy: false,
-  });
-
   if (!result) return null;
 
-  const toggleSection = (key: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
+  const usedAI = result.usedProfessionalAnalysis || result.usedLLM;
 
   const copyResult = () => {
-    const text = `🎯 推薦黃金球: ${result.goldenBalls.join(", ")}
-💡 ${result.reasoning}
-${result.hotAnalysis ? `\n🔥 強勢熱號: ${result.hotAnalysis}` : ""}
-${result.coldAnalysis ? `\n❄️ 冷號回補: ${result.coldAnalysis}` : ""}
-${result.trendAnalysis ? `\n📈 趨勢分析: ${result.trendAnalysis}` : ""}
-${result.strategy ? `\n🎯 整體策略: ${result.strategy}` : ""}`;
-    navigator.clipboard.writeText(text);
+    const lines = [
+      `🎯 推薦黃金球: ${result.goldenBalls.join(", ")}`,
+      `💡 ${result.reasoning}`,
+    ];
+    if (result.tailNote) lines.push(`🔍 尾數共振：${result.tailNote}`);
+    if (result.hotAnalysis) lines.push(`🔥 強勢熱號：${result.hotAnalysis}`);
+    if (result.coldAnalysis) lines.push(`❄️ 冷號回補：${result.coldAnalysis}`);
+    if (result.trendAnalysis) lines.push(`📈 趨勢分析：${result.trendAnalysis}`);
+    if (result.strategy) lines.push(`🎯 整體策略：${result.strategy}`);
+    navigator.clipboard.writeText(lines.join("\n"));
     toast.success("分析報告已複製");
   };
 
-  const analysisItems = [
-    {
-      key: "hotAnalysis",
-      label: "🔥 強勢熱號 + 尾數共振",
-      content: result.hotAnalysis,
-      highlight: true,
-      tailNote: result.tailNote,
-    },
-    {
-      key: "coldAnalysis",
-      label: "❄️ 冷號回補機會",
-      content: result.coldAnalysis,
-      highlight: false,
-    },
-    {
-      key: "trendAnalysis",
-      label: "📈 趨勢分析 & 區間分布",
-      content: result.trendAnalysis,
-      highlight: false,
-    },
-    {
-      key: "strategy",
-      label: "🎯 整體選號策略",
-      content: result.strategy,
-      highlight: true,
-    },
-  ];
+  // 組合所有分析內容為一段連續文字
+  const analysisLines: { icon: string; label: string; content: string }[] = [];
+  if (result.tailNote) {
+    analysisLines.push({ icon: "🔍", label: "尾數共振", content: result.tailNote });
+  }
+  if (result.hotAnalysis) {
+    analysisLines.push({ icon: "🔥", label: "強勢熱號", content: result.hotAnalysis });
+  }
+  if (result.coldAnalysis) {
+    analysisLines.push({ icon: "❄️", label: "冷號回補", content: result.coldAnalysis });
+  }
+  if (result.trendAnalysis) {
+    analysisLines.push({ icon: "📈", label: "趨勢分析", content: result.trendAnalysis });
+  }
+  if (result.strategy) {
+    analysisLines.push({ icon: "🎯", label: "整體策略", content: result.strategy });
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-3 border-b border-primary/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-yellow-400" />
-              <div>
-                <DialogTitle className="text-base font-bold">
-                  {title || "AI 專業演算分析報告"}
-                </DialogTitle>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {sourceHour && targetHour && `${sourceHour}時段數據 → 預測 ${targetHour}時段`}
-                  {result.sampleCount && ` • 分析 ${result.sampleCount} 期數據`}
-                  {result.usedLLM !== undefined && ` • ${result.usedLLM ? "AI 智能演算" : "統計備用方案"}`}
-                </p>
-              </div>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-0">
+        {/* 標題列 */}
+        <DialogHeader className="px-4 pt-4 pb-3 border-b border-primary/20 flex-row items-center justify-between space-y-0">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+            <div>
+              <DialogTitle className="text-sm font-bold leading-tight">
+                {title || "AI 專業演算分析報告"}
+              </DialogTitle>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {sourceHour && targetHour && `${sourceHour}時 → ${targetHour}時`}
+                {result.sampleCount ? ` • ${result.sampleCount}期` : ""}
+                {" • "}{usedAI ? "AI演算" : "統計方法"}
+              </p>
             </div>
-            <button
-              onClick={() => onOpenChange(false)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="text-muted-foreground hover:text-foreground transition-colors ml-2"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* 黃金球顯示 */}
-          <div className="bg-gradient-to-br from-primary/8 to-primary/3 rounded-lg p-4 border border-primary/20">
-            <p className="text-[10px] text-muted-foreground font-semibold mb-3">🎯 推薦黃金球</p>
-            <div className="flex items-center gap-3 mb-3">
+        <div className="px-4 py-3 space-y-3">
+          {/* 黃金球 */}
+          <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/5 rounded-lg p-3 border border-yellow-500/30">
+            <p className="text-[10px] text-yellow-400 font-semibold mb-2">🎯 推薦黃金球</p>
+            <div className="flex items-center gap-2 flex-wrap mb-2">
               {result.goldenBalls.map((ball) => (
-                <div key={ball} className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 border-2 border-yellow-300 shadow-lg">
-                  <span className="text-sm font-bold text-white">{ball}</span>
+                <div
+                  key={ball}
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 border-2 border-yellow-300 shadow-md"
+                >
+                  <span className="text-xs font-bold text-white">{ball}</span>
                 </div>
               ))}
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              💡 {result.reasoning}
+              {result.reasoning}
             </p>
-            {result.parseErrors && result.parseErrors.length > 0 && (
-              <p className="text-[10px] text-orange-400 mt-2">
-                ⚠ {result.parseErrors.length} 行解析失敗
-              </p>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-3 h-7 text-xs px-2"
-              onClick={copyResult}
-            >
-              <Copy className="w-3 h-3 mr-1" />
-              複製報告
-            </Button>
           </div>
 
-          {/* 7項詳細分析 */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground px-1">詳細演算分析</p>
-            {analysisItems.map((item) => (
-              <div
-                key={item.key}
-                className={`border rounded-lg overflow-hidden transition-colors ${
-                  item.highlight ? "border-primary/40 bg-primary/5" : "border-border/40 bg-background/40"
-                }`}
-              >
-                <button
-                  className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-background/60 transition-colors"
-                  onClick={() => toggleSection(item.key)}
-                >
-                  <span
-                    className={`text-xs font-semibold ${
-                      item.highlight ? "text-primary" : "text-foreground"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                  {expandedSections[item.key] ? (
-                    <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  ) : (
-                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  )}
-                </button>
-                {expandedSections[item.key] && (
-                  <div className="px-3 pb-2.5 pt-0 border-t border-border/20 bg-background/30">
-                    {item.tailNote && (
-                      <p className="text-[10px] text-primary/80 bg-primary/10 rounded px-2 py-1.5 mb-2">
-                        🔍 尾數共振：{item.tailNote}
-                      </p>
-                    )}
-                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {item.content || "（無資料）"}
+          {/* 7項分析 - 一個框連續顯示 */}
+          {analysisLines.length > 0 && (
+            <div className="border border-border/40 rounded-lg overflow-hidden">
+              <div className="px-3 py-2 bg-secondary/30 border-b border-border/30">
+                <p className="text-[10px] font-semibold text-muted-foreground">詳細演算分析</p>
+              </div>
+              <div className="divide-y divide-border/20">
+                {analysisLines.map((item, idx) => (
+                  <div key={idx} className="px-3 py-2">
+                    <span className="text-[10px] font-semibold text-primary/80">
+                      {item.icon} {item.label}
+                    </span>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
+                      {item.content}
                     </p>
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* 複製按鈕 */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs"
+            onClick={copyResult}
+          >
+            <Copy className="w-3 h-3 mr-1.5" />
+            複製分析報告
+          </Button>
+
+          {result.parseErrors && result.parseErrors.length > 0 && (
+            <p className="text-[10px] text-orange-400 text-center">
+              ⚠ {result.parseErrors.length} 行解析失敗
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

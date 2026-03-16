@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Brain, Sparkles, ChevronDown, ChevronUp, Copy, ClipboardPaste } from "lucide-react";
+import { Loader2, Brain, Sparkles, Copy, ClipboardPaste } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "wouter";
 import NumberBall from "@/components/NumberBall";
@@ -55,7 +55,7 @@ export default function AiCustomAnalyzePage() {
   const [searchParams] = useSearchParams();
   const [rawText, setRawText] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
 
   const analyzeMutation = trpc.aiStar.analyzeCustomDataFull.useMutation({
     onSuccess: (data) => {
@@ -134,10 +134,6 @@ export default function AiCustomAnalyzePage() {
     }
   };
 
-  const toggleSection = (key: string) => {
-    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const copyResult = () => {
     if (!result) return;
     const text = [
@@ -165,7 +161,7 @@ export default function AiCustomAnalyzePage() {
     { key: "dead", label: "4. 死碼排除", content: result.deadNumbers },
     { key: "cold", label: "5. 冷號回補分析", content: result.coldAnalysis },
     { key: "trend", label: "6. 區間分布趨勢", content: result.trendAnalysis },
-    { key: "core", label: "7. 核心演算結論（5期策略）", content: result.coreConclusion, highlight: true },
+    { key: "core", label: "7. 核心演算結論（5期策略）", content: result.coreConclusion },
   ] : [];
 
   return (
@@ -285,46 +281,31 @@ export default function AiCustomAnalyzePage() {
             </div>
           </CardHeader>
           
-          {/* 7項詳細分析 */}
-          <CardContent className="px-4 py-3 space-y-2">
-            {analysisItems.map((item) => (
-              <div
-                key={item.key}
-                className={`border rounded-lg overflow-hidden transition-colors ${
-                  item.highlight ? 'border-primary/40 bg-primary/5' : 'border-border/40 bg-background/40'
-                }`}
-              >
-                <button
-                  className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-background/60 transition-colors"
-                  onClick={() => toggleSection(item.key)}
-                >
-                  <span className={`text-xs font-semibold ${item.highlight ? 'text-primary' : 'text-foreground'}`}>
-                    {item.label}
-                  </span>
-                  {expandedSections[item.key]
-                    ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  }
-                </button>
-                {expandedSections[item.key] && (
-                  <div className="px-3 pb-2.5 pt-0 border-t border-border/20 bg-background/30">
+          {/* 7項詳細分析 - 一個框連續顯示 */}
+          <CardContent className="px-4 py-3">
+            <div className="border border-border/40 rounded-lg overflow-hidden">
+              <div className="px-3 py-2 bg-secondary/30 border-b border-border/30">
+                <p className="text-[10px] font-semibold text-muted-foreground">詳細演算分析（7項）</p>
+              </div>
+              <div className="divide-y divide-border/20">
+                {analysisItems.map((item) => (
+                  <div key={item.key} className="px-3 py-2">
+                    <span className="text-[10px] font-semibold text-primary/80">{item.label}</span>
                     {item.tailNote && (
-                      <p className="text-[10px] text-primary/80 bg-primary/10 rounded px-2 py-1.5 mb-2">
-                        🔍 尾數共振：{item.tailNote}
-                      </p>
+                      <p className="text-[10px] text-primary/70 mt-0.5">🔍 尾數共振：{item.tailNote}</p>
                     )}
-                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
                       {item.content || "（無資料）"}
                     </p>
                   </div>
-                )}
+                ))}
               </div>
-            ))}
+            </div>
           </CardContent>
-          
+
           {/* 整體策略 */}
           {result.strategy && (
-            <div className="border-t border-primary/20 px-4 py-3 bg-yellow-500/5 border-yellow-500/30">
+            <div className="border-t border-primary/20 px-4 py-3 bg-yellow-500/5">
               <p className="text-xs font-semibold text-yellow-400 mb-1">整體選號策略</p>
               <p className="text-xs text-muted-foreground leading-relaxed">{result.strategy}</p>
             </div>

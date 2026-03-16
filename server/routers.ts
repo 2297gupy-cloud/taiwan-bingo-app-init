@@ -303,6 +303,29 @@ export const appRouter = router({
             customModel = keyRows[0].customModel || null;
           }
         }
+        // 有 API Key 時，使用 7 項專業演算（analyzeCustomData）
+        if (userApiKey) {
+          const formatted = await getFormattedHourData(dateStr, input.sourceHour);
+          if (formatted.text) {
+            const customResult = await analyzeCustomData(formatted.text, userApiKey, customBaseUrl, customModel);
+            await saveAiStarPrediction(
+              dateStr,
+              input.sourceHour,
+              slot.target,
+              customResult.goldenBalls,
+              false,
+              customResult.reasoning
+            );
+            return {
+              ...customResult,
+              dateStr,
+              sourceHour: input.sourceHour,
+              targetHour: slot.target,
+              usedProfessionalAnalysis: true,
+            };
+          }
+        }
+        // 無 API Key 或無數據時，使用原有統計方法
         const result = await analyzeHourSlot(dateStr, input.sourceHour, userApiKey, customBaseUrl, customModel);
         await saveAiStarPrediction(
           dateStr,
