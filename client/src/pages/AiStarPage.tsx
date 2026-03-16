@@ -545,9 +545,13 @@ export default function AiStarPage() {
   const slots = slotsData?.slots || [];
   const currentSlot = slotsData?.currentSlot;
 
-  const effectiveSlot = selectedSlot || currentSlot?.hour || "15";
-  const currentPrediction = predictions?.find(p => p.sourceHour === effectiveSlot);
-  const currentSlotInfo = slots.find(s => s.source === effectiveSlot);
+  // 確保 effectiveSlot 是有效的 source 值（07-21），預設為 14
+  const effectiveSlot = selectedSlot || currentSlot?.hour || "14";
+  // 驗證 effectiveSlot 是否在 HOUR_SLOTS 中
+  const validSlot = slots.find(s => s.source === effectiveSlot);
+  const safeEffectiveSlot = validSlot ? effectiveSlot : (slots.length > 0 ? slots[0].source : "14");
+  const currentPrediction = predictions?.find(p => p.sourceHour === safeEffectiveSlot);
+  const currentSlotInfo = slots.find(s => s.source === safeEffectiveSlot);
 
   // 驗證時段：每個卡片的黃金球在同時段驗證（verifyHour = target）
   // 14時卡片 → verifyHour="14" → 驗證 14:00~14:55（即時顯示已開獎結果）
@@ -782,7 +786,7 @@ export default function AiStarPage() {
                     }
                     setManualText("");
                     setParsedBalls([]);
-                    setSelectedSlot(null);
+                    setSelectedSlot(safeEffectiveSlot);
                     setVerifySlot(null);
                     toast.success(`已清除所有時段球號`);
                   } catch {
@@ -812,7 +816,7 @@ export default function AiStarPage() {
               const pred = predictions?.find(p => p.sourceHour === slot.source);
               // isCurrent: 當前時間對應的卡片（比對 target 時段）
               const isCurrent = currentSlot?.hour === slot.target;
-              const isSelected = effectiveSlot === slot.source;
+                const isSelected = safeEffectiveSlot === slot.source;
               return (
                 <SlotCard
                   key={slot.source}
@@ -870,7 +874,7 @@ export default function AiStarPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => analyzeMutation.mutate({ dateStr, sourceHour: effectiveSlot })}
+                  onClick={() => analyzeMutation.mutate({ dateStr, sourceHour: safeEffectiveSlot })}
                   disabled={analyzeMutation.isPending}
                   className="gap-1 border border-amber-500 text-xs px-2 py-1 h-7 hover:bg-amber-500/10 font-semibold"
                 >
