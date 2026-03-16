@@ -614,3 +614,10 @@
 - [x] 修改 routers.ts 中 aiSuperPrize.batchAnalyze 路由讀取並傳遞 customBaseUrl 和 customModel
 - [x] 更新前端 ApiKeyPanel 添加 API Base URL 和模型名稱輸入欄位（進階設定展開區塊）
 - [x] 撰寫 22 個 Vitest 測試驗證第三方 API 代理功能，全部通過
+
+
+## AI 超級獎第三方代理服務支持 (2026-03-16 v63)
+- [x] 檢查 AiSuperPrizePage 前端頁面是否正確使用 customBaseUrl 和 customModel（發現前端沒有傳遞，但後端已支援）
+- [x] 驗證後端 aiSuperPrize.analyze 和 aiSuperPrize.batchAnalyze 路由正確傳遞參數（已確認）
+- [x] 撰寫 21 個 Vitest 測試驗證 AI 超級獎第三方代理功能，全部通過
+- [x] 確認上游应用已支援第三方代理（後端已完整実現）
