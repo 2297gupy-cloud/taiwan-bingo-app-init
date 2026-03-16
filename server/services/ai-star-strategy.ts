@@ -73,12 +73,33 @@ export function getTodayDateStr(): string {
   return utc8.toISOString().split("T")[0];
 }
 
+/** 構建頻率分析說明 */
+function buildFrequencyAnalysis(
+  draws: { term: string; time: string; numbers: number[] }[]
+): string {
+  const frequency: Record<number, number> = {};
+  for (const draw of draws) {
+    for (const num of draw.numbers) {
+      frequency[num] = (frequency[num] || 0) + 1;
+    }
+  }
+
+  const sorted = Object.entries(frequency)
+    .map(([num, count]) => ({ num: parseInt(num), count }))
+    .sort((a, b) => b.count - a.count);
+
+  const topHot = sorted.slice(0, 5).map(item => `${String(item.num).padStart(2, "0")}(${item.count}次)`).join(", ");
+  const topCold = sorted.slice(-5).reverse().map(item => `${String(item.num).padStart(2, "0")}(${item.count}次)`).join(", ");
+
+  return `📊 頻率統計（${draws.length}期）\n熱號：${topHot}\n冷號：${topCold}`;
+}
+
 /** 使用 LLM 智能分析開獎數據，推薦黃金球 */
 async function analyzeWithLLM(
   draws: { term: string; time: string; numbers: number[] }[],
   sourceHour: string,
   userApiKey?: string | null
-): Promise<{ goldenBalls: number[]; reasoning: string }> {
+): Promise<{ goldenBalls: number[]; reasoning: string; fullAnalysis?: string }> {
   // 格式化開獎數據
   const drawLines = draws.map((d, idx) => {
     const nums = d.numbers.map((n) => String(n).padStart(2, "0")).join(" ");
@@ -206,9 +227,14 @@ ${dataText}
 
     if (goldenBalls.length < 1) throw new Error("LLM 未返回有效號碼");
 
+    // 構建完整分析說明
+    const frequencyAnalysis = buildFrequencyAnalysis(draws);
+    const fullAnalysis = `【完整分析過程】\n\n${frequencyAnalysis}\n\n【AI 推理結論】\n${parsed.reasoning || "AI 智能分析完成"}`;
+
     return {
       goldenBalls: goldenBalls.sort((a, b) => a - b),
       reasoning: parsed.reasoning || "AI 智能分析完成",
+      fullAnalysis: fullAnalysis,
     };
   } catch (err) {
     console.error("[analyzeWithLLM] LLM 分析失敗，回退到統計方法:", err instanceof Error ? err.message : String(err));

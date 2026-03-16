@@ -358,6 +358,7 @@ function SlotCard({
   prediction?: {
     goldenBalls: number[];
     reasoning: string | null;
+    fullAnalysis?: string | null;
     isManual: boolean;
   };
   isCurrent: boolean;

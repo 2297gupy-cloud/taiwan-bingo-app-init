@@ -535,3 +535,14 @@
 - [x] 設計視覺層級方案：已分析卡片邊框 2px + shadow-sm，有開獎期數卡片邊框 1px + shadow-sm，未分析卡片邊框 1px
 - [x] 修改 SlotCard 元件：根據卡片狀態應用不同的邊框厚度、背景透明度、陰影樣式
 - [x] 測試視覺層級效果：開發伺服器正常運行，三種狀態的卡片視覺上易於區分
+
+
+## AI 分析推理說明完整演算展開 (2026-03-16 v54)
+- [x] 查找推理說明的現有實現位置（AiStarPage.tsx 第 855-865 行）
+- [x] 檢查 API 返回的完整分析數據結構（analyzeWithLLM 返回 fullAnalysis）
+- [x] 設計展開/收起機制（使用 HTML details/summary 元素）
+- [x] 後端：添加 buildFrequencyAnalysis 函數生成頻率統計說明
+- [x] 後端：修改 analyzeWithLLM 返回 fullAnalysis 包含完整分析過程
+- [x] 前端：修改 SlotCard 元件支持 fullAnalysis 字段
+- [x] 前端：修改推理說明展開部分顯示完整分析或簡短說明
+- [x] 測試：開發伺服器正常運行，編譯無誤
