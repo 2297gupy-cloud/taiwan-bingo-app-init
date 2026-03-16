@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Copy, X, Sparkles } from "lucide-react";
+import { Copy, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface AnalysisResult {
@@ -90,97 +90,83 @@ export function AnalysisResultModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-0">
-        {/* 標題列 */}
-        <DialogHeader className="px-4 pt-4 pb-3 border-b border-primary/20 flex-row items-center justify-between space-y-0">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-3">
+        {/* 標題 */}
+        <DialogHeader className="mb-2 space-y-1">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-            <div>
-              <DialogTitle className="text-sm font-bold leading-tight">
-                {title || "AI 專業演算分析報告"}
-              </DialogTitle>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {sourceHour && targetHour && `${sourceHour}時 → ${targetHour}時`}
-                {result.sampleCount ? ` • ${result.sampleCount}期` : ""}
-                {" • "}{usedAI ? "AI演算" : "統計方法"}
-              </p>
-            </div>
+            <DialogTitle className="text-sm font-bold">
+              {title || "AI 分析報告"}
+            </DialogTitle>
           </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground transition-colors ml-2"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <p className="text-[10px] text-muted-foreground">
+            {sourceHour && targetHour && `${sourceHour}時 → ${targetHour}時`}
+            {result.sampleCount ? ` • ${result.sampleCount}期` : ""}
+            {" • "}{usedAI ? "AI演算" : "統計方法"}
+          </p>
         </DialogHeader>
 
-        <div className="px-4 py-3 space-y-3">
+        {/* 單一框內容 */}
+        <div className="border border-border/40 rounded-lg overflow-hidden">
           {/* 黃金球 */}
-          <div className="bg-gradient-to-br from-yellow-500/10 to-amber-500/5 rounded-lg p-3 border border-yellow-500/30">
-            <p className="text-[10px] text-yellow-400 font-semibold mb-2">🎯 推薦黃金球</p>
-            <div className="flex items-center gap-2 flex-wrap mb-2">
+          <div className="px-3 py-2 bg-gradient-to-r from-yellow-500/15 to-amber-500/10 border-b border-border/30">
+            <p className="text-[10px] text-yellow-400 font-semibold mb-1.5">🎯 推薦黃金球</p>
+            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
               {result.goldenBalls.map((ball) => (
                 <div
                   key={ball}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 border-2 border-yellow-300 shadow-md"
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 border border-yellow-300 shadow-sm"
                 >
                   <span className="text-xs font-bold text-white">{ball}</span>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
               {result.reasoning}
             </p>
           </div>
 
-          {/* 7 項分析 - 一個框連續顯示 */}
+          {/* 7 項分析 - 緊排在同一框 */}
           {analysisLines.length > 0 && (
-            <div className="border border-border/40 rounded-lg overflow-hidden">
-              <div className="px-3 py-2 bg-secondary/30 border-b border-border/30">
-                <p className="text-[10px] font-semibold text-muted-foreground">
-                  詳細演算分析{analysisLines.length >= 7 ? "（7項）" : ""}
-                </p>
-              </div>
-              <div className="divide-y divide-border/20">
-                {analysisLines.map((item, idx) => (
-                  <div key={idx} className="px-3 py-2">
-                    <span className="text-[10px] font-semibold text-primary/80">
-                      {item.label}
-                    </span>
-                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
-                      {item.content}
-                    </p>
-                  </div>
-                ))}
-              </div>
+            <div className="divide-y divide-border/20">
+              {analysisLines.map((item, idx) => (
+                <div key={idx} className="px-3 py-1.5">
+                  <span className="text-[10px] font-semibold text-primary/80">
+                    {item.label}
+                  </span>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5 whitespace-pre-wrap">
+                    {item.content}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
 
-          {/* 整體策略（若有） */}
+          {/* 整體策略 */}
           {result.strategy && (
-            <div className="border border-yellow-500/20 rounded-lg px-3 py-2 bg-yellow-500/5">
-              <p className="text-[10px] font-semibold text-yellow-400 mb-1">整體選號策略</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{result.strategy}</p>
+            <div className="px-3 py-1.5 border-t border-border/20 bg-yellow-500/5">
+              <p className="text-[10px] font-semibold text-yellow-400 mb-0.5">整體策略</p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">{result.strategy}</p>
             </div>
-          )}
-
-          {/* 複製按鈕 */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full h-8 text-xs"
-            onClick={copyResult}
-          >
-            <Copy className="w-3 h-3 mr-1.5" />
-            複製分析報告
-          </Button>
-
-          {result.parseErrors && result.parseErrors.length > 0 && (
-            <p className="text-[10px] text-orange-400 text-center">
-              ⚠ {result.parseErrors.length} 行解析失敗
-            </p>
           )}
         </div>
+
+        {/* 複製按鈕 */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full h-7 text-xs mt-2"
+          onClick={copyResult}
+        >
+          <Copy className="w-3 h-3 mr-1" />
+          複製報告
+        </Button>
+
+        {result.parseErrors && result.parseErrors.length > 0 && (
+          <p className="text-[10px] text-orange-400 text-center mt-1">
+            ⚠ {result.parseErrors.length} 行解析失敗
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );
