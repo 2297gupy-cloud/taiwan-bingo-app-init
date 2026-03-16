@@ -406,13 +406,16 @@ function SlotCard({
 
   const handleCopyToAnalyze = useCallback(() => {
     if (formattedData?.text) {
+      // 使用 hash 方式傳遞大量數據，避免 URL 長度限制
       const encodedData = encodeURIComponent(formattedData.text);
-      setLocation(`/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`);
+      const url = `/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`;
+      // 直接導航到新 URL
+      window.location.href = url;
       toast.success("已複製到 AI演算，自動分析中...");
     } else {
       toast.error("此時段尚無數據可複製");
     }
-  }, [formattedData, setLocation]);
+  }, [formattedData]);
 
   const longPress = useLongPress(handleCopy, 300);
 

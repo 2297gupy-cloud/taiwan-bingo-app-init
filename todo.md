@@ -675,3 +675,10 @@
 - [x] 改進 AiStarPage 和 AiSuperPrizePage：toast.error + 「前往設定」按鈕
 - [x] 改進 AiCustomAnalyzePage：檢測 API Key 無效並顯示友善提示
 - [x] TypeScript 編譯無誤，開發伺服器正常運作
+
+
+## 修復一鍵複製到 AI演算功能 (2026-03-16 v71)
+- [x] 查看 handleCopyToAnalyze 函數實現（發現 setLocation 的 wouter hook 有瑕疵）
+- [x] 修復 AiStarPage 的 handleCopyToAnalyze：使用 window.location.href 直接導航
+- [x] 修復 AiSuperPrizePage 的 handleCopyToAnalyze
+- [x] TypeScript 編譯無誤，開發伺服器正常運作
