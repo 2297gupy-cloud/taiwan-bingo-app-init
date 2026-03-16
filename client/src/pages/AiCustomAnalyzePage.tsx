@@ -67,7 +67,14 @@ export default function AiCustomAnalyzePage() {
       }
     },
     onError: (err) => {
-      toast.error(`演算失敗：${err.message}`);
+      const isApiKeyError = err.message.includes("401") || err.message.includes("invalid_api_key") || err.message.includes("Incorrect API key");
+      if (isApiKeyError) {
+        toast.error(`❌ API Key 無效！請到 API Key 設定更换有效的 Key。`, {
+          duration: 5000,
+        });
+      } else {
+        toast.error(`演算失敗：${err.message}`);
+      }
     },
   });
 

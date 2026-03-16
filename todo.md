@@ -668,3 +668,10 @@
 - [x] 修改 AiCustomAnalyzePage，支援 autoAnalyze query 參數自動分析
 - [x] 修改 MainPage，支援從其他標籤跳轉到 AI演算標籤並傳遞參數
 - [x] TypeScript 編譯無誤，開發伺器正常運作
+
+
+## API Key 無效提示改進 (2026-03-16 v70)
+- [x] 查看目前 API Key 無效時的提示邏輯（在 AiStarPage、AiSuperPrizePage、AiCustomAnalyzePage）
+- [x] 改進 AiStarPage 和 AiSuperPrizePage：toast.error + 「前往設定」按鈕
+- [x] 改進 AiCustomAnalyzePage：檢測 API Key 無效並顯示友善提示
+- [x] TypeScript 編譯無誤，開發伺服器正常運作

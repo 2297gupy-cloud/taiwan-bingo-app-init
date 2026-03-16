@@ -474,7 +474,13 @@ export default function AiSuperPrizePage() {
       if (data.llmError && !data.usedLLM) {
         const isApiKeyError = data.llmError.includes("401") || data.llmError.includes("invalid_api_key") || data.llmError.includes("Incorrect API key");
         if (isApiKeyError) {
-          toast.warning(`⚠️ API Key 無效！已回退到統計方法分析。請到 API Key 設定更换有效的 Key。`);
+          toast.error(`❌ API Key 無效！已回退到統計方法分析。`, {
+            action: {
+              label: "前往設定",
+              onClick: () => setShowApiKeyPanel(true),
+            },
+            duration: 5000,
+          });
         } else {
           toast.warning(`⚠️ AI 分析失敗，已回退到統計方法。錯誤：${data.llmError.substring(0, 60)}`);
         }
