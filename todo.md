@@ -509,3 +509,14 @@
 - [x] 前端：移除重複代碼，確保兩個頁面共用同一元件
 - [x] 測試：撰寫 38 個單元測試驗證元件結構、API Key 輸入、狀態管理、UI 狀態、按鈕功能、共用性等，全部測試通過
 - [x] 測試：驗證兩個頁面的 API Key 狀態同步
+
+
+## API Key 有效性驗證 (2026-03-16 v51)
+- [x] 後端：設計 API Key 驗證邏輯（OpenAI 和 Gemini）
+- [x] 後端：實現 validateOpenaiKey 函數進行 OpenAI Key 驗證
+- [x] 後端：實現 validateGeminiKey 函數進行 Gemini Key 驗證
+- [x] 後端：在 aiStar.saveApiKey 路由中添加驗證邏輯
+- [x] 前端：修改 ApiKeyPanel 元件改進錯誤處理和按鈕文字
+- [x] 前端：在儲存時顯示驗證進度和結果
+- [x] 前端：驗證失敗時顯示具體錯誤提示
+- [x] 測試：撰寫 24 個單元測試驗證 API Key 驗證邏輯，全部測試通過

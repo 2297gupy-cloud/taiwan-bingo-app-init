@@ -52,6 +52,8 @@ import {
 import { aiApiKeys, drawRecords } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
+import { validateApiKey } from "./api-key-validator";
+
 
 export const appRouter = router({
   system: systemRouter,
@@ -408,6 +410,29 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const db = await getDb();
         if (!db) throw new Error("資料庫不可用");
+        
+        // 驗證 API Key
+        const validationErrors: string[] = [];
+        
+        if (input.openaiKey) {
+          const validation = await validateApiKey(input.openaiKey);
+          if (!validation.valid) {
+            validationErrors.push(`OpenAI Key 驗證失敗：${validation.error}`);
+          }
+        }
+        
+        if (input.geminiKey) {
+          const validation = await validateApiKey(input.geminiKey);
+          if (!validation.valid) {
+            validationErrors.push(`Gemini Key 驗證失敗：${validation.error}`);
+          }
+        }
+        
+        // 如果驗證失敗，拋出錯誤
+        if (validationErrors.length > 0) {
+          throw new Error(validationErrors.join("; "));
+        }
+        
         const existing = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
         if (existing.length > 0) {
           await db.update(aiApiKeys).set({

@@ -34,14 +34,17 @@ export function ApiKeyPanel({
 
   const saveKey = trpc.aiStar.saveApiKey.useMutation({
     onSuccess: () => {
-      toast.success("API Key 已儲存");
+      toast.success("API Key 已驗證並儲存成功");
       setEditingOpenai(false);
       setEditingGemini(false);
       setOpenaiKey("");
       setGeminiKey("");
       refetchKeys();
     },
-    onError: () => toast.error("請先登入才能儲存 API Key"),
+    onError: (err) => {
+      const errorMessage = err.message || "API Key 驗證或儲存失敗";
+      toast.error(errorMessage);
+    },
   });
 
   const clearOpenai = () => saveKey.mutate({ openaiKey: "", geminiKey: undefined });
@@ -126,7 +129,7 @@ export function ApiKeyPanel({
                 onClick={() => saveKey.mutate({ openaiKey: openaiKey || undefined, geminiKey: geminiKey || undefined })}
                 disabled={saveKey.isPending}
                 className="w-full h-8 text-xs bg-amber-500 hover:bg-amber-600 text-black">
-                {saveKey.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "儲存 API Key"}
+                {saveKey.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "驗證並儲存 API Key"}
               </Button>
             )}
           </div>
