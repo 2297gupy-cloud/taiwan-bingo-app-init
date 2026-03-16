@@ -526,4 +526,5 @@
 - [x] 查找各時總覽卡片中 21 期和 24 期顯示為綠色字體的原因（AiStarPage.tsx 第 469 行）
 - [x] 檢查字體顏色邏輯：原使用 text-green-400/70，應改為 text-muted-foreground/50
 - [x] 修正字體顏色，將 text-green-400/70 改為 text-muted-foreground/50
-- [x] 測試修正結果，開發伺服器正常運行，編譯無誤
+- [x] 清除快取並重新構建：rm -rf node_modules dist .vite，pnpm install，重啟開發伺服器
+- [x] 測試修正結果，開發伺服器正常運行，編譯無誤，頁面已更新
