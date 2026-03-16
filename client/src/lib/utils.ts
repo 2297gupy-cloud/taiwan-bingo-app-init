@@ -86,9 +86,38 @@ export function getPlateClass(val: string): string {
 
 export function getCountdown(): { minutes: number; seconds: number } {
   const now = new Date();
-  const totalSeconds = now.getMinutes() * 60 + now.getSeconds();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  
+  // 開獎時間：07:05 ~ 23:55，每 5 分鐘一期
+  // 如果當前時間在 23:55 之後或 07:05 之前，倒數到隔天 07:05
+  if (hours < 7 || (hours === 7 && minutes < 5) || hours > 23 || (hours === 23 && minutes >= 55)) {
+    // 計算距離下一個開獎時間的秒數
+    let targetDate = new Date();
+    
+    if (hours < 7 || (hours === 7 && minutes < 5)) {
+      // 今天 07:05
+      targetDate.setHours(7, 5, 0, 0);
+    } else {
+      // 隔天 07:05
+      targetDate.setDate(targetDate.getDate() + 1);
+      targetDate.setHours(7, 5, 0, 0);
+    }
+    
+    const diff = targetDate.getTime() - now.getTime();
+    const totalSecs = Math.floor(diff / 1000);
+    return {
+      minutes: Math.floor(totalSecs / 60),
+      seconds: totalSecs % 60,
+    };
+  }
+  
+  // 在開獎時間內（07:05 ~ 23:55），計算距離下一個 5 分鐘倍數的秒數
+  const totalSeconds = minutes * 60 + seconds;
   const fiveMinSeconds = 5 * 60;
   const remaining = fiveMinSeconds - (totalSeconds % fiveMinSeconds);
+  
   return {
     minutes: Math.floor(remaining / 60),
     seconds: remaining % 60,
