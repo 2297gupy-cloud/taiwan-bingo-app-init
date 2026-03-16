@@ -89,13 +89,20 @@ export default function Live() {
   };
 
   useEffect(() => {
+    let lastRefetchTime = 0;
     const timer = setInterval(() => {
       const cd = getCountdown();
       setCountdown(cd);
-      if (cd.minutes === 0 && cd.seconds === 0) {
-        refetch();
+      // 當倒數到 0-2 秒時觸發 refetch（避免漏掉瞬間）
+      if (cd.minutes === 0 && cd.seconds <= 2) {
+        const now = Date.now();
+        // 防止重複 refetch（同一秒內只 refetch 一次）
+        if (now - lastRefetchTime > 1000) {
+          lastRefetchTime = now;
+          refetch();
+        }
       }
-    }, 1000);
+    }, 500); // 改為 500ms 更新一次，提高精度
     return () => clearInterval(timer);
   }, [refetch]);
 
