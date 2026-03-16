@@ -819,7 +819,7 @@ export default function AiSuperPrizePage() {
             <span className="text-xs font-medium text-foreground">
               手動輸入（{currentSlotInfo?.target.padStart(2, "0") || effectiveSlot.padStart(2, "0")}時）
             </span>
-            <span className="text-[10px] text-muted-foreground ml-auto">最多 10 顆球</span>
+            <span className="text-[10px] text-muted-foreground ml-auto">支援 1-20 顆球</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Input
@@ -839,6 +839,9 @@ export default function AiSuperPrizePage() {
                 <Loader2 className="h-3 w-3 animate-spin" />
               ) : "儲存"}
             </Button>
+          </div>
+          <div className="text-[9px] text-muted-foreground mt-1.5">
+            支援輸入 1-20 顆球，號碼範圍 1-80，以空格或逗號分隔
           </div>
           {parsedBalls.length > 0 && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
