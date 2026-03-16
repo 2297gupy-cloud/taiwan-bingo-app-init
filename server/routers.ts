@@ -53,9 +53,20 @@ import { aiApiKeys, drawRecords } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
 import { validateApiKey } from "./api-key-validator";
+import { manualCheckUserApiKey } from "./api-key-monitor";
 
 
 export const appRouter = router({
+  // API Key 監控路由
+  apiKey: router({
+    checkStatus: protectedProcedure
+      .input(z.string())
+      .query(async ({ input }) => {
+        const result = await manualCheckUserApiKey(input);
+        return result;
+      }),
+  }),
+
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

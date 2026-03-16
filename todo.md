@@ -588,3 +588,10 @@
 - [x] 修正 validateOpenaiKey 函數（直接調用 OpenAI API 驗證）
 - [x] 修正 validateGeminiKey 函數（直接調用 Gemini API 驗證）
 - [x] 測試修正結果（開發伺服器正常運行，編譯無誤）
+
+
+## API Key 過期或失效自動提醒功能 (2026-03-16 v60)
+- [x] 設計 API Key 自動提醒機制（定期檢查、通知策略）
+- [x] 實現後端 API Key 定期檢查函數
+- [x] 修改前端添加提醒信息顯示
+- [x] 測試 API Key 提醒功能
