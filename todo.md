@@ -682,3 +682,9 @@
 - [x] 修復 AiStarPage 的 handleCopyToAnalyze：使用 window.location.href 直接導航
 - [x] 修復 AiSuperPrizePage 的 handleCopyToAnalyze
 - [x] TypeScript 編譯無誤，開發伺服器正常運作
+
+
+## 新增剪貼簿「貼上」按鈕改進 (2026-03-16 v72)
+- [ ] 查看 AiCustomAnalyzePage 的輸入框實現
+- [ ] 新增「貼上」按鈕，使用 navigator.clipboard API
+- [ ] 測試並儲存 Checkpoint

@@ -110,11 +110,27 @@ export default function AiCustomAnalyzePage() {
 
   const handlePaste = async () => {
     try {
+      // 檢查瀏覽器是否支援 Clipboard API
+      if (!navigator.clipboard) {
+        toast.error("您的瀏覽器不支援剪貼簿功能，請手動貼入");
+        return;
+      }
       const text = await navigator.clipboard.readText();
+      if (!text.trim()) {
+        toast.warning("剪貼簿為空，請先複製開獎數據");
+        return;
+      }
       setRawText(text);
       toast.success("已從剪貼簿貼入數據");
-    } catch {
-      toast.error("無法讀取剪貼簿，請手動貼入");
+    } catch (err: any) {
+      // 詳細的錯誤處理
+      if (err.name === "NotAllowedError") {
+        toast.error("需要剪貼簿權限。請在瀏覽器設定中允許此網站存取剪貼簿");
+      } else if (err.name === "NotFoundError") {
+        toast.warning("剪貼簿為空，請先複製開獎數據");
+      } else {
+        toast.error("無法讀取剪貼簿，請手動貼入");
+      }
     }
   };
 
