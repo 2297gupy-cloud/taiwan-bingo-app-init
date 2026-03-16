@@ -243,57 +243,59 @@ export default function AiCustomAnalyzePage() {
         </CardContent>
       </Card>
 
-      {/* 結果顯示 */}
+      {/* 結果顯示 - 完整分析報告框 */}
       {result && result.goldenBalls.length > 0 && (
-        <div className="space-y-3">
-          {/* 黃金球結果 */}
-          <Card className="border-primary/40 bg-primary/5">
-            <CardContent className="px-4 py-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-yellow-400" />
-                  <span className="text-sm font-bold text-foreground">AI 演算黃金球</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    {result.usedLLM ? "AI 智能演算" : "統計備用方案"}
-                  </Badge>
+        <Card className="border-primary/50 bg-gradient-to-br from-primary/8 to-primary/3 shadow-lg">
+          <CardHeader className="pb-3 pt-4 px-4 border-b border-primary/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-yellow-400" />
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">AI 專業演算分析報告</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    分析 {result.sampleCount} 期數據 • {result.usedLLM ? "AI 智能演算" : "統計備用方案"}
+                  </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs px-2"
-                  onClick={copyResult}
-                >
-                  <Copy className="w-3 h-3 mr-1" />
-                  複製
-                </Button>
               </div>
-              <div className="flex items-center gap-3 mb-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={copyResult}
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                複製報告
+              </Button>
+            </div>
+            
+            {/* 黃金球顯示 */}
+            <div className="bg-background/50 rounded-lg p-3 border border-primary/20">
+              <p className="text-[10px] text-muted-foreground font-semibold mb-2">🎯 推薦黃金球</p>
+              <div className="flex items-center gap-2">
                 {result.goldenBalls.map((ball) => (
                   <NumberBall key={ball} number={ball} size="lg" />
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground bg-background/60 rounded p-2">
-                {result.reasoning}
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                💡 {result.reasoning}
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] text-muted-foreground">分析期數：{result.sampleCount} 期</span>
-                {result.parseErrors.length > 0 && (
-                  <span className="text-[10px] text-orange-400">⚠ {result.parseErrors.length} 行解析失敗</span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 7項演算詳細分析 */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground px-1">詳細演算分析</p>
+              {result.parseErrors.length > 0 && (
+                <p className="text-[10px] text-orange-400 mt-1.5">⚠ {result.parseErrors.length} 行解析失敗</p>
+              )}
+            </div>
+          </CardHeader>
+          
+          {/* 7項詳細分析 */}
+          <CardContent className="px-4 py-3 space-y-2">
             {analysisItems.map((item) => (
-              <Card
+              <div
                 key={item.key}
-                className={`border-border/40 ${item.highlight ? 'border-primary/40 bg-primary/5' : ''}`}
+                className={`border rounded-lg overflow-hidden transition-colors ${
+                  item.highlight ? 'border-primary/40 bg-primary/5' : 'border-border/40 bg-background/40'
+                }`}
               >
                 <button
-                  className="w-full px-3 py-2.5 flex items-center justify-between text-left"
+                  className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-background/60 transition-colors"
                   onClick={() => toggleSection(item.key)}
                 >
                   <span className={`text-xs font-semibold ${item.highlight ? 'text-primary' : 'text-foreground'}`}>
@@ -305,31 +307,29 @@ export default function AiCustomAnalyzePage() {
                   }
                 </button>
                 {expandedSections[item.key] && (
-                  <CardContent className="px-3 pb-3 pt-0">
+                  <div className="px-3 pb-2.5 pt-0 border-t border-border/20 bg-background/30">
                     {item.tailNote && (
-                      <p className="text-[10px] text-primary/80 bg-primary/10 rounded px-2 py-1 mb-2">
-                        尾數共振：{item.tailNote}
+                      <p className="text-[10px] text-primary/80 bg-primary/10 rounded px-2 py-1.5 mb-2">
+                        🔍 尾數共振：{item.tailNote}
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
                       {item.content || "（無資料）"}
                     </p>
-                  </CardContent>
+                  </div>
                 )}
-              </Card>
+              </div>
             ))}
-          </div>
-
+          </CardContent>
+          
           {/* 整體策略 */}
           {result.strategy && (
-            <Card className="border-yellow-500/30 bg-yellow-500/5">
-              <CardContent className="px-3 py-3">
-                <p className="text-xs font-semibold text-yellow-400 mb-1">整體選號策略</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{result.strategy}</p>
-              </CardContent>
-            </Card>
+            <div className="border-t border-primary/20 px-4 py-3 bg-yellow-500/5 border-yellow-500/30">
+              <p className="text-xs font-semibold text-yellow-400 mb-1">整體選號策略</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{result.strategy}</p>
+            </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* 空狀態 */}
