@@ -46,30 +46,7 @@ function SiteHeader({ activeTab, onTabChange }: { activeTab: string; onTabChange
           <p className="text-[8px] text-muted-foreground tracking-widest">TAIWAN BINGO</p>
         </div>
       </div>
-      {/* Quick nav buttons */}
-      <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-        {[
-          { label: "即時開獎", key: "live" },
-          { label: "歷史紀錄", key: "history" },
-          { label: "規則說明", key: null },
-          { label: "台彩最新資訊🔥", key: null },
-        ].map(({ label, key }) => (
-          <button
-            key={label}
-            onClick={() => {
-              if (key) onTabChange(key);
-              else toast.info("功能開發中");
-            }}
-            className={`text-[10px] px-2.5 py-1 rounded border whitespace-nowrap transition-colors flex-shrink-0 ${
-              key && activeTab === key
-                ? "bg-primary/20 border-primary text-primary"
-                : "border-primary/40 text-primary hover:bg-primary/10"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+
     </header>
   );
 }
@@ -88,23 +65,23 @@ function Announcement() {
 // ============ Section: Tab Switcher ============
 function SectionTabs({ active, onChange }: { active: string; onChange: (v: string) => void }) {
   const tabs = [
-    { key: "live", label: "即時開獎" },
-    { key: "ai", label: "AI 預測" },
+    { key: "live", label: "📺 即時開獎" },
+    { key: "ai", label: "🤖 AI 預測" },
     { key: "aistar", label: "⭐ AI一星" },
     { key: "aisuper", label: "🔴 AI超級獎" },
-    { key: "aianalyze", label: "🧠 AI演算" },
-    { key: "history", label: "歷史號碼" },
+    { key: "aianalyze", label: "📊 AI演算" },
+    { key: "history", label: "📄 歷史號碼" },
   ];
   return (
-    <div className="mx-3 mb-3 flex overflow-x-auto scrollbar-hide">
+    <div className="mx-3 mb-3 flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`flex-1 min-w-fit py-2 px-2 text-xs font-semibold border whitespace-nowrap transition-colors ${
+          className={`py-2 px-3 text-xs font-semibold rounded-lg whitespace-nowrap transition-all flex-shrink-0 ${
             active === tab.key
-              ? "bg-primary/10 border-primary text-primary"
-              : "border-border text-muted-foreground hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-md"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
           }`}
         >
           {tab.label}
