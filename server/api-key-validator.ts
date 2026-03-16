@@ -16,40 +16,48 @@ export async function validateOpenaiKey(apiKey: string): Promise<{
   }
 
   try {
-    // 使用 LLM 幫助函數進行驗證
-    // 該函數內部會使用提供的 API Key
-    const response = await invokeLLM({
-      messages: [
-        {
-          role: "user",
-          content: "Say 'ok' in one word.",
-        },
-      ],
+    // 直接調用 OpenAI API 驗證 Key
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content: "Say 'ok' in one word.",
+          },
+        ],
+        max_tokens: 10,
+      }),
     });
 
-    if (response && response.choices && response.choices.length > 0) {
+    if (response.ok) {
       return { valid: true };
-    } else {
+    } else if (response.status === 401) {
       return {
         valid: false,
-        error: "OpenAI API 響應異常",
+        error: "OpenAI API Key 無效或已過期",
+      };
+    } else if (response.status === 429) {
+      return {
+        valid: false,
+        error: "OpenAI API 請求過於頻繁，請稍後再試",
+      };
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        valid: false,
+        error: `OpenAI API 驗證失敗 (${response.status}): ${errorData.error?.message || "未知錯誤"}`,
       };
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    // 根據錯誤訊息判斷具體原因
-    if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
-      return {
-        valid: false,
-        error: "OpenAI API Key 無效或已過期",
-      };
-    } else if (errorMessage.includes("429") || errorMessage.includes("rate limit")) {
-      return {
-        valid: false,
-        error: "OpenAI API 請求過於頻繁，請稍後再試",
-      };
-    } else if (errorMessage.includes("network") || errorMessage.includes("timeout")) {
+    if (errorMessage.includes("network") || errorMessage.includes("timeout")) {
       return {
         valid: false,
         error: "網路連接失敗，請檢查網路設定",
@@ -79,40 +87,48 @@ export async function validateGeminiKey(apiKey: string): Promise<{
   }
 
   try {
-    // 使用 LLM 幫助函數進行驗證
-    // 該函數內部會使用提供的 API Key
-    const response = await invokeLLM({
-      messages: [
-        {
-          role: "user",
-          content: "Say 'ok' in one word.",
-        },
-      ],
+    // 直接調用 Gemini API 驗證 Key
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gemini-2.0-flash",
+        messages: [
+          {
+            role: "user",
+            content: "Say 'ok' in one word.",
+          },
+        ],
+        max_tokens: 10,
+      }),
     });
 
-    if (response && response.choices && response.choices.length > 0) {
+    if (response.ok) {
       return { valid: true };
-    } else {
+    } else if (response.status === 401 || response.status === 403) {
       return {
         valid: false,
-        error: "Google Gemini API 響應異常",
+        error: "Google Gemini API Key 無效或已過期",
+      };
+    } else if (response.status === 429) {
+      return {
+        valid: false,
+        error: "Google Gemini API 請求過於頻繁，請稍後再試",
+      };
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        valid: false,
+        error: `Google Gemini API 驗證失敗 (${response.status}): ${errorData.error?.message || "未知錯誤"}`,
       };
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     
-    // 根據錯誤訊息判斷具體原因
-    if (errorMessage.includes("401") || errorMessage.includes("Unauthorized") || errorMessage.includes("invalid_api_key")) {
-      return {
-        valid: false,
-        error: "Google Gemini API Key 無效或已過期",
-      };
-    } else if (errorMessage.includes("429") || errorMessage.includes("rate limit")) {
-      return {
-        valid: false,
-        error: "Google Gemini API 請求過於頻繁，請稍後再試",
-      };
-    } else if (errorMessage.includes("network") || errorMessage.includes("timeout")) {
+    if (errorMessage.includes("network") || errorMessage.includes("timeout")) {
       return {
         valid: false,
         error: "網路連接失敗，請檢查網路設定",

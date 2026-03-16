@@ -578,3 +578,13 @@
 - [x] 修正 AI 分析文案（添加使用模型、分析時段、數據樣本等信息）
 - [x] 修正超級獎 AI 分析文案（analyzeWithLLMSuperPrize 函數）
 - [x] 測試 AI 分析效果（開發伺服器正常運行，編譯無誤）
+
+
+## 使用新 API Key 時未使用 LLM 的問題修復 (2026-03-16 v59)
+- [x] 查找使用新 API Key 時未使用 LLM 的原因（validateOpenaiKey/validateGeminiKey 使用 invokeLLM 而非直接 API 調用）
+- [x] 檢查 API Key 驗證機制是否正確（驗證邏輯不使用用戶提供的 Key）
+- [x] 檢查 LLM 調用邏輯是否正確（已確認 LLM 調用邏輯正確）
+- [x] 修正 API Key 驗證邏輯（改為直接調用 OpenAI 和 Gemini API 進行驗證）
+- [x] 修正 validateOpenaiKey 函數（直接調用 OpenAI API 驗證）
+- [x] 修正 validateGeminiKey 函數（直接調用 Gemini API 驗證）
+- [x] 測試修正結果（開發伺服器正常運行，編譯無誤）
