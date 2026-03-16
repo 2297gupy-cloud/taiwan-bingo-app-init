@@ -1018,9 +1018,9 @@ async function analyzeWithLLMSuperPrize(
   userApiKey?: string | null,
   customBaseUrl?: string | null,
   customModel?: string | null
-): Promise<{ candidateBalls: number[]; reasoning: string }> {
+): Promise<{ candidateBalls: number[]; reasoning: string; hotAnalysis?: string; streakAnalysis?: string; diagonalAnalysis?: string; deadNumbers?: string; coldAnalysis?: string; trendAnalysis?: string; coreConclusion?: string; strategy?: string }> {
   const dataText = superNumbers.map((n, i) => `第${i + 1}期: ${String(n).padStart(2, "0")}`).join("\n");
-  const prompt = `你是台灣賓果彩票超級獎分析專家。以下是台灣賓果 ${sourceHour}:00-${sourceHour}:55 時段最近 ${superNumbers.length} 期的超級獎號碼（bullEyeTop，1-80之間）：\n${dataText}\n請分析這些超級獎號碼的規律，推薦 10 顆最有可能在下一個時段出現的超級獎候選號碼（1-80之間的整數）。\n請以 JSON 格式回應：\n{\n  "candidateBalls": [數字1, 數字2, ..., 數字10],\n  "reasoning": "簡短分析說明（50字以內）"\n}`;
+  const prompt = `你是台灣賓果彩票超級獎分析專家。以下是台灣賓果 ${sourceHour}:00-${sourceHour}:55 時段最近 ${superNumbers.length} 期的超級獎號碼（bullEyeTop，1-80之間）：\n${dataText}\n請分析這些超級獎號碼的規律，推薦 10 顆最有可能在下一個時段出現的超級獎候選號碼（1-80之間的整數）。\n\n分析要點：\n1. 統計各號碼出現頻率（熱號代表高機率）\n2. 觀察近期趨勢（近期熱號更重要）\n3. 考慮冷號回補可能性（長期未出的號碼）\n4. 連莊號（相鄰期數出現的號碼）\n5. 斜連交會點（對角線相鄰的號碼）\n6. 區間平衡度（小號區與大號區的平衡）\n7. 整體策略（綜合上述分析給出最終推薦）\n\n請以 JSON 格式回應，提供詳細分析（7 項完整分析）：\n{\n  "candidateBalls": [數字1, 數字2, ..., 數字10],\n  "reasoning": "簡短結論（不超過 80 字）",\n  "hotAnalysis": "1. 強勢熱號分析：說明 TOP3 熱號及其出現頻率",\n  "streakAnalysis": "2. 連莊號分析：相鄰期數出現的號碼及其規律",\n  "diagonalAnalysis": "3. 斜連交會點：對角線相鄰的號碼組合",\n  "deadNumbers": "4. 死碼排除：長期未出現的號碼（應避免）",\n  "coldAnalysis": "5. 冷號回補分析：說明為何選擇冷號回補",\n  "trendAnalysis": "6. 區間趨勢分析：近期趨勢說明及區間分布",\n  "coreConclusion": "7. 核心演算結論：綜合上述 6 項分析，給出最終推薦策略",\n  "strategy": "整體選號策略：簡述選號邏輯"\n}`;
   
   const llmMessages = [
     { role: "system" as const, content: "你是台灣賓果彩票超級獎數據分析專家。請用繁體中文回應，並嚴格按照 JSON 格式輸出。" },
@@ -1037,8 +1037,16 @@ async function analyzeWithLLMSuperPrize(
         properties: {
           candidateBalls: { type: "array", items: { type: "integer" } },
           reasoning: { type: "string" },
+          hotAnalysis: { type: "string", description: "1. 強勢熱號分析" },
+          streakAnalysis: { type: "string", description: "2. 連莊號分析" },
+          diagonalAnalysis: { type: "string", description: "3. 斜連交會點" },
+          deadNumbers: { type: "string", description: "4. 死碼排除" },
+          coldAnalysis: { type: "string", description: "5. 冷號回補分析" },
+          trendAnalysis: { type: "string", description: "6. 區間趨勢分析" },
+          coreConclusion: { type: "string", description: "7. 核心演算結論" },
+          strategy: { type: "string", description: "整體選號策略" },
         },
-        required: ["candidateBalls", "reasoning"],
+        required: ["candidateBalls", "reasoning", "hotAnalysis", "streakAnalysis", "diagonalAnalysis", "deadNumbers", "coldAnalysis", "trendAnalysis", "coreConclusion", "strategy"],
         additionalProperties: false,
       },
     },
@@ -1136,7 +1144,18 @@ async function analyzeWithLLMSuperPrize(
       .filter((n) => Number.isInteger(n) && n >= 1 && n <= 80)
       .slice(0, 10);
     if (candidateBalls.length < 1) throw new Error("LLM 未返回有效號碼");
-    return { candidateBalls: candidateBalls.sort((a, b) => a - b), reasoning: parsed.reasoning || "AI 智能分析完成" };
+    return {
+      candidateBalls: candidateBalls.sort((a, b) => a - b),
+      reasoning: parsed.reasoning || "AI 智能分析完成",
+      hotAnalysis: parsed.hotAnalysis || "",
+      streakAnalysis: parsed.streakAnalysis || "",
+      diagonalAnalysis: parsed.diagonalAnalysis || "",
+      deadNumbers: parsed.deadNumbers || "",
+      coldAnalysis: parsed.coldAnalysis || "",
+      trendAnalysis: parsed.trendAnalysis || "",
+      coreConclusion: parsed.coreConclusion || "",
+      strategy: parsed.strategy || "",
+    };
   } catch (err) {
     console.error("[analyzeWithLLMSuperPrize] LLM 分析失敗，回退到統計方法:", err instanceof Error ? err.message : String(err));
     throw err;
@@ -1169,6 +1188,14 @@ export async function analyzeSuperPrizeSlot(
   sampleCount: number;
   usedLLM: boolean;
   llmError?: string;
+  hotAnalysis?: string;
+  streakAnalysis?: string;
+  diagonalAnalysis?: string;
+  deadNumbers?: string;
+  coldAnalysis?: string;
+  trendAnalysis?: string;
+  coreConclusion?: string;
+  strategy?: string;
 }> {
   const database = await db();
   const allDraws = await database
@@ -1183,7 +1210,7 @@ export async function analyzeSuperPrizeSlot(
   const superNumbers = allDraws.map(d => d.superNumber as number).filter(n => n >= 1 && n <= 80);
   let usedLLM = false;
   let llmError: string | undefined;
-  let result: { candidateBalls: number[]; reasoning: string };
+  let result: any = { candidateBalls: [], reasoning: "" };
   try {
     result = await analyzeWithLLMSuperPrize(superNumbers, sourceHour, userApiKey, customBaseUrl, customModel);
     const keyType = customBaseUrl ? `第三方代理(${customModel || 'gemini-2.0-flash-lite'})` : userApiKey?.startsWith("sk-") ? "OpenAI Key" : userApiKey?.startsWith("AIza") ? "Gemini Key" : "系統內建 Key";
@@ -1193,7 +1220,9 @@ export async function analyzeSuperPrizeSlot(
     const errMsg = err instanceof Error ? err.message : String(err);
     llmError = errMsg;
     console.log(`[analyzeSuperPrizeSlot] LLM 失敗，使用統計方法，時段 ${sourceHour}:`, errMsg);
-    result = analyzeWithStatsSuperPrize(superNumbers);
+    const statsResult = analyzeWithStatsSuperPrize(superNumbers);
+    result = { ...result, ...statsResult };
+    usedLLM = false;
   }
   return { ...result, sampleCount: allDraws.length, usedLLM, llmError };
 }
