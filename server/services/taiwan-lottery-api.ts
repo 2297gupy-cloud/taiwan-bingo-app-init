@@ -80,9 +80,14 @@ export async function fetchBingoDataFromAPI(dateStr: string): Promise<BingoQuery
     try {
       const response = await fetch(url, {
         headers: { 
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'application/json',
-          'Referer': 'https://www.taiwanlottery.com/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Referer': 'https://www.taiwanlottery.com.tw/',
+          'Accept-Language': 'zh-TW,zh;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
         },
         signal: AbortSignal.timeout(15000),
       });

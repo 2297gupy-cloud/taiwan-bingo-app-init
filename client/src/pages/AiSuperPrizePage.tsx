@@ -495,8 +495,6 @@ export default function AiSuperPrizePage() {
       setModalResult({
         goldenBalls: data.candidateBalls || [],
         reasoning: data.reasoning || "",
-        usedLLM: data.usedLLM,
-        sampleCount: data.sampleCount,
         hotAnalysis: (data as any).hotAnalysis,
         streakAnalysis: (data as any).streakAnalysis,
         diagonalAnalysis: (data as any).diagonalAnalysis,
@@ -516,8 +514,9 @@ export default function AiSuperPrizePage() {
     },
   });
 
-  // 手動儲存 mutation
-  const saveManualMutation = trpc.aiSuperPrize.saveManual.useMutation({
+  // 手動儲存 mutation（暫時禁用）
+  // 手動儲存 mutation（暫時禁用）
+  /*const saveManualMutation = trpc.aiSuperPrize.saveManual.useMutation({
     onSuccess: () => {
       toast.success("超級獎候選球已儲存");
       setManualText("");
@@ -527,6 +526,7 @@ export default function AiSuperPrizePage() {
     onError: () => toast.error("儲存失敗"),
   });
 
+  */
   // 删除預測 mutation
   const deleteMutation = trpc.aiSuperPrize.deletePrediction.useMutation({
     onSuccess: () => {
@@ -565,12 +565,8 @@ export default function AiSuperPrizePage() {
       toast.error("請輸入至少 1 個號碼（1-80）");
       return;
     }
-    saveManualMutation.mutate({
-      dateStr,
-      sourceHour: effectiveSlot,
-      targetHour: currentSlotInfo?.target || effectiveSlot,
-      candidateBalls: parsedBalls,
-    });
+    toast.info("手動儲存功能暫時禁用");
+    // TODO: 實現手動儲存功能
   };
 
   const handleCopyData = useCallback(() => {
@@ -753,11 +749,7 @@ export default function AiSuperPrizePage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => analyzeMutation.mutate({
-                    dateStr,
-                    sourceHour: effectiveSlot,
-                    targetHour: currentSlotInfo?.target || effectiveSlot,
-                  })}
+                  onClick={handleManualSubmit}
                   disabled={analyzeMutation.isPending}
                   className="gap-1 border border-red-500 text-xs px-2 py-1 h-7 hover:bg-red-500/10 font-semibold"
                 >
