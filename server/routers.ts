@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+
 import {
   getLatestDraw,
   getRecentDraws,
@@ -810,6 +811,72 @@ export const appRouter = router({
           hitRates[strategy] = Math.round((hitCount / records.length) * 100);
         }
         return hitRates;
+      }),
+  }),
+
+  /** 管理員路由 */
+  admin: router({
+    /** 導入台彩開獎數據 */
+    importLotteryData: publicProcedure
+      .input(z.object({
+        data: z.array(z.object({
+          drawNumber: z.string(),
+          drawTime: z.string(),
+          numbers: z.array(z.number()),
+          superNumber: z.number(),
+          bigSmall: z.string(),
+          oddEven: z.string(),
+        }))
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // 暫時允許所有登录用戶測試（後續可改爲管理員限制）
+
+        const db = await getDb();
+        if (!db) throw new Error('無法連接數據庫');
+
+        let inserted = 0;
+        let skipped = 0;
+
+        for (const record of input.data) {
+          try {
+            // 檢查是否已存在
+            const existing = await db
+              .select()
+              .from(drawRecords)
+              .where(eq(drawRecords.drawNumber, record.drawNumber));
+
+            if (existing.length > 0) {
+              skipped++;
+              continue;
+            }
+
+            // 計算總和
+            const total = record.numbers.reduce((a, b) => a + b, 0);
+
+            // 插入新記錄
+            await db.insert(drawRecords).values({
+              drawNumber: record.drawNumber,
+              drawTime: record.drawTime,
+              numbers: record.numbers,
+              superNumber: record.superNumber,
+              total: total,
+              bigSmall: record.bigSmall,
+              oddEven: record.oddEven,
+              plate: 'import',
+            });
+
+            inserted++;
+          } catch (err) {
+            console.error(`插入失敗 (${record.drawNumber}):`, err);
+          }
+        }
+
+        return {
+          success: true,
+          inserted,
+          skipped,
+          total: input.data.length,
+        };
       }),
   }),
 });
