@@ -879,5 +879,234 @@ export const appRouter = router({
         };
       }),
   }),
+
+  /** 外部網站對接 API */
+  external: router({
+    /** 獲取最新開獎數據（用於外部網站 30 秒偵測） */
+    getLatestDraws: publicProcedure
+      .input(z.object({
+        limit: z.number().min(1).max(100).default(20),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { success: false, data: [] };
+
+        try {
+          const records = await db
+            .select()
+            .from(drawRecords)
+            .orderBy(desc(drawRecords.drawNumber))
+            .limit(input.limit);
+
+          return {
+            success: true,
+            data: records.map(r => ({
+              term: r.drawNumber,
+              time: r.drawTime,
+              numbers: r.numbers,
+              superNumber: r.superNumber,
+              bigSmall: r.bigSmall,
+              oddEven: r.oddEven,
+              timestamp: r.createdAt?.getTime() || Date.now(),
+            })).reverse(),
+          };
+        } catch (err) {
+          console.error('[External API] Error fetching latest draws:', err);
+          return { success: false, data: [], error: String(err) };
+        }
+      }),
+
+    /** 獲取指定日期的所有開獎數據 */
+    getDrawsByDate: publicProcedure
+      .input(z.object({
+        dateStr: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { success: false, data: [] };
+
+        try {
+          // 根據日期和時間範圍查詢（07:05 ~ 23:55）
+          const records = await db
+            .select()
+            .from(drawRecords)
+            .where(sql`DATE(drawTime) = ${input.dateStr}`)
+            .orderBy(drawRecords.drawTime);
+
+          return {
+            success: true,
+            dateStr: input.dateStr,
+            data: records.map(r => ({
+              term: r.drawNumber,
+              time: r.drawTime,
+              numbers: r.numbers,
+              superNumber: r.superNumber,
+              bigSmall: r.bigSmall,
+              oddEven: r.oddEven,
+            })),
+          };
+        } catch (err) {
+          console.error('[External API] Error fetching draws by date:', err);
+          return { success: false, data: [], error: String(err) };
+        }
+      }),
+
+    /** 獲取 AI 預測結果（用於外部網站顯示） */
+    getAIPredictions: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+        limit: z.number().min(1).max(15).default(15),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        try {
+          const predictions = await getAiStarPredictions(dateStr);
+          return {
+            success: true,
+            dateStr,
+            data: predictions.slice(0, input.limit).map(p => ({
+              sourceHour: p.sourceHour,
+              targetHour: p.targetHour,
+              candidateBalls: p.goldenBalls,
+              reasoning: p.reasoning,
+              accuracy: 0,
+            })),
+          };
+        } catch (err) {
+          console.error('[External API] Error fetching AI predictions:', err);
+          return { success: false, data: [], error: String(err) };
+        }
+      }),
+
+    /** 獲取命中率統計（過去 N 天） */
+    getAccuracyStats: publicProcedure
+      .input(z.object({
+        days: z.number().min(1).max(30).default(7),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { success: false, data: [] };
+
+        try {
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - input.days);
+
+          // 查詢驗證記錄表
+          const records = await db
+            .select({
+              dateStr: sql`DATE(createdAt)`,
+              totalPredictions: sql`COUNT(*)`,
+              hits: sql`SUM(CASE WHEN isHit = true THEN 1 ELSE 0 END)`,
+            })
+            .from(sql`verificationRecords`)
+            .where(sql`createdAt >= ${startDate}`)
+            .groupBy(sql`DATE(createdAt)`);
+
+          return {
+            success: true,
+            days: input.days,
+            data: records.map(r => ({
+              date: r.dateStr,
+              totalPredictions: Number(r.totalPredictions) || 0,
+              hits: Number(r.hits) || 0,
+              accuracy: Number(r.totalPredictions) > 0
+                ? ((Number(r.hits) || 0) / Number(r.totalPredictions) * 100).toFixed(2)
+                : '0.00',
+            })),
+          };
+        } catch (err) {
+          console.error('[External API] Error fetching accuracy stats:', err);
+          return { success: false, data: [], error: String(err) };
+        }
+      }),
+
+    /** 獲取綜合數據（最新開獎 + 預測 + 統計） */
+    getSummary: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        try {
+          // 並行獲取三個數據源
+          const [latestDrawsRes, predictionsRes, statsRes] = await Promise.all([
+            // 最新開獎
+            (async () => {
+              const db = await getDb();
+              if (!db) return { success: false, data: [] };
+              const records = await db
+                .select()
+                .from(drawRecords)
+                .orderBy(desc(drawRecords.drawNumber))
+                .limit(5);
+              return {
+                success: true,
+                data: records.reverse().map(r => ({
+                  term: r.drawNumber,
+                  time: r.drawTime,
+                  numbers: r.numbers,
+                  superNumber: r.superNumber,
+                })),
+              };
+            })(),
+            // AI 預測
+            (async () => {
+              try {
+                const predictions = await getAiStarPredictions(dateStr);
+                return {
+                  success: true,
+                  data: predictions.slice(0, 5).map(p => ({
+                    sourceHour: p.sourceHour,
+                    targetHour: p.targetHour,
+                    candidateBalls: p.goldenBalls,
+                  })),
+                };
+              } catch (err) {
+                return { success: false, data: [] };
+              }
+            })(),
+            // 統計數據
+            (async () => {
+              const db = await getDb();
+              if (!db) return { success: false, data: {} };
+              try {
+                const result = await db
+                  .select({
+                    total: sql`COUNT(*)`,
+                    hits: sql`SUM(CASE WHEN isHit = true THEN 1 ELSE 0 END)`,
+                  })
+                  .from(sql`verificationRecords`)
+                  .where(sql`DATE(createdAt) = ${dateStr}`);
+                const row = result[0];
+                return {
+                  success: true,
+                  data: {
+                    totalPredictions: Number(row?.total) || 0,
+                    hits: Number(row?.hits) || 0,
+                    accuracy: Number(row?.total) > 0
+                      ? ((Number(row?.hits) || 0) / Number(row?.total) * 100).toFixed(2)
+                      : '0.00',
+                  },
+                };
+              } catch (err) {
+                return { success: false, data: {} };
+              }
+            })(),
+          ]);
+
+          return {
+            success: true,
+            dateStr,
+            timestamp: new Date().toISOString(),
+            latestDraws: latestDrawsRes.data,
+            predictions: predictionsRes.data,
+            stats: statsRes.data,
+          };
+        } catch (err) {
+          console.error('[External API] Error fetching summary:', err);
+          return { success: false, error: String(err) };
+        }
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

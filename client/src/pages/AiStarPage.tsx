@@ -212,7 +212,7 @@ function NumberDistributionBlock({
               </thead>
               <tbody>
                 {[...displayDraws].reverse().map((draw) => {
-                  const isPending = draw.pending ?? false;
+                  const isPending = false;
                   return (
                     <tr key={draw.term || draw.time} className={cn("border-t border-white/10", isPending && "opacity-50")}>
                       <td className={cn("sticky left-0 z-10 bg-card text-[6px] font-mono px-0 py-0.5 text-right border-r border-white/20 whitespace-nowrap", isPending ? "text-muted-foreground/30" : "text-muted-foreground/60")}>

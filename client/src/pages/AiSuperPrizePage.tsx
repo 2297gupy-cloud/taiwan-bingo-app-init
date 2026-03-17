@@ -185,15 +185,15 @@ function SuperNumberDistributionBlock({
               </thead>
               <tbody>
                 {[...displayDraws].reverse().map((draw) => {
-                  const isPending = draw.pending ?? false;
+                  const isPending = false;
                   const superNum = (draw as { superNumber?: number }).superNumber;
+                  const drawNumbers = (draw as { numbers?: number[] }).numbers || [];
                   return (
                     <tr key={draw.term || draw.time} className={cn("border-t border-white/10", isPending && "opacity-50")}>
                       <td className={cn("sticky left-0 z-10 bg-card text-[6px] font-mono px-0 py-0.5 text-right border-r border-white/20 whitespace-nowrap", isPending ? "text-muted-foreground/30" : "text-muted-foreground/60")}>
                         {draw.time || "-"}
                       </td>
-                      {NUMS.map(n => {
-                        const isDrawn = !isPending && new Set(draw.numbers).has(n);
+                      {NUMS.map(n => {                        const isDrawn = !isPending && new Set(drawNumbers).has(n);
                         const isCandidate = candidateSet.has(n);
                         const isSuperNumber = !isPending && superNum === n;
                         return (
@@ -474,7 +474,7 @@ export default function AiSuperPrizePage() {
   // AI 分析 mutation
   const analyzeMutation = trpc.aiSuperPrize.analyze.useMutation({
     onSuccess: (data) => {
-      if (data.llmError && !data.usedLLM) {
+      if (data.llmError) {
         const isApiKeyError = data.llmError.includes("401") || data.llmError.includes("invalid_api_key") || data.llmError.includes("Incorrect API key");
         if (isApiKeyError) {
           toast.error(`❌ API Key 無效！已回退到統計方法分析。`, {
@@ -488,8 +488,7 @@ export default function AiSuperPrizePage() {
           toast.warning(`⚠️ AI 分析失敗，已回退到統計方法。錯誤：${data.llmError.substring(0, 60)}`);
         }
       } else {
-        const keyType = data.usedLLM ? "用戶 APIKey" : "系統 Key";
-        toast.success(`${data.sourceHour}時段 AI 分析完成 (${keyType})，推薦 ${data.candidateBalls.length} 顓超級獎候選球`);
+        toast.success(`${data.sourceHour}時段 AI 分析完成，推薦 ${data.candidateBalls.length} 顓超級獎候選球`);
       }
       // 只儲存結果，不自動彈出（用戶點擊「AI 推理說明」時才彈出）
       setModalResult({
@@ -824,12 +823,10 @@ export default function AiSuperPrizePage() {
             <Button
               size="sm"
               onClick={handleManualSubmit}
-              disabled={saveManualMutation.isPending || parsedBalls.length < 1}
+              disabled={parsedBalls.length < 1}
               className="h-7 text-[10px] px-2.5 bg-red-500 hover:bg-red-600 text-white shrink-0"
             >
-              {saveManualMutation.isPending ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : "儲存"}
+              儲存
             </Button>
           </div>
           <div className="text-[9px] text-muted-foreground mt-1.5">

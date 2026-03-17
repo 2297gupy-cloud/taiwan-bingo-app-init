@@ -530,10 +530,10 @@ async function analyzeStatistically(
   for (const item of topHot.slice(0, 2)) {
     candidates.add(item.num);
   }
-  for (const num of recent5Hot) {
+  for (const num of Array.from(recent5Hot)) {
     if (candidates.size < 3) candidates.add(num);
   }
-  for (const num of streakNumbers) {
+  for (const num of Array.from(streakNumbers)) {
     if (candidates.size < 3) candidates.add(num);
   }
 

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT DISTINCT drawTime FROM draw_records LIMIT 10",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT DISTINCT drawTime FROM draw_records LIMIT 10",
+  "rows": [
+    {
+      "drawTime": "115/03/09 15:35:00"
+    },
+    {
+      "drawTime": "115/03/07 12:25:00"
+    },
+    {
+      "drawTime": "115/02/25 23:10:00"
+    },
+    {
+      "drawTime": "115/02/26 14:40:00"
+    },
+    {
+      "drawTime": "115/03/15 10:10:00"
+    },
+    {
+      "drawTime": "115/02/25 10:25:00"
+    },
+    {
+      "drawTime": "115/02/22 12:15:00"
+    },
+    {
+      "drawTime": "115/02/24 13:35:00"
+    },
+    {
+      "drawTime": "115/03/02 20:45:00"
+    },
+    {
+      "drawTime": "115/03/15 16:35:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawTime\n115/03/09 15:35:00\n115/03/07 12:25:00\n115/02/25 23:10:00\n115/02/26 14:40:00\n115/03/15 10:10:00\n115/02/25 10:25:00\n115/02/22 12:15:00\n115/02/24 13:35:00\n115/03/02 20:45:00\n115/03/15 16:35:00\n",
+  "stderr": "",
+  "execution_time_ms": 1641
+}

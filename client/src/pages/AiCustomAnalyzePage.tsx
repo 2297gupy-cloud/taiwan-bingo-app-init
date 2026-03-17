@@ -59,11 +59,11 @@ export default function AiCustomAnalyzePage() {
 
   const analyzeMutation = trpc.aiStar.analyzeCustomDataFull.useMutation({
     onSuccess: (data) => {
-      setResult(data);
+      setResult(data as any);
       if (data.goldenBalls.length === 0) {
         toast.error("無法解析輸入的數據，請確認格式正確");
       } else {
-        toast.success(`AI 演算完成！分析 ${data.sampleCount} 期數據`);
+        toast.success(`AI 演算完成！分析完成`);
       }
     },
     onError: (err) => {
