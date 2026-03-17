@@ -73,15 +73,15 @@ function SectionTabs({ active, onChange }: { active: string; onChange: (v: strin
     { key: "history", label: "📄 歷史號碼" },
   ];
   return (
-    <div className="mx-3 mb-3 flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+    <div className="sticky top-[60px] z-30 bg-background/95 backdrop-blur border-b border-border mx-3 mb-3 flex flex-wrap gap-2 py-2">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`py-2 px-3 text-xs font-semibold rounded-lg whitespace-nowrap transition-all flex-shrink-0 ${
+          className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap ${
             active === tab.key
-              ? "bg-primary text-primary-foreground shadow-md"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
+              ? "bg-primary text-primary-foreground shadow-md border-b-2 border-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80 active:scale-95"
           }`}
         >
           {tab.label}
@@ -117,7 +117,7 @@ function LiveDraw() {
   if (!latest) return <div className="p-4 text-center text-muted-foreground text-xs">載入中...</div>;
 
   return (
-    <section id="live" className="scroll-mt-24">
+    <section id="live" className="scroll-mt-24 overflow-y-auto">
       {/* Current draw card */}
       <div className="mx-3 mb-3 p-3 rounded-lg bg-card border border-border">
         {/* Period info row */}
@@ -769,30 +769,32 @@ export default function MainPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <SiteHeader activeTab={activeTab} onTabChange={handleTabChange} />
       <Announcement />
       <SectionTabs active={activeTab} onChange={handleTabChange} />
-      {activeTab === "live" && <LiveDraw />}
-      {activeTab === "history" && <HistorySection />}
-      {activeTab === "ai" && <AiPredictionSection />}
-      {activeTab === "aisuper" && (
-        <div className="px-3">
-          <AiSuperPrizePage />
-        </div>
-      )}
-      {activeTab === "aistar" && (
-        <div className="px-3">
-          <AiStarPage />
-        </div>
-      )}
-      {activeTab === "aianalyze" && (
-        <div className="px-3 py-3">
-          <AiCustomAnalyzePage />
-        </div>
-      )}
-      {activeTab === "stats" && <StatsSection />}
-      <Footer />
+      <div className="flex-1 overflow-y-auto pb-20">
+        {activeTab === "live" && <LiveDraw />}
+        {activeTab === "history" && <HistorySection />}
+        {activeTab === "ai" && <AiPredictionSection />}
+        {activeTab === "aisuper" && (
+          <div className="px-3">
+            <AiSuperPrizePage />
+          </div>
+        )}
+        {activeTab === "aistar" && (
+          <div className="px-3">
+            <AiStarPage />
+          </div>
+        )}
+        {activeTab === "aianalyze" && (
+          <div className="px-3 py-3">
+            <AiCustomAnalyzePage />
+          </div>
+        )}
+        {activeTab === "stats" && <StatsSection />}
+        <Footer />
+      </div>
       <BackToTop />
     </div>
   );
