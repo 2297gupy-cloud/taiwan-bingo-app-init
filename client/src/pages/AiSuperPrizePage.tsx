@@ -322,7 +322,7 @@ function SuperSlotCard({
   prediction?: {
     candidateBalls: number[];
     reasoning: string | null;
-    isManual: boolean;
+    isManual: number | boolean;
   };
   isCurrent: boolean;
   isSelected: boolean;

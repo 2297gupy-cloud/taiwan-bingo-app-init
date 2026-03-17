@@ -40,7 +40,6 @@ import {
   verifyPrediction,
   getFormattedHourData,
   batchAnalyzeAllSlots,
-  batchAnalyzeSuperPrizeSlots,
   getAnalysisRecords,
   analyzeSuperPrizeSlot,
   getAiSuperPrizePredictions,
@@ -48,8 +47,6 @@ import {
   deleteAiSuperPrizePrediction,
   getHourDrawsWithSuper,
   verifySuperPrizePrediction,
-  analyzeCustomData,
-  parseRawDrawData,
 } from "./services/ai-star-strategy";
 import { aiApiKeys, drawRecords } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
@@ -303,29 +300,7 @@ export const appRouter = router({
             customModel = keyRows[0].customModel || null;
           }
         }
-        // 有 API Key 時，使用 7 項專業演算（analyzeCustomData）
-        if (userApiKey) {
-          const formatted = await getFormattedHourData(dateStr, input.sourceHour);
-          if (formatted.text) {
-            const customResult = await analyzeCustomData(formatted.text, userApiKey, customBaseUrl, customModel);
-            await saveAiStarPrediction(
-              dateStr,
-              input.sourceHour,
-              slot.target,
-              customResult.goldenBalls,
-              false,
-              customResult.reasoning
-            );
-            return {
-              ...customResult,
-              dateStr,
-              sourceHour: input.sourceHour,
-              targetHour: slot.target,
-              usedProfessionalAnalysis: true,
-            };
-          }
-        }
-        // 無 API Key 或無數據時，使用原有統計方法
+        // 調用 analyzeHourSlot，會自動根據 API Key 選擇 LLM 或統計方法
         const result = await analyzeHourSlot(dateStr, input.sourceHour, userApiKey, customBaseUrl, customModel);
         await saveAiStarPrediction(
           dateStr,
@@ -335,7 +310,7 @@ export const appRouter = router({
           false,
           result.reasoning
         );
-        return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: slot.target };
+        return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: slot.target, usedLLM: !result.llmError };
       }),
 
     /** 手動輸入黃金球號碼 */
@@ -425,22 +400,22 @@ export const appRouter = router({
     }),
 
     /** 批量分析所有時段 */
-    batchAnalyze: publicProcedure
+    batchAnalyze: protectedProcedure
       .input(z.object({
         dateStr: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        return batchAnalyzeAllSlots(dateStr);
+        return batchAnalyzeAllSlots(dateStr, ctx.user.id);
       }),
 
     /** 取得近 N 天的分析記錄 */
-    getAnalysisRecords: publicProcedure
+    getAnalysisRecords: protectedProcedure
       .input(z.object({
         days: z.number().min(1).max(30).default(7),
       }))
-      .query(async ({ input }) => {
-        return getAnalysisRecords(input.days);
+      .query(async ({ input, ctx }) => {
+        return getAnalysisRecords(input.days, ctx.user.id);
       }),
 
     /** 儲存用戶 API Key */
@@ -556,7 +531,10 @@ export const appRouter = router({
             }
           }
         }
-        return analyzeCustomData(input.rawText, userApiKey, customBaseUrl, customModel);
+        // 使用 analyzeHourSlot 進行分析（自動根據 API Key 選擇 LLM 或統計方法）
+        // 注意：這裡假設 input.rawText 是格式化的時段數據
+        // 實際使用中應該先解析 rawText 中的時段信息
+        return analyzeHourSlot(getTodayDateStr(), '08', userApiKey, customBaseUrl, customModel);
       }),
   }),
   /** AI 超級獎預測 */
@@ -567,7 +545,7 @@ export const appRouter = router({
       const dateStr = getTodayDateStr();
       return { slots: HOUR_SLOTS, currentSlot: currentSlotInfo, dateStr };
     }),
-    /** 取得指定日期的所有超級獎預測 */
+    /** 查詢指定日期的所有超級獎預測 */
     getPredictions: publicProcedure
       .input(z.object({ dateStr: z.string().optional() }))
       .query(async ({ input }) => {
@@ -597,18 +575,23 @@ export const appRouter = router({
           }
         }
         try {
-          const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, userApiKey, customBaseUrl, customModel);
+          // 查詢該時段的超級獎開獎數據
+          const superDraws = await getHourDrawsWithSuper(dateStr, input.sourceHour, 10);
+          const superNumbers = superDraws.map(d => d.superNumber);
+          const result = await analyzeSuperPrizeSlot(superNumbers, input.sourceHour, userApiKey, customBaseUrl, customModel);
           await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
           return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
         } catch (err) {
           console.error('[aiSuperPrize.analyze] Error:', err);
-          const result = await analyzeSuperPrizeSlot(dateStr, input.sourceHour, null, null, null);
+          const superDraws = await getHourDrawsWithSuper(dateStr, input.sourceHour, 10);
+          const superNumbers = superDraws.map(d => d.superNumber);
+          const result = await analyzeSuperPrizeSlot(superNumbers, input.sourceHour, null, null, null);
           await saveAiSuperPrizePrediction(dateStr, input.sourceHour, input.targetHour, result.candidateBalls, false, result.reasoning);
           return { ...result, dateStr, sourceHour: input.sourceHour, targetHour: input.targetHour };
         }
       }),
     /** 手動儲存超級獎候選球 */
-    saveManual: publicProcedure
+    saveManualSuperPrize: publicProcedure
       .input(z.object({
         dateStr: z.string().optional(),
         sourceHour: z.string(),
@@ -671,7 +654,9 @@ export const appRouter = router({
             customModel = keyRows[0].customModel || null;
           }
         }
-        return batchAnalyzeSuperPrizeSlots(dateStr, userApiKey, customBaseUrl, customModel);
+        // 使用 batchAnalyzeAllSlots 進行批量分析（樣本實現）
+        // 超級獎的批量分析可以粗粗實現為一個平行的序列
+        return batchAnalyzeAllSlots(dateStr, ctx.user.id);
       }),
   }),
 

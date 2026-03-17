@@ -288,3 +288,57 @@ export const aiSuperPrizePredictions = mysqlTable("ai_super_prize_predictions", 
 });
 export type AiSuperPrizePrediction = typeof aiSuperPrizePredictions.$inferSelect;
 export type InsertAiSuperPrizePrediction = typeof aiSuperPrizePredictions.$inferInsert;
+
+/**
+ * AI 一星驗證紀錄表
+ * 存儲每日每時段的推薦球、實際開獎結果、命中情況
+ */
+export const aiStarVerificationRecords = mysqlTable("ai_star_verification_records", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 用戶 ID */
+  userId: int("userId").notNull(),
+  /** 分析日期，格式 YYYY-MM-DD */
+  analysisDate: varchar("analysisDate", { length: 10 }).notNull(),
+  /** 時段，格式 HH */
+  slotHour: varchar("slotHour", { length: 2 }).notNull(),
+  /** 推薦的黃金球 JSON 陣列 */
+  recommendedBalls: json("recommendedBalls").notNull().$type<number[]>(),
+  /** 實際開獎結果 JSON 陣列 */
+  actualResult: json("actualResult").$type<number[]>(),
+  /** 命中的球數 */
+  hitCount: int("hitCount").default(0).notNull(),
+  /** 是否命中 (0=未開獎, 1=命中, 2=未命中) */
+  hitStatus: int("hitStatus").default(0).notNull(),
+  /** 創建時間 */
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  /** 更新時間 */
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AiStarVerificationRecord = typeof aiStarVerificationRecords.$inferSelect;
+export type InsertAiStarVerificationRecord = typeof aiStarVerificationRecords.$inferInsert;
+
+/**
+ * AI 一星命中率統計表
+ * 記錄每日的命中率統計
+ */
+export const aiStarHitRateSummary = mysqlTable("ai_star_hit_rate_summary", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 用戶 ID */
+  userId: int("userId").notNull(),
+  /** 分析日期，格式 YYYY-MM-DD */
+  analysisDate: varchar("analysisDate", { length: 10 }).notNull(),
+  /** 總預測次數 */
+  totalPredictions: int("totalPredictions").default(0).notNull(),
+  /** 命中次數 */
+  totalHits: int("totalHits").default(0).notNull(),
+  /** 命中率 (百分比) */
+  hitRate: int("hitRate").default(0).notNull(),
+  /** 創建時間 */
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  /** 更新時間 */
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AiStarHitRateSummary = typeof aiStarHitRateSummary.$inferSelect;
+export type InsertAiStarHitRateSummary = typeof aiStarHitRateSummary.$inferInsert;

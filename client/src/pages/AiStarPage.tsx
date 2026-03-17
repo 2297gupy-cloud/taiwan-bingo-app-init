@@ -361,7 +361,7 @@ function SlotCard({
     goldenBalls: number[];
     reasoning: string | null;
     fullAnalysis?: string | null;
-    isManual: boolean;
+    isManual: number | boolean;
   };
   isCurrent: boolean;
   isSelected: boolean;
