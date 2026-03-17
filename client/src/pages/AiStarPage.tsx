@@ -775,7 +775,6 @@ export default function AiStarPage() {
               </button>
               <button
                 onClick={async () => {
-                  if (!window.confirm(`確定清除 ${dateStr} 所有時段的球號？此操作無法撤銷。`)) return;
                   try {
                     if (predictions && predictions.length > 0) {
                       await Promise.all(
