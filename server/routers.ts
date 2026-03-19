@@ -1,4 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
+import { getAiPredictions } from './google-api';
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -275,7 +276,7 @@ export const appRouter = router({
       .input(z.object({ dateStr: z.string().optional() }))
       .query(async ({ input }) => {
         const dateStr = input.dateStr || getTodayDateStr();
-        return getAiStarPredictions(dateStr);
+        return getAiPredictions(dateStr);
       }),
 
     /** AI 自動分析指定時段 */
