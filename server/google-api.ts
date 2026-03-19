@@ -100,17 +100,27 @@ export async function getAiPredictions(dateStr: string) {
   const cached = cache.get(cacheKey);
   
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log(`[Cache Hit] AI predictions for ${dateStr}`);
     return cached.data;
   }
 
   try {
-    const response = await fetch(`${GOOGLE_API_URL}?action=predictions&date=${dateStr}`);
+    // 確保日期格式正確 (YYYY-MM-DD)
+    const formattedDate = dateStr.match(/^\d{4}-\d{2}-\d{2}$/) ? dateStr : dateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+    
+    console.log(`[API Call] Fetching AI predictions for date: ${formattedDate}`);
+    const url = `${GOOGLE_API_URL}?action=predictions&date=${formattedDate}`;
+    console.log(`[API URL] ${url}`);
+    
+    const response = await fetch(url);
     const json = await response.json();
+    
+    console.log(`[API Response] Status: ${response.status}, Success: ${json.success}, Data length: ${Array.isArray(json.data) ? json.data.length : 'N/A'}`);
     
     // 驗證 Google API 響應格式
     const apiValidation = validateGoogleApiResponse(json);
     if (!apiValidation.valid) {
-      console.error(`Invalid Google API response format: ${apiValidation.error}`);
+      console.error(`[Validation Error] Invalid Google API response format: ${apiValidation.error}`);
       return [];
     }
     
@@ -118,17 +128,19 @@ export async function getAiPredictions(dateStr: string) {
       // 驗證預測數據
       const predictionsValidation = validateAiPredictions(json.data);
       if (!predictionsValidation.valid) {
-        console.error(`Invalid predictions data format: ${predictionsValidation.error}`);
+        console.error(`[Validation Error] Invalid predictions data format: ${predictionsValidation.error}`);
         return [];
       }
       
+      console.log(`[Success] Fetched ${predictionsValidation.data?.length || 0} predictions for ${dateStr}`);
       cache.set(cacheKey, { data: predictionsValidation.data, timestamp: Date.now() });
       return predictionsValidation.data || [];
     }
     
+    console.warn(`[Empty Response] No predictions data returned for ${dateStr}`);
     return [];
   } catch (error) {
-    console.error(`Failed to fetch AI predictions for date ${dateStr} from Google API:`, error);
+    console.error(`[Fetch Error] Failed to fetch AI predictions for date ${dateStr} from Google API:`, error);
     return [];
   }
 }
