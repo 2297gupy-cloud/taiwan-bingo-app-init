@@ -873,16 +873,29 @@ export default function AiStarPage() {
                     setBatchAnalysisTotal(24);
                     const allHours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
                     let completed = 0;
+                    let successCount = 0;
+                    
                     allHours.forEach((hour, index) => {
                       setTimeout(() => {
-                        analyzeMutation.mutate({ dateStr, sourceHour: hour });
-                        completed++;
-                        setBatchAnalysisProgress(completed);
-                        if (completed === 24) {
-                          setIsBatchAnalyzing(false);
-                          toast.success('已完成全部 24 個時段分析');
-                        }
-                      }, index * 300);
+                        analyzeMutation.mutate({ dateStr, sourceHour: hour }, {
+                          onSuccess: () => {
+                            successCount++;
+                            completed++;
+                            setBatchAnalysisProgress(completed);
+                            if (completed === 24) {
+                              setIsBatchAnalyzing(false);
+                              setTimeout(() => {
+                                refetchPredictions();
+                                toast.success(`已完成全部 24 個時段分析，成功 ${successCount} 個`);
+                              }, 300);
+                            }
+                          },
+                          onError: () => {
+                            completed++;
+                            setBatchAnalysisProgress(completed);
+                          }
+                        });
+                      }, index * 150);
                     });
                     toast.success('已開始分析全部 24 個時段');
                   }}
