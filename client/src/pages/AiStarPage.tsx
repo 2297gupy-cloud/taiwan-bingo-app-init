@@ -860,6 +860,26 @@ export default function AiStarPage() {
               </span>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const allHours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+                  allHours.forEach(hour => {
+                    analyzeMutation.mutate({ dateStr, sourceHour: hour });
+                  });
+                  toast.success('已開始分析全部 24 個時段');
+                }}
+                disabled={analyzeMutation.isPending}
+                className="gap-1 border border-green-500 text-xs px-2 py-1 h-7 hover:bg-green-500/10 font-semibold"
+              >
+                {analyzeMutation.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Zap className="h-3 w-3" />
+                )}
+                一鍵全部分析
+              </Button>
               {hourDataForCopy?.text && (
                 <button
                   onClick={handleCopyData}
@@ -891,15 +911,26 @@ export default function AiStarPage() {
             </div>
           </div>
 
-          {/* 黃金球展示 */}
+          {/* 黃金球展示 - 表格格式 */}
           {currentPrediction ? (
-            <div className="space-y-1.5">
-              <div className="flex justify-center">
-                <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-secondary/30 border-2 border-amber-500">
-                  {currentPrediction.goldenBalls.map((num: number, idx: number) => (
-                    <GoldenBall key={idx} number={num} size="lg" />
-                  ))}
-                </div>
+            <div className="space-y-2">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr className="border-b border-border/30">
+                      <td className="px-2 py-1.5 text-muted-foreground">預測號碼</td>
+                      <td className="px-2 py-1.5 font-bold text-amber-400">
+                        {currentPrediction.goldenBalls.join(", ") || "無"}
+                      </td>
+                    </tr>
+                    <tr className="border-b border-border/30">
+                      <td className="px-2 py-1.5 text-muted-foreground">時段範圍</td>
+                      <td className="px-2 py-1.5">
+                        {currentSlotInfo?.copyRange || (effectiveSlot.padStart(2, "0") + "00~" + effectiveSlot.padStart(2, "0") + "55")} → {currentSlotInfo?.target.padStart(2, "0") || "??"}:00~{currentSlotInfo?.target.padStart(2, "0") || "??"}:55
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
               {currentPrediction.reasoning && (
                 <button
@@ -909,17 +940,9 @@ export default function AiStarPage() {
                   📋 AI 推理說明
                 </button>
               )}
-              <p className="text-[10px] text-muted-foreground/50 text-center">
-                數據 {currentSlotInfo?.copyRange || (effectiveSlot.padStart(2, "0") + "00~" + effectiveSlot.padStart(2, "0") + "55")} → 預測 {currentSlotInfo?.target.padStart(2, "0") || "??"}:00~{currentSlotInfo?.target.padStart(2, "0") || "??"}:55
-              </p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2 py-3">
-              <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-secondary/30 border border-amber-500/20 border-dashed animate-pulse">
-                {[0, 1, 2].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full bg-secondary/50 flex items-center justify-center text-[10px] text-muted-foreground">?</div>
-                ))}
-              </div>
               <p className="text-[10px] text-muted-foreground">
                 尚未分析此時段，點擊「AI分析」或在下方手動輸入
               </p>
