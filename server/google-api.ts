@@ -1,3 +1,5 @@
+import { validateGoogleApiResponse, validateAiPredictions, validateDraws } from './validators';
+
 /**
  * Google Apps Script API 集成
  * 使用 Google Apps Script 作為唯一的數據源
@@ -105,17 +107,23 @@ export async function getAiPredictions(dateStr: string) {
     const response = await fetch(`${GOOGLE_API_URL}?action=predictions&date=${dateStr}`);
     const json = await response.json();
     
+    // 驗證 Google API 響應格式
+    const apiValidation = validateGoogleApiResponse(json);
+    if (!apiValidation.valid) {
+      console.error(`Invalid Google API response format: ${apiValidation.error}`);
+      return [];
+    }
+    
     if (json.success && json.data) {
-      const predictions = (json.data || []).map((item: any) => ({
-        sourceHour: String(item.sourceHour || item.hour).padStart(2, '0'),
-        targetHour: String(item.targetHour || item.hour).padStart(2, '0'),
-        goldenBalls: item.goldenBalls || item.balls || [],
-        isManual: item.isManual ? 1 : 0,
-        reasoning: item.reasoning || '',
-      }));
+      // 驗證預測數據
+      const predictionsValidation = validateAiPredictions(json.data);
+      if (!predictionsValidation.valid) {
+        console.error(`Invalid predictions data format: ${predictionsValidation.error}`);
+        return [];
+      }
       
-      cache.set(cacheKey, { data: predictions, timestamp: Date.now() });
-      return predictions;
+      cache.set(cacheKey, { data: predictionsValidation.data, timestamp: Date.now() });
+      return predictionsValidation.data || [];
     }
     
     return [];
