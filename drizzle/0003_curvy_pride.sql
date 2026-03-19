@@ -1,1 +1,0 @@
-ALTER TABLE `draw_records` MODIFY COLUMN `drawTime` varchar(50) NOT NULL;

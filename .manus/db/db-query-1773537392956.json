@@ -1,9 +1,0 @@
-{
-  "query": "INSERT INTO draw_records (drawNumber, drawTime, numbers, superNumber, total, bigSmall, oddEven, plate) \nVALUES ('115014845', '115/03/15 09:10:00', '[1,3,5,10,11,13,17,19,22,48,51,52,56,57,58,59,63,65,73,78]', 1, 1062, 'big', 'odd', 'A')\nON DUPLICATE KEY UPDATE \n  drawTime = '115/03/15 09:10:00',\n  numbers = '[1,3,5,10,11,13,17,19,22,48,51,52,56,57,58,59,63,65,73,78]',\n  superNumber = 1,\n  total = 1062,\n  bigSmall = 'big',\n  oddEven = 'odd',\n  plate = 'A';",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute INSERT INTO draw_records (drawNumber, drawTime, numbers, superNumber, total, bigSmall, oddEven, plate) \nVALUES ('115014845', '115/03/15 09:10:00', '[1,3,5,10,11,13,17,19,22,48,51,52,56,57,58,59,63,65,73,78]', 1, 1062, 'big', 'odd', 'A')\nON DUPLICATE KEY UPDATE \n  drawTime = '115/03/15 09:10:00',\n  numbers = '[1,3,5,10,11,13,17,19,22,48,51,52,56,57,58,59,63,65,73,78]',\n  superNumber = 1,\n  total = 1062,\n  bigSmall = 'big',\n  oddEven = 'odd',\n  plate = 'A';",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 1582
-}
