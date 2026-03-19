@@ -5,7 +5,9 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
+import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { startLiveDrawPolling } from "../services/live-draw-simulator";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -39,7 +41,7 @@ async function startServer() {
     "/api/trpc",
     createExpressMiddleware({
       router: appRouter,
-      createContext: async () => ({}),
+      createContext,
     })
   );
   // development mode uses Vite, production mode uses static files
@@ -60,8 +62,12 @@ async function startServer() {
     console.log(`Server running on http://localhost:${port}/`);
   });
 
-  // 應用已啟動
-  console.log('[Server] Ready to serve requests');
+  // 啟動即時開獎輪詢
+  // 優先嘗試從台彩 API 抓取真實數據，失敗則使用模擬數據
+  // 每天 204 期，07:05 到 23:55，每 5 分鐘一期
+  setTimeout(() => {
+    startLiveDrawPolling(20); // 每 20 秒檢查一次
+  }, 2000);
 }
 
 startServer().catch(console.error);
