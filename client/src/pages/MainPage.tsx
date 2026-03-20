@@ -209,7 +209,7 @@ function LiveDraw() {
           <h2 className="text-sm font-semibold">近期開獎</h2>
         </div>
         <div className="space-y-1.5">
-          {recent?.slice(0, 5).map((draw) => (
+          {recent?.slice(0, 5).map((draw: any) => (
             <div key={draw.id} className="p-2 rounded bg-card border border-border">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-mono font-semibold">{draw.drawNumber}</span>
@@ -375,7 +375,7 @@ function HistorySection() {
             </tr>
           </thead>
           <tbody>
-            {data?.records.map((draw) => {
+            {data?.records.map((draw: any) => {
               const nums = [...(draw.numbers as number[])];
               const sorted = sortMode === "size" ? nums.sort((a, b) => a - b) : nums;
               return (

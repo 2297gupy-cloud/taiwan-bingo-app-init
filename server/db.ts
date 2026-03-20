@@ -73,20 +73,27 @@ export async function getUserByOpenId(openId: string) {
 
 // ============ Draw Records ============
 
-/** 取得最新一期開獎記錄 */
+/** 取得最新一期開獎記錄 - 從 Google API 獲取 */
 export async function getLatestDraw() {
-  const db = await getDb();
-  if (!db) return null;
-  // 用 drawTime 降序排列，避免字串排序導致舊格式期號排在前面
-  const result = await db.select().from(drawRecords).orderBy(desc(drawRecords.drawTime)).limit(1);
-  return result[0] || null;
+  try {
+    const { getLatestDraws } = await import('./google-api');
+    const draws = await getLatestDraws(1);
+    return draws.length > 0 ? draws[0] : null;
+  } catch (error) {
+    console.error('[getLatestDraw] Error fetching from Google API:', error);
+    return null;
+  }
 }
 
-/** 取得最近 N 期開獎記錄 */
+/** 取得最近 N 期開獎記錄 - 從 Google API 獲取 */
 export async function getRecentDraws(limit: number = 20) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(drawRecords).orderBy(desc(drawRecords.drawNumber)).limit(limit);
+  try {
+    const { getLatestDraws } = await import('./google-api');
+    return await getLatestDraws(limit);
+  } catch (error) {
+    console.error('[getRecentDraws] Error fetching from Google API:', error);
+    return [];
+  }
 }
 
 /** 取得歷史開獎記錄（分頁） */

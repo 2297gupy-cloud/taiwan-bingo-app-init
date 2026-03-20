@@ -42,7 +42,7 @@ export default function Live() {
     }
     
     const headers = ["期號", "開獎時間", "號碼", "總和", "大小", "單雙", "超級號", "盤面"];
-    const rows = history30days.map(draw => [
+    const rows = history30days.map((draw: any) => [
       draw.drawNumber,
       draw.drawTime,
       (draw.numbers as number[]).join(","),
@@ -55,7 +55,7 @@ export default function Live() {
     
     const csv = [
       headers.join(","),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+      ...rows.map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(","))
     ].join("\n");
     
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -76,7 +76,7 @@ export default function Live() {
     let validCount = 0;
     let invalidCount = 0;
     
-    history30days.forEach(draw => {
+    history30days.forEach((draw: any) => {
       const drawNum = draw.drawNumber.toString();
       if (drawNum.length === 9 && /^\d+$/.test(drawNum)) {
         validCount++;
@@ -243,7 +243,7 @@ export default function Live() {
         </h2>
 
         <div className="space-y-2">
-          {recent?.map((draw) => (
+          {recent?.map((draw: any) => (
             <div
               key={draw.id}
               className="p-3 rounded-lg bg-card border border-border"
@@ -297,7 +297,7 @@ export default function Live() {
         </h2>
 
         <div className="grid grid-cols-2 gap-1">
-          {history50?.map((draw) => (
+          {history50?.map((draw: any) => (
             <div
               key={draw.id}
               className="p-2 rounded-lg bg-card border border-border/30 text-[9px]"

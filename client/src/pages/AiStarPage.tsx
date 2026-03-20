@@ -387,7 +387,7 @@ function SlotCard({
   );
   
   // 計算該時段的開獎期數
-  const drawsInHour = hourDraws?.filter(draw => {
+  const drawsInHour = hourDraws?.filter((draw: any) => {
     const drawHour = parseInt(draw.drawTime.split(' ')[1].split(':')[0]);
     return drawHour === targetHour;
   }).length || 0;
