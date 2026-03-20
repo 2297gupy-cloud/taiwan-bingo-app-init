@@ -164,7 +164,7 @@ function LiveDraw() {
         <div className="grid grid-cols-5 gap-2 mb-3 justify-items-center">
           {sortedNumbers.map((num, i) => (
             <NumberBall
-              key={i}
+              key={`${latest.drawNumber}-${num}-${i}`}
               number={num}
               isSuper={num === latest.superNumber}
               size="lg"
@@ -219,7 +219,7 @@ function LiveDraw() {
               </div>
               <div className="flex flex-wrap gap-0.5 mb-1">
                 {(draw.numbers as number[]).map((num, i) => (
-                  <NumberBall key={i} number={num} isSuper={num === draw.superNumber} size="sm" />
+                  <NumberBall key={`${draw.drawNumber}-${num}-${i}`} number={num} isSuper={num === draw.superNumber} size="sm" />
                 ))}
               </div>
               <div className="flex items-center gap-2 text-[9px]">
@@ -395,7 +395,7 @@ function HistorySection() {
                     <div className="flex flex-wrap gap-0.5 justify-center">
                       {sorted.map((num, i) => (
                         <span
-                          key={i}
+                          key={`${draw.drawNumber}-${num}-${i}`}
                           className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[8px] font-bold border ${
                             num === draw.superNumber
                               ? "bg-destructive border-destructive text-white"
@@ -404,8 +404,7 @@ function HistorySection() {
                         >
                           {padNumber(num)}
                         </span>
-                      ))}
-                    </div>
+                      ))}                    </div>
                   </td>
                   <td className={`py-1.5 px-1 text-center font-bold ${getBigSmallClass(draw.bigSmall)}`}>
                     {getBigSmallLabel(draw.bigSmall)}

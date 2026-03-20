@@ -179,7 +179,7 @@ export default function Live() {
           <div className="flex flex-wrap gap-1.5 mb-4">
             {sortedNumbers.map((num, i) => (
               <NumberBall
-                key={i}
+                key={`${latest.drawNumber}-${num}-${i}`}
                 number={num}
                 isSuper={num === latest.superNumber}
                 size="lg"
@@ -261,7 +261,7 @@ export default function Live() {
               <div className="flex flex-wrap gap-1 mb-2">
                 {(draw.numbers as number[]).map((num, i) => (
                   <NumberBall
-                    key={i}
+                    key={`${draw.drawNumber}-${num}-${i}`}
                     number={num}
                     isSuper={num === draw.superNumber}
                     size="sm"
@@ -318,7 +318,7 @@ export default function Live() {
               <div className="flex flex-wrap gap-0.5">
                 {(draw.numbers as number[]).map((num, i) => (
                   <span
-                    key={i}
+                    key={`${draw.drawNumber}-${num}-${i}`}
                     className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-secondary text-[7px] font-semibold"
                   >
                     {num}

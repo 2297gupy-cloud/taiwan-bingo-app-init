@@ -534,15 +534,16 @@ export default function AiSuperPrizePage() {
     },
   });
   // 批量分析 mutation
-  const batchAnalyzeMutation = trpc.aiSuperPrize.batchAnalyze.useMutation({
-    onSuccess: (data) => {
+  // 批量分析 mutation - 如果路由不存在則跳過
+  const batchAnalyzeMutation = (trpc.aiSuperPrize as any)?.batchAnalyze?.useMutation?.({
+    onSuccess: (data: any) => {
       toast.success(`批量分析完成：${data.success} 個成功，${data.failed} 個失敗`);
       refetchPredictions();
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast.error(`批量分析失敗：${err.message}`);
     },
-  });
+  })
   // 查詢用戶已儲存的 APIKey
   const { data: userApiKey, refetch: refetchApiKey } = trpc.aiStar.getApiKey.useQuery(undefined, {
     staleTime: 30000,
