@@ -126,37 +126,43 @@ function formatBigSmall(val: string): string {
   return "―";
 }
 
-/** 取得指定時段的開獎數據（最近 10 期） - 從 Google API 獲取 */
+/** 取得指定時段的開獎數據（最近 10 期） - 改用 MySQL 資料庫查詢 */
 export async function getHourDraws(
   dateStr: string,
   targetHour: string,
   limit: number = 10
 ): Promise<{ term: string; time: string; numbers: number[]; superNumber: number }[]> {
   try {
-    // 從 Google API 獲取指定日期的所有開獎數據
-    const allDraws = await getDrawsByDate(dateStr);
-    
-    if (!allDraws || allDraws.length === 0) {
-      console.log(`[getHourDraws] No draws found for ${dateStr}`);
-      return [];
-    }
-
+    // 改用 MySQL 資料庫查詢（由台灣彩券官方 API 同步的真實數據）
+    const database = await db();
+    const rocDate = toROCDateStr(dateStr);
     const hourNum = parseInt(targetHour, 10);
     const hourStr = String(hourNum).padStart(2, "0");
 
-    // 篩選指定時段的開獎數據
-    // drawTime 格式："115/03/15 07:05:00"
+    // 查詢該時段的開獎記錄
+    const allDraws = await database
+      .select()
+      .from(drawRecords)
+      .where(
+        and(
+          like(drawRecords.drawTime, `${rocDate}%`),
+          like(drawRecords.drawTime, `% ${hourStr}:%`)
+        )
+      )
+      .orderBy(desc(drawRecords.drawTime))
+      .limit(limit);
+    
+    if (!allDraws || allDraws.length === 0) {
+      console.log(`[getHourDraws] No draws found for ${dateStr} hour ${hourStr}`);
+      return [];
+    }
+
+    // 用 drawTime 去重，建立時間→開獎記錄的 Map
     const drawMap = new Map<string, typeof allDraws[0]>();
     for (const d of allDraws) {
-      const timeStr = d.drawTime.split(" ")[1] || "";
-      const [hours] = timeStr.split(":");
-      
-      // 只保留指定時段的開獎
-      if (hours === hourStr) {
-        const timeKey = timeStr.substring(0, 5); // HH:MM
-        if (!drawMap.has(timeKey)) {
-          drawMap.set(timeKey, d);
-        }
+      const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
+      if (!drawMap.has(timeKey)) {
+        drawMap.set(timeKey, d);
       }
     }
 
@@ -1075,37 +1081,43 @@ export async function deleteAiSuperPrizePrediction(dateStr: string, sourceHour: 
     );
 }
 
-/** 取得指定時段的超級獎開獎數據 - 從 Google API 獲取 */
+/** 取得指定時段的超級獎開獎數據 - 改用 MySQL 資料庫查詢 */
 export async function getHourDrawsWithSuper(
   dateStr: string,
   targetHour: string,
   limit: number = 10
 ): Promise<{ term: string; time: string; superNumber: number }[]> {
   try {
-    // 從 Google API 獲取指定日期的所有開獎數據
-    const allDraws = await getDrawsByDate(dateStr);
-    
-    if (!allDraws || allDraws.length === 0) {
-      console.log(`[getHourDrawsWithSuper] No draws found for ${dateStr}`);
-      return [];
-    }
-
+    // 改用 MySQL 資料庫查詢（由台灣彩券官方 API 同步的真實數據）
+    const database = await db();
+    const rocDate = toROCDateStr(dateStr);
     const hourNum = parseInt(targetHour, 10);
     const hourStr = String(hourNum).padStart(2, "0");
 
-    // 篩選指定時段的開獎數據
-    // drawTime 格式："115/03/15 07:05:00"
+    // 查詢該時段的開獎記錄
+    const allDraws = await database
+      .select()
+      .from(drawRecords)
+      .where(
+        and(
+          like(drawRecords.drawTime, `${rocDate}%`),
+          like(drawRecords.drawTime, `% ${hourStr}:%`)
+        )
+      )
+      .orderBy(desc(drawRecords.drawTime))
+      .limit(limit);
+    
+    if (!allDraws || allDraws.length === 0) {
+      console.log(`[getHourDrawsWithSuper] No draws found for ${dateStr} hour ${hourStr}`);
+      return [];
+    }
+
+    // 用 drawTime 去重，建立時間→開獎記錄的 Map
     const drawMap = new Map<string, typeof allDraws[0]>();
     for (const d of allDraws) {
-      const timeStr = d.drawTime.split(" ")[1] || "";
-      const [hours] = timeStr.split(":");
-      
-      // 只保留指定時段的開獎
-      if (hours === hourStr) {
-        const timeKey = timeStr.substring(0, 5); // HH:MM
-        if (!drawMap.has(timeKey)) {
-          drawMap.set(timeKey, d);
-        }
+      const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
+      if (!drawMap.has(timeKey)) {
+        drawMap.set(timeKey, d);
       }
     }
 
