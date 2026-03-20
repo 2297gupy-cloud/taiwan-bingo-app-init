@@ -410,13 +410,13 @@ function SlotCard({
       // 使用 hash 方式傳遞大量數據，避免 URL 長度限制
       const encodedData = encodeURIComponent(formattedData.text);
       const url = `/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`;
-      // 直接導航到新 URL
-      window.location.href = url;
+      // 使用 setLocation 進行 React 內導航，避免頁面重新加載
+      setLocation(url);
       toast.success("已複製到 AI演算，自動分析中...");
     } else {
       toast.error("此時段尚無數據可複製");
     }
-  }, [formattedData]);
+  }, [formattedData, setLocation]);
 
   const longPress = useLongPress(handleCopy, 300);
 

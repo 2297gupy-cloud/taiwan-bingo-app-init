@@ -348,16 +348,18 @@ export async function getFormattedHourData(
   }
 
   // 轉換為陣列並排序（從新到舊，用於 AI 分析）
+  // 08 時取 11 期（07:05~07:55），其他時段取 12 期
+  const periodCount = sourceHour === "08" ? 11 : 12;
   const draws = Array.from(drawMap.values())
     .sort((a, b) => b.drawTime.localeCompare(a.drawTime))
-    .slice(0, 10)
+    .slice(0, periodCount)
     .map((d) => ({
       term: d.drawNumber,
       time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
       numbers: d.numbers as number[],
       superNumber: d.superNumber as number,
       bigSmall: formatBigSmall(d.bigSmall),
-      oddEven: d.oddEven === "odd" ? "奇" : d.oddEven === "even" ? "偶" : "―",
+      oddEven: d.oddEven === "odd" ? "單" : d.oddEven === "even" ? "雙" : "―",
     }));
 
   const header = `台灣賓果 ${sourceHour}:00~${sourceHour}:55 時段開獎數據\n日期: ${dateStr}\n時段: ${copyRange || ""}`;
