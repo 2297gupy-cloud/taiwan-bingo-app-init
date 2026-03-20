@@ -863,48 +863,6 @@ export default function AiStarPage() {
               </span>
             </div>
             <div className="flex gap-2">
-              <div className="flex flex-col gap-1 flex-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsBatchAnalyzing(true);
-                    setBatchAnalysisProgress(0);
-                    setBatchAnalysisTotal(24);
-                    const allHours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-                    let completed = 0;
-                    allHours.forEach((hour, index) => {
-                      setTimeout(() => {
-                        analyzeMutation.mutate({ dateStr, sourceHour: hour });
-                        completed++;
-                        setBatchAnalysisProgress(completed);
-                        if (completed === 24) {
-                          setIsBatchAnalyzing(false);
-                          toast.success('已完成全部 24 個時段分析');
-                        }
-                      }, index * 300);
-                    });
-                    toast.success('已開始分析全部 24 個時段');
-                  }}
-                  disabled={analyzeMutation.isPending || isBatchAnalyzing}
-                  className="gap-1 border border-green-500 text-xs px-2 py-1 h-7 hover:bg-green-500/10 font-semibold"
-                >
-                  {isBatchAnalyzing ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Zap className="h-3 w-3" />
-                  )}
-                  {isBatchAnalyzing ? `分析中 ${batchAnalysisProgress}/${batchAnalysisTotal}` : '一鍵全部分析'}
-                </Button>
-                {isBatchAnalyzing && (
-                  <div className="w-full bg-secondary/30 rounded h-1.5 overflow-hidden">
-                    <div
-                      className="h-full bg-green-500 transition-all duration-300"
-                      style={{ width: `${(batchAnalysisProgress / batchAnalysisTotal) * 100}%` }}
-                    />
-                  </div>
-                )}
-              </div>
               {hourDataForCopy?.text && (
                 <button
                   onClick={handleCopyData}
