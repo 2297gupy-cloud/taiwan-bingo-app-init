@@ -377,7 +377,10 @@ export async function getFormattedHourData(
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
-    return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎: ${String(d.superNumber).padStart(2, "0")}`;
+    // 未中獎時大小和單雙顯示為「－」
+    const bigSmallDisplay = d.bigSmall || "－";
+    const oddEvenDisplay = d.oddEven || "－";
+    return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎: ${String(d.superNumber).padStart(2, "0")} ${bigSmallDisplay} ${oddEvenDisplay}`;
   });
 
   const text = `${header}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
