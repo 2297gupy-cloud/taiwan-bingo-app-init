@@ -39,7 +39,7 @@ export type AiPrediction = z.infer<typeof AiPredictionSchema>;
 export const GoogleApiResponseSchema = z.object({
   success: z.boolean(),
   data: z.any().optional(),
-  error: z.string().optional(),
+  error: z.string().nullable().optional(),
   message: z.string().optional(),
 }).strict();
 

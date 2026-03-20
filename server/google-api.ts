@@ -161,7 +161,7 @@ export async function getAiPredictions(dateStr: string) {
     const formattedDate = dateStr.match(/^\d{4}-\d{2}-\d{2}$/) ? dateStr : dateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
     
     console.log(`[API Call] Fetching AI predictions for date: ${formattedDate}`);
-    const url = `${GOOGLE_API_URL}?action=predictions&date=${formattedDate}`;
+    const url = `${GOOGLE_API_URL}?date=${formattedDate}`;
     console.log(`[API URL] ${url}`);
     
     const response = await fetch(url);

@@ -639,27 +639,7 @@ export const appRouter = router({
         return getFormattedHourData(dateStr, input.sourceHour, input.copyRange);
       }),
     /** 批量分析所有時段的超級獎候選球 */
-    batchAnalyze: protectedProcedure
-      .input(z.object({ dateStr: z.string().optional() }))
-      .mutation(async ({ input, ctx }) => {
-        const dateStr = input.dateStr || getTodayDateStr();
-        // 讀取用戶儲存的 APIKey 和自訂設定
-        const db = await getDb();
-        let userApiKey: string | null | undefined;
-        let customBaseUrl: string | null | undefined;
-        let customModel: string | null | undefined;
-        if (db) {
-          const keyRows = await db.select().from(aiApiKeys).where(eq(aiApiKeys.userId, ctx.user.id)).limit(1);
-          if (keyRows.length > 0) {
-            userApiKey = keyRows[0].openaiKey || keyRows[0].geminiKey || null;
-            customBaseUrl = keyRows[0].customBaseUrl || null;
-            customModel = keyRows[0].customModel || null;
-          }
-        }
-        // 使用 batchAnalyzeAllSlots 進行批量分析（樣本實現）
-        // 超級獎的批量分析可以粗粗實現為一個平行的序列
-        return batchAnalyzeAllSlots(dateStr, ctx.user.id);
-      }),
+
   }),
 
   /** 台彩數據同步管理 */

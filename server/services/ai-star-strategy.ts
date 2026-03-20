@@ -641,8 +641,28 @@ export async function batchAnalyzeAllSlots(dateStr: string, userId?: number): Pr
   const verificationRecords = [];
   let totalHits = 0;
 
+  // 判斷是否為今天
+  const today = new Date().toISOString().split('T')[0];
+  const isToday = dateStr === today;
+
   for (const slot of HOUR_SLOTS) {
     try {
+      // 如果是今天，先檢查該時段是否有數據
+      if (isToday) {
+        const hourDraws = await getHourDraws(dateStr, slot.source, 1);
+        if (hourDraws.length === 0) {
+          // 今天無數據的時段跳過
+          console.log(`[batchAnalyze] Skipping ${dateStr} hour ${slot.source} - no data yet`);
+          results.push({
+            sourceHour: slot.source,
+            success: false,
+            error: '此時段尚無開獎數據',
+          });
+          failedCount++;
+          continue;
+        }
+      }
+
       const result = await analyzeHourSlot(dateStr, slot.source);
       await saveAiStarPrediction(
         dateStr,
