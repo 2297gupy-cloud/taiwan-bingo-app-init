@@ -377,9 +377,9 @@ export async function getFormattedHourData(
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
-    // 未中獎時大小和單雙顯示為「－」
+    // 直接使用數據庫的大小值，單雙全部顯示「－」
     const bigSmallDisplay = d.bigSmall || "－";
-    const oddEvenDisplay = d.oddEven || "－";
+    const oddEvenDisplay = "－"; // 單雙全部顯示「－」
     return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎: ${String(d.superNumber).padStart(2, "0")} ${bigSmallDisplay} ${oddEvenDisplay}`;
   });
 
