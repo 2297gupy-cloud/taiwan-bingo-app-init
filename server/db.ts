@@ -73,25 +73,74 @@ export async function getUserByOpenId(openId: string) {
 
 // ============ Draw Records ============
 
-/** 取得最新一期開獎記錄 - 從 Google API 獲取 */
+/** 取得最新一期開獎記錄 - 優先從 MySQL 獲取，備用 Google API */
 export async function getLatestDraw() {
   try {
+    const database = await getDb();
+    if (database) {
+      // 優先從 MySQL 獲取（由台灣彩券官方 API 同步的真實數據）
+      const latest = await database
+        .select()
+        .from(drawRecords)
+        .orderBy(desc(drawRecords.drawTime))
+        .limit(1);
+      
+      if (latest.length > 0) {
+        const record = latest[0];
+        return {
+          drawNumber: record.drawNumber,
+          drawTime: record.drawTime,
+          numbers: record.numbers as number[],
+          superNumber: record.superNumber as number,
+          total: record.total as number,
+          bigSmall: record.bigSmall,
+          oddEven: record.oddEven,
+          plate: record.plate || 'A',
+        };
+      }
+    }
+    
+    // 備用：從 Google API 獲取
     const { getLatestDraws } = await import('./google-api');
     const draws = await getLatestDraws(1);
     return draws.length > 0 ? draws[0] : null;
   } catch (error) {
-    console.error('[getLatestDraw] Error fetching from Google API:', error);
+    console.error('[getLatestDraw] Error:', error);
     return null;
   }
 }
 
-/** 取得最近 N 期開獎記錄 - 從 Google API 獲取 */
+/** 取得最近 N 期開獎記錄 - 優先從 MySQL 獲取，備用 Google API */
 export async function getRecentDraws(limit: number = 20) {
   try {
+    const database = await getDb();
+    if (database) {
+      // 優先從 MySQL 獲取
+      const records = await database
+        .select()
+        .from(drawRecords)
+        .orderBy(desc(drawRecords.drawTime))
+        .limit(limit);
+      
+      if (records.length > 0) {
+        return records.map(r => ({
+          drawNumber: r.drawNumber,
+          drawTime: r.drawTime,
+          numbers: r.numbers as number[],
+          superNumber: r.superNumber as number,
+          total: r.total as number,
+          bigSmall: r.bigSmall,
+          oddEven: r.oddEven,
+          plate: r.plate || 'A',
+        }));
+      }
+    }
+    
+    // 備用：從 Google API 獲取
     const { getLatestDraws } = await import('./google-api');
     return await getLatestDraws(limit);
   } catch (error) {
-    console.error('[getRecentDraws] Error fetching from Google API:', error);
+    console.error('[getRecentDraws] Error:', error);
     return [];
   }
 }
