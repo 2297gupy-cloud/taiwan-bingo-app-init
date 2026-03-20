@@ -164,7 +164,7 @@ function LiveDraw() {
         <div className="grid grid-cols-5 gap-2 mb-3 justify-items-center">
           {sortedNumbers.map((num, i) => (
             <NumberBall
-              key={`${latest.drawNumber}-${num}-${i}`}
+              key={i}
               number={num}
               isSuper={num === latest.superNumber}
               size="lg"
@@ -209,7 +209,7 @@ function LiveDraw() {
           <h2 className="text-sm font-semibold">近期開獎</h2>
         </div>
         <div className="space-y-1.5">
-          {recent?.slice(0, 5).map((draw: any) => (
+          {recent?.slice(0, 5).map((draw) => (
             <div key={draw.id} className="p-2 rounded bg-card border border-border">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-mono font-semibold">{draw.drawNumber}</span>
@@ -219,7 +219,7 @@ function LiveDraw() {
               </div>
               <div className="flex flex-wrap gap-0.5 mb-1">
                 {(draw.numbers as number[]).map((num, i) => (
-                  <NumberBall key={`${draw.drawNumber}-${num}-${i}`} number={num} isSuper={num === draw.superNumber} size="sm" />
+                  <NumberBall key={i} number={num} isSuper={num === draw.superNumber} size="sm" />
                 ))}
               </div>
               <div className="flex items-center gap-2 text-[9px]">
@@ -375,7 +375,7 @@ function HistorySection() {
             </tr>
           </thead>
           <tbody>
-            {data?.records.map((draw: any) => {
+            {data?.records.map((draw) => {
               const nums = [...(draw.numbers as number[])];
               const sorted = sortMode === "size" ? nums.sort((a, b) => a - b) : nums;
               return (
@@ -395,7 +395,7 @@ function HistorySection() {
                     <div className="flex flex-wrap gap-0.5 justify-center">
                       {sorted.map((num, i) => (
                         <span
-                          key={`${draw.drawNumber}-${num}-${i}`}
+                          key={i}
                           className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[8px] font-bold border ${
                             num === draw.superNumber
                               ? "bg-destructive border-destructive text-white"
@@ -404,7 +404,8 @@ function HistorySection() {
                         >
                           {padNumber(num)}
                         </span>
-                      ))}                    </div>
+                      ))}
+                    </div>
                   </td>
                   <td className={`py-1.5 px-1 text-center font-bold ${getBigSmallClass(draw.bigSmall)}`}>
                     {getBigSmallLabel(draw.bigSmall)}

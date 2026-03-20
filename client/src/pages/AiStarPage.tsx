@@ -387,7 +387,7 @@ function SlotCard({
   );
   
   // 計算該時段的開獎期數
-  const drawsInHour = hourDraws?.filter((draw: any) => {
+  const drawsInHour = hourDraws?.filter(draw => {
     const drawHour = parseInt(draw.drawTime.split(' ')[1].split(':')[0]);
     return drawHour === targetHour;
   }).length || 0;
@@ -553,7 +553,7 @@ export default function AiStarPage() {
   // 驗證 effectiveSlot 是否在 HOUR_SLOTS 中
   const validSlot = slots.find(s => s.source === effectiveSlot);
   const safeEffectiveSlot = validSlot ? effectiveSlot : (slots.length > 0 ? slots[0].source : "14");
-  const currentPrediction = predictions?.find((p: any) => p.sourceHour === safeEffectiveSlot);
+  const currentPrediction = predictions?.find(p => p.sourceHour === safeEffectiveSlot);
   const currentSlotInfo = slots.find(s => s.source === safeEffectiveSlot);
 
   // 驗證時段：每個卡片的黃金球在同時段驗證（verifyHour = target）
@@ -561,7 +561,7 @@ export default function AiStarPage() {
   const effectiveVerifySlot = verifySlot || currentSlotInfo?.target || null;
   const verifySlotInfo = effectiveVerifySlot ? slots.find(s => s.target === effectiveVerifySlot) : null;
   const verifyPrediction = effectiveVerifySlot
-    ? predictions?.find((p: any) => p.targetHour === effectiveVerifySlot)
+    ? predictions?.find(p => p.targetHour === effectiveVerifySlot)
     : currentPrediction;
 
   // 驗證結果查詢：用 verifyHour（卡片顯示時段+1）查詢
@@ -781,7 +781,7 @@ export default function AiStarPage() {
                   try {
                     if (predictions && predictions.length > 0) {
                       await Promise.all(
-                        predictions.map((pred: any) =>
+                        predictions.map(pred =>
                           deleteMutation.mutateAsync({ dateStr, sourceHour: pred.sourceHour })
                         )
                       );
@@ -815,7 +815,7 @@ export default function AiStarPage() {
 
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-1">
             {slots.map(slot => {
-              const pred = predictions?.find((p: any) => p.sourceHour === slot.source);
+              const pred = predictions?.find(p => p.sourceHour === slot.source);
               // isCurrent: 當前時間對應的卡片（比對 target 時段）
               const isCurrent = currentSlot?.hour === slot.target;
                 const isSelected = safeEffectiveSlot === slot.source;
@@ -873,29 +873,16 @@ export default function AiStarPage() {
                     setBatchAnalysisTotal(24);
                     const allHours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
                     let completed = 0;
-                    let successCount = 0;
-                    
                     allHours.forEach((hour, index) => {
                       setTimeout(() => {
-                        analyzeMutation.mutate({ dateStr, sourceHour: hour }, {
-                          onSuccess: () => {
-                            successCount++;
-                            completed++;
-                            setBatchAnalysisProgress(completed);
-                            if (completed === 24) {
-                              setIsBatchAnalyzing(false);
-                              setTimeout(() => {
-                                refetchPredictions();
-                                toast.success(`已完成全部 24 個時段分析，成功 ${successCount} 個`);
-                              }, 300);
-                            }
-                          },
-                          onError: () => {
-                            completed++;
-                            setBatchAnalysisProgress(completed);
-                          }
-                        });
-                      }, index * 150);
+                        analyzeMutation.mutate({ dateStr, sourceHour: hour });
+                        completed++;
+                        setBatchAnalysisProgress(completed);
+                        if (completed === 24) {
+                          setIsBatchAnalyzing(false);
+                          toast.success('已完成全部 24 個時段分析');
+                        }
+                      }, index * 300);
                     });
                     toast.success('已開始分析全部 24 個時段');
                   }}
@@ -1062,7 +1049,7 @@ export default function AiStarPage() {
             <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段（即時驗證同時段開獎結果）：</p>
             <div className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border/20">
               {slots.map(slot => {
-                const pred = predictions?.find((p: any) => p.targetHour === slot.target);
+                const pred = predictions?.find(p => p.targetHour === slot.target);
                 const isVerifySelected = effectiveVerifySlot === slot.target;
                 return (
                   <button

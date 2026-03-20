@@ -7,7 +7,6 @@ import { getDb } from "../db";
 import { drawRecords, aiStarPredictions, aiStarVerificationRecords, aiStarHitRateSummary, type DrawRecord } from "../../drizzle/schema";
 import { eq, and, desc, like, gte } from "drizzle-orm";
 import { invokeLLM } from "../_core/llm";
-import { getDrawsByDate } from "../google-api";
 
 // Helper to get db instance
 async function db() {
@@ -126,63 +125,49 @@ function formatBigSmall(val: string): string {
   return "―";
 }
 
-/** 取得指定時段的開獎數據（最近 10 期） - 改用 MySQL 資料庫查詢 */
+/** 取得指定時段的開獎數據（最近 10 期） */
 export async function getHourDraws(
   dateStr: string,
   targetHour: string,
   limit: number = 10
 ): Promise<{ term: string; time: string; numbers: number[]; superNumber: number }[]> {
-  try {
-    // 改用 MySQL 資料庫查詢（由台灣彩券官方 API 同步的真實數據）
-    const database = await db();
-    const rocDate = toROCDateStr(dateStr);
-    const hourNum = parseInt(targetHour, 10);
-    const hourStr = String(hourNum).padStart(2, "0");
+  const database = await db();
+  const rocDate = toROCDateStr(dateStr);
+  const hourNum = parseInt(targetHour, 10);
 
-    // 查詢該時段的開獎記錄
-    const allDraws = await database
-      .select()
-      .from(drawRecords)
-      .where(
-        and(
-          like(drawRecords.drawTime, `${rocDate}%`),
-          like(drawRecords.drawTime, `% ${hourStr}:%`)
-        )
+  const allDraws = await database
+    .select()
+    .from(drawRecords)
+    .where(
+      and(
+        like(drawRecords.drawTime, `${rocDate}%`),
+        like(drawRecords.drawTime, `% ${String(hourNum).padStart(2, "0")}:%`)
       )
-      .orderBy(desc(drawRecords.drawTime))
-      .limit(limit);
-    
-    if (!allDraws || allDraws.length === 0) {
-      console.log(`[getHourDraws] No draws found for ${dateStr} hour ${hourStr}`);
-      return [];
+    )
+    .orderBy(desc(drawRecords.drawTime))
+    .limit(30);
+
+  // 用 drawTime 去重，建立時間→開獎記錄的 Map
+  const drawMap = new Map<string, typeof allDraws[0]>();
+  for (const d of allDraws) {
+    const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
+    if (!drawMap.has(timeKey)) {
+      drawMap.set(timeKey, d);
     }
-
-    // 用 drawTime 去重，建立時間→開獎記錄的 Map
-    const drawMap = new Map<string, typeof allDraws[0]>();
-    for (const d of allDraws) {
-      const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
-      if (!drawMap.has(timeKey)) {
-        drawMap.set(timeKey, d);
-      }
-    }
-
-    // 轉換為陣列並排序（從舊到新）
-    const result = Array.from(drawMap.values())
-      .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
-      .slice(0, limit)
-      .map((d) => ({
-        term: d.drawNumber,
-        time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
-        numbers: d.numbers as number[],
-        superNumber: d.superNumber as number,
-      }));
-
-    console.log(`[getHourDraws] Found ${result.length} draws for ${dateStr} hour ${hourStr}`);
-    return result;
-  } catch (error) {
-    console.error(`[getHourDraws] Error fetching draws for ${dateStr} hour ${targetHour}:`, error);
-    return [];
   }
+
+  // 轉換為陣列並排序（從舊到新）
+  const result = Array.from(drawMap.values())
+    .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
+    .slice(0, limit)
+    .map((d) => ({
+      term: d.drawNumber,
+      time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
+      numbers: d.numbers as number[],
+      superNumber: d.superNumber as number,
+    }));
+
+  return result;
 }
 
 /** 取得指定日期的所有 AI 一星預測 */
@@ -378,16 +363,14 @@ export async function getFormattedHourData(
   const header = `台灣賓果 ${sourceHour}:00~${sourceHour}:55 時段開獎數據\n日期: ${dateStr}\n時段: ${copyRange || ""}`;
   const separator = "─".repeat(60);
   const FIXED_ANALYSIS_FOOTER = `
-專業數據演算報告
-演算之後 12 期出至最佳三顆黃金球數字，展開以下說明：
-
-1. 演算之後 12 期出至最佳三顆黃金球數字，展開以下說明
-2. 強勢熱門號，「尾數共振」偵測
-3. 穩定的連莊號，捕捉剛起步的二連莊趨勢
-4. 捕捉斜連交會點，鎖定高機率落球區
-5. 縮小斜連跨度執行與精準死碼排除，強化防禦邏輯
-6. 核心演算邏輯穩定，不用回測驗證
-7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯
+分析要點：
+1. 統計各號碼出現頻率（熱號代表高機率）
+2. 觀察近期趨勢（近期熱號更重要）
+3. 考慮冷號回補可能性（長期未出的號碼）
+4. 連莊號（相鄰期數出現的號碼）
+5. 斜連交會點（對角線相鄰的號碼）
+6. 區間平衡度（小號區與大號區的平衡）
+7. 整體策略（綜合上述分析給出最終推薦）
 
 請推薦 3 顆最有可能在下一個時段出現的黃金球號碼（1-80 之間）。`;
 
@@ -643,28 +626,8 @@ export async function batchAnalyzeAllSlots(dateStr: string, userId?: number): Pr
   const verificationRecords = [];
   let totalHits = 0;
 
-  // 判斷是否為今天
-  const today = new Date().toISOString().split('T')[0];
-  const isToday = dateStr === today;
-
   for (const slot of HOUR_SLOTS) {
     try {
-      // 如果是今天，先檢查該時段是否有數據
-      if (isToday) {
-        const hourDraws = await getHourDraws(dateStr, slot.source, 1);
-        if (hourDraws.length === 0) {
-          // 今天無數據的時段跳過
-          console.log(`[batchAnalyze] Skipping ${dateStr} hour ${slot.source} - no data yet`);
-          results.push({
-            sourceHour: slot.source,
-            success: false,
-            error: '此時段尚無開獎數據',
-          });
-          failedCount++;
-          continue;
-        }
-      }
-
       const result = await analyzeHourSlot(dateStr, slot.source);
       await saveAiStarPrediction(
         dateStr,
@@ -1103,62 +1066,44 @@ export async function deleteAiSuperPrizePrediction(dateStr: string, sourceHour: 
     );
 }
 
-/** 取得指定時段的超級獎開獎數據 - 改用 MySQL 資料庫查詢 */
+/** 取得指定時段的超級獎開獎數據 */
 export async function getHourDrawsWithSuper(
   dateStr: string,
   targetHour: string,
   limit: number = 10
 ): Promise<{ term: string; time: string; superNumber: number }[]> {
-  try {
-    // 改用 MySQL 資料庫查詢（由台灣彩券官方 API 同步的真實數據）
-    const database = await db();
-    const rocDate = toROCDateStr(dateStr);
-    const hourNum = parseInt(targetHour, 10);
-    const hourStr = String(hourNum).padStart(2, "0");
+  const database = await db();
+  const rocDate = toROCDateStr(dateStr);
+  const hourNum = parseInt(targetHour, 10);
 
-    // 查詢該時段的開獎記錄
-    const allDraws = await database
-      .select()
-      .from(drawRecords)
-      .where(
-        and(
-          like(drawRecords.drawTime, `${rocDate}%`),
-          like(drawRecords.drawTime, `% ${hourStr}:%`)
-        )
+  const allDraws = await database
+    .select()
+    .from(drawRecords)
+    .where(
+      and(
+        like(drawRecords.drawTime, `${rocDate}%`),
+        like(drawRecords.drawTime, `% ${String(hourNum).padStart(2, "0")}:%`)
       )
-      .orderBy(desc(drawRecords.drawTime))
-      .limit(limit);
-    
-    if (!allDraws || allDraws.length === 0) {
-      console.log(`[getHourDrawsWithSuper] No draws found for ${dateStr} hour ${hourStr}`);
-      return [];
+    )
+    .orderBy(desc(drawRecords.drawTime))
+    .limit(30);
+
+  const drawMap = new Map<string, typeof allDraws[0]>();
+  for (const d of allDraws) {
+    const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
+    if (!drawMap.has(timeKey)) {
+      drawMap.set(timeKey, d);
     }
-
-    // 用 drawTime 去重，建立時間→開獎記錄的 Map
-    const drawMap = new Map<string, typeof allDraws[0]>();
-    for (const d of allDraws) {
-      const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
-      if (!drawMap.has(timeKey)) {
-        drawMap.set(timeKey, d);
-      }
-    }
-
-    // 轉換為陣列並排序（從舊到新）
-    const result = Array.from(drawMap.values())
-      .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
-      .slice(0, limit)
-      .map((d) => ({
-        term: d.drawNumber,
-        time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
-        superNumber: d.superNumber as number,
-      }));
-
-    console.log(`[getHourDrawsWithSuper] Found ${result.length} draws for ${dateStr} hour ${hourStr}`);
-    return result;
-  } catch (error) {
-    console.error(`[getHourDrawsWithSuper] Error fetching draws for ${dateStr} hour ${targetHour}:`, error);
-    return [];
   }
+
+  return Array.from(drawMap.values())
+    .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
+    .slice(0, limit)
+    .map((d) => ({
+      term: d.drawNumber,
+      time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
+      superNumber: d.superNumber as number,
+    }));
 }
 
 /** 驗證超級獎預測 */

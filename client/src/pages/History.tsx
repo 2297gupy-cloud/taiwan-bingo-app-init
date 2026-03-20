@@ -129,7 +129,7 @@ export default function History() {
               <div className="flex flex-wrap gap-1 mb-2">
                 {sorted.map((num, i) => (
                   <NumberBall
-                    key={`${draw.drawNumber}-${num}-${i}`}
+                    key={i}
                     number={num}
                     isSuper={num === draw.superNumber}
                     size="sm"

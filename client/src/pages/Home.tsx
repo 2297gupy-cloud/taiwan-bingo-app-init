@@ -77,7 +77,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-1.5 mb-3">
             {(latest.numbers as number[]).map((num, i) => (
               <NumberBall
-                key={`${latest.drawNumber}-${num}-${i}`}
+                key={i}
                 number={num}
                 isSuper={num === latest.superNumber}
               />

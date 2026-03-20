@@ -42,7 +42,7 @@ export default function Live() {
     }
     
     const headers = ["期號", "開獎時間", "號碼", "總和", "大小", "單雙", "超級號", "盤面"];
-    const rows = history30days.map((draw: any) => [
+    const rows = history30days.map(draw => [
       draw.drawNumber,
       draw.drawTime,
       (draw.numbers as number[]).join(","),
@@ -55,7 +55,7 @@ export default function Live() {
     
     const csv = [
       headers.join(","),
-      ...rows.map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(","))
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
     ].join("\n");
     
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -76,7 +76,7 @@ export default function Live() {
     let validCount = 0;
     let invalidCount = 0;
     
-    history30days.forEach((draw: any) => {
+    history30days.forEach(draw => {
       const drawNum = draw.drawNumber.toString();
       if (drawNum.length === 9 && /^\d+$/.test(drawNum)) {
         validCount++;
@@ -179,7 +179,7 @@ export default function Live() {
           <div className="flex flex-wrap gap-1.5 mb-4">
             {sortedNumbers.map((num, i) => (
               <NumberBall
-                key={`${latest.drawNumber}-${num}-${i}`}
+                key={i}
                 number={num}
                 isSuper={num === latest.superNumber}
                 size="lg"
@@ -243,7 +243,7 @@ export default function Live() {
         </h2>
 
         <div className="space-y-2">
-          {recent?.map((draw: any) => (
+          {recent?.map((draw) => (
             <div
               key={draw.id}
               className="p-3 rounded-lg bg-card border border-border"
@@ -261,7 +261,7 @@ export default function Live() {
               <div className="flex flex-wrap gap-1 mb-2">
                 {(draw.numbers as number[]).map((num, i) => (
                   <NumberBall
-                    key={`${draw.drawNumber}-${num}-${i}`}
+                    key={i}
                     number={num}
                     isSuper={num === draw.superNumber}
                     size="sm"
@@ -297,7 +297,7 @@ export default function Live() {
         </h2>
 
         <div className="grid grid-cols-2 gap-1">
-          {history50?.map((draw: any) => (
+          {history50?.map((draw) => (
             <div
               key={draw.id}
               className="p-2 rounded-lg bg-card border border-border/30 text-[9px]"
@@ -318,7 +318,7 @@ export default function Live() {
               <div className="flex flex-wrap gap-0.5">
                 {(draw.numbers as number[]).map((num, i) => (
                   <span
-                    key={`${draw.drawNumber}-${num}-${i}`}
+                    key={i}
                     className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-secondary text-[7px] font-semibold"
                   >
                     {num}
