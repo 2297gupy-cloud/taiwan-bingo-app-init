@@ -359,7 +359,7 @@ export async function getFormattedHourData(
       numbers: d.numbers as number[],
       superNumber: d.superNumber as number,
       bigSmall: formatBigSmall(d.bigSmall),
-      oddEven: d.oddEven === "odd" ? "單" : d.oddEven === "even" ? "雙" : "―",
+      oddEven: d.oddEven === "odd" ? "單" : d.oddEven === "even" ? "雙" : d.oddEven || "－",
     }));
 
   const header = `台灣賓果 ${sourceHour}:00~${sourceHour}:55 時段開獎數據\n日期: ${dateStr}\n時段: ${copyRange || ""}`;
@@ -377,9 +377,9 @@ export async function getFormattedHourData(
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
-    // 直接使用數據庫的大小值，單雙全部顯示「－」
-    const bigSmallDisplay = d.bigSmall || "－";
-    const oddEvenDisplay = "－"; // 單雙全部顯示「－」
+    // 直接使用數據庫的大小和單雙值，沒有時顯示「－」
+    const bigSmallDisplay = d.bigSmall && d.bigSmall !== "－" ? d.bigSmall : "－";
+    const oddEvenDisplay = d.oddEven && d.oddEven !== "－" ? d.oddEven : "－";
     return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎: ${String(d.superNumber).padStart(2, "0")} ${bigSmallDisplay} ${oddEvenDisplay}`;
   });
 
