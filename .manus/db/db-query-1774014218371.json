@@ -1,0 +1,49 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "ai_api_keys"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "ai_predictions"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "ai_star_hit_rate_summary"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "ai_star_predictions"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "ai_star_verification_records"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "ai_super_prize_predictions"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "analysis_records"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "bingo_rooms"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "draw_records"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "simulations"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "users"
+    },
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA": "verification_records"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_kTdJcS62GUwid3zgDEGkMA\n__drizzle_migrations\nai_api_keys\nai_predictions\nai_star_hit_rate_summary\nai_star_predictions\nai_star_verification_records\nai_super_prize_predictions\nanalysis_records\nbingo_rooms\ndraw_records\nsimulations\nusers\nverification_records\n",
+  "stderr": "",
+  "execution_time_ms": 1560
+}

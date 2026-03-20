@@ -1,0 +1,8 @@
+{
+  "query": "SELECT term, drawTime, numbers, superNumber, bigSmall, oddEven FROM draws WHERE drawTime >= '19:00' AND drawTime <= '19:55' ORDER BY drawTime DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT term, drawTime, numbers, superNumber, bigSmall, oddEven FROM draws WHERE drawTime >= '19:00' AND drawTime <= '19:55' ORDER BY drawTime DESC;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'ktdjcs62guwid3zgdegkma.draws' doesn't exist"
+  ]
+}

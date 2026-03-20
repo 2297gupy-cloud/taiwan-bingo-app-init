@@ -366,7 +366,6 @@ export async function getFormattedHourData(
   const separator = "─".repeat(60);
   const FIXED_ANALYSIS_FOOTER = `
 專業數據演算報告
-演算之後 12 期出至最佳三顆黃金球數字，展開以下說明：
 
 1. 演算之後 12 期出至最佳三顆黃金球數字，展開以下說明
 2. 強勢熱門號，「尾數共振」偵測
@@ -374,9 +373,7 @@ export async function getFormattedHourData(
 4. 捕捉斜連交會點，鎖定高機率落球區
 5. 縮小斜連跨度執行與精準死碼排除，強化防禦邏輯
 6. 核心演算邏輯穩定，不用回測驗證
-7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯
-
-請推薦 3 顆最有可能在下一個時段出現的黃金球號碼（1-80 之間）。`;
+7. 核心演算結論 (5期策略) 預計期數/推視組合重點/策略邂輯`;
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");

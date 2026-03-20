@@ -1,0 +1,94 @@
+{
+  "query": "SELECT drawNumber, drawTime, superNumber, bigSmall, oddEven FROM draw_records WHERE drawTime LIKE '%03/20%19:%' ORDER BY drawTime DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, superNumber, bigSmall, oddEven FROM draw_records WHERE drawTime LIKE '%03/20%19:%' ORDER BY drawTime DESC;",
+  "rows": [
+    {
+      "drawNumber": "115015989",
+      "drawTime": "115/03/20 19:55:00",
+      "superNumber": "47",
+      "bigSmall": "small",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015988",
+      "drawTime": "115/03/20 19:50:00",
+      "superNumber": "28",
+      "bigSmall": "small",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015987",
+      "drawTime": "115/03/20 19:45:00",
+      "superNumber": "44",
+      "bigSmall": "big",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015986",
+      "drawTime": "115/03/20 19:40:00",
+      "superNumber": "63",
+      "bigSmall": "big",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015985",
+      "drawTime": "115/03/20 19:35:00",
+      "superNumber": "18",
+      "bigSmall": "small",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015984",
+      "drawTime": "115/03/20 19:30:00",
+      "superNumber": "63",
+      "bigSmall": "big",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015983",
+      "drawTime": "115/03/20 19:25:00",
+      "superNumber": "48",
+      "bigSmall": "small",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015982",
+      "drawTime": "115/03/20 19:20:00",
+      "superNumber": "67",
+      "bigSmall": "small",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015981",
+      "drawTime": "115/03/20 19:15:00",
+      "superNumber": "46",
+      "bigSmall": "big",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015980",
+      "drawTime": "115/03/20 19:10:00",
+      "superNumber": "64",
+      "bigSmall": "big",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015979",
+      "drawTime": "115/03/20 19:05:00",
+      "superNumber": "73",
+      "bigSmall": "big",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015978",
+      "drawTime": "115/03/20 19:00:00",
+      "superNumber": "53",
+      "bigSmall": "big",
+      "oddEven": "odd"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\tsuperNumber\tbigSmall\toddEven\n115015989\t115/03/20 19:55:00\t47\tsmall\teven\n115015988\t115/03/20 19:50:00\t28\tsmall\todd\n115015987\t115/03/20 19:45:00\t44\tbig\teven\n115015986\t115/03/20 19:40:00\t63\tbig\todd\n115015985\t115/03/20 19:35:00\t18\tsmall\todd\n115015984\t115/03/20 19:30:00\t63\tbig\todd\n115015983\t115/03/20 19:25:00\t48\tsmall\teven\n115015982\t115/03/20 19:20:00\t67\tsmall\todd\n115015981\t115/03/20 19:15:00\t46\tbig\teven\n115015980\t115/03/20 19:10:00\t64\tbig\todd\n115015979\t115/03/20 19:05:00\t73\tbig\teven\n115015978\t115/03/20 19:00:00\t53\tbig\todd\n",
+  "stderr": "",
+  "execution_time_ms": 1597
+}
