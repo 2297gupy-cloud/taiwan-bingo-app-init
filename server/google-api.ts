@@ -12,6 +12,49 @@ const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 30 * 1000; // 30 秒
 
 /**
+ * 將 Google API 數據轉換為應用格式
+ */
+function transformGoogleData(googleData: any) {
+  if (!googleData) return null;
+  
+  try {
+    // 解析 numbers 數組（Google API 返回字符串數組）
+    const numbers = Array.isArray(googleData.numbers)
+      ? googleData.numbers.map((n: string | number) => parseInt(String(n), 10))
+      : [];
+    
+    // 構建 drawTime（Google API 返回 date 和 time 分開）
+    let drawTime = '';
+    if (googleData.date && googleData.time) {
+      const dateObj = new Date(googleData.date);
+      const timeObj = new Date(googleData.time);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const hours = String(timeObj.getHours()).padStart(2, '0');
+      const minutes = String(timeObj.getMinutes()).padStart(2, '0');
+      const seconds = String(timeObj.getSeconds()).padStart(2, '0');
+      const rocYear = year - 1911;
+      drawTime = `${rocYear}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    }
+    
+    return {
+      drawNumber: googleData.period || '',
+      drawTime: drawTime,
+      numbers: numbers,
+      superNumber: parseInt(String(googleData.superNum), 10) || (numbers[0] ?? 0),
+      total: numbers.reduce((sum: number, n: number) => sum + n, 0),
+      bigSmall: googleData.size === '大' ? 'big' : googleData.size === '小' ? 'small' : 'small',
+      oddEven: googleData.oe === '單' ? 'odd' : googleData.oe === '雙' ? 'even' : 'even',
+      plate: 'A',
+    };
+  } catch (error) {
+    console.error('Error transforming Google data:', error, googleData);
+    return null;
+  }
+}
+
+/**
  * 從 Google API 獲取最新開獎數據
  */
 export async function getLatestDraws(limit: number = 20) {
@@ -27,8 +70,13 @@ export async function getLatestDraws(limit: number = 20) {
     const json = await response.json();
     
     if (json.success && json.data) {
-      cache.set(cacheKey, { data: json.data, timestamp: Date.now() });
-      return json.data;
+      // 轉換數據格式
+      const transformed = json.data
+        .map((item: any) => transformGoogleData(item))
+        .filter((item: any) => item !== null);
+      
+      cache.set(cacheKey, { data: transformed, timestamp: Date.now() });
+      return transformed;
     }
     
     return [];
@@ -81,8 +129,12 @@ export async function getDrawsByDate(dateStr: string) {
     const json = await response.json();
     
     if (json.success && json.data) {
-      cache.set(cacheKey, { data: json.data, timestamp: Date.now() });
-      return json.data;
+      const transformed = json.data
+        .map((item: any) => transformGoogleData(item))
+        .filter((item: any) => item !== null);
+      
+      cache.set(cacheKey, { data: transformed, timestamp: Date.now() });
+      return transformed;
     }
     
     return [];
