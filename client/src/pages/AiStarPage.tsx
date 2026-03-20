@@ -874,18 +874,16 @@ export default function AiStarPage() {
               )}
               <div className="relative">
                 <Button
-                  variant="outline"
-                  size="sm"
                   onClick={() => analyzeMutation.mutate({ dateStr, sourceHour: safeEffectiveSlot })}
                   disabled={analyzeMutation.isPending}
-                  className="gap-1 border border-amber-500 text-xs px-2 py-1 h-7 hover:bg-amber-500/10 font-semibold"
+                  className="gap-1.5 text-xs px-3 py-1.5 h-8 font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-md border-0 hover:scale-105"
                 >
                   {analyzeMutation.isPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Brain className="h-3 w-3" />
+                    <Brain className="h-4 w-4" />
                   )}
-                  AI分析
+                  <span>🚀 AI分析</span>
                 </Button>
                 {currentPrediction && !currentPrediction.isManual && (userApiKey?.openaiKey || userApiKey?.geminiKey) && (
                   <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }} />
