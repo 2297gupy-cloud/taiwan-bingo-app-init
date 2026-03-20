@@ -377,7 +377,7 @@ export async function getFormattedHourData(
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
-    return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎: ${String(d.superNumber).padStart(2, "0")} ${d.bigSmall} ${d.oddEven}`;
+    return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎: ${String(d.superNumber).padStart(2, "0")}`;
   });
 
   const text = `${header}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
