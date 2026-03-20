@@ -1,0 +1,94 @@
+{
+  "query": "SELECT drawNumber, drawTime, total, bigSmall, oddEven FROM draw_records WHERE drawNumber IN ('115015977', '115015976', '115015975', '115015974', '115015973', '115015972', '115015971', '115015970', '115015969', '115015968', '115015967', '115015966') ORDER BY drawTime DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, total, bigSmall, oddEven FROM draw_records WHERE drawNumber IN ('115015977', '115015976', '115015975', '115015974', '115015973', '115015972', '115015971', '115015970', '115015969', '115015968', '115015967', '115015966') ORDER BY drawTime DESC;",
+  "rows": [
+    {
+      "drawNumber": "115015977",
+      "drawTime": "115/03/20 18:55:00",
+      "total": "856",
+      "bigSmall": "big",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015976",
+      "drawTime": "115/03/20 18:50:00",
+      "total": "682",
+      "bigSmall": "small",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015975",
+      "drawTime": "115/03/20 18:45:00",
+      "total": "705",
+      "bigSmall": "small",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015974",
+      "drawTime": "115/03/20 18:40:00",
+      "total": "666",
+      "bigSmall": "small",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015973",
+      "drawTime": "115/03/20 18:35:00",
+      "total": "839",
+      "bigSmall": "big",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015972",
+      "drawTime": "115/03/20 18:30:00",
+      "total": "725",
+      "bigSmall": "small",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015971",
+      "drawTime": "115/03/20 18:25:00",
+      "total": "680",
+      "bigSmall": "small",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015970",
+      "drawTime": "115/03/20 18:20:00",
+      "total": "674",
+      "bigSmall": "small",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015969",
+      "drawTime": "115/03/20 18:15:00",
+      "total": "733",
+      "bigSmall": "small",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015968",
+      "drawTime": "115/03/20 18:10:00",
+      "total": "730",
+      "bigSmall": "small",
+      "oddEven": "even"
+    },
+    {
+      "drawNumber": "115015967",
+      "drawTime": "115/03/20 18:05:00",
+      "total": "733",
+      "bigSmall": "small",
+      "oddEven": "odd"
+    },
+    {
+      "drawNumber": "115015966",
+      "drawTime": "115/03/20 18:00:00",
+      "total": "784",
+      "bigSmall": "small",
+      "oddEven": "even"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\ttotal\tbigSmall\toddEven\n115015977\t115/03/20 18:55:00\t856\tbig\teven\n115015976\t115/03/20 18:50:00\t682\tsmall\teven\n115015975\t115/03/20 18:45:00\t705\tsmall\todd\n115015974\t115/03/20 18:40:00\t666\tsmall\teven\n115015973\t115/03/20 18:35:00\t839\tbig\todd\n115015972\t115/03/20 18:30:00\t725\tsmall\todd\n115015971\t115/03/20 18:25:00\t680\tsmall\teven\n115015970\t115/03/20 18:20:00\t674\tsmall\teven\n115015969\t115/03/20 18:15:00\t733\tsmall\todd\n115015968\t115/03/20 18:10:00\t730\tsmall\teven\n115015967\t115/03/20 18:05:00\t733\tsmall\todd\n115015966\t115/03/20 18:00:00\t784\tsmall\teven\n",
+  "stderr": "",
+  "execution_time_ms": 1648
+}

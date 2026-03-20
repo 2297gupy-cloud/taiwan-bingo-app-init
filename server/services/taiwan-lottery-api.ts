@@ -181,9 +181,9 @@ export function processRawData(rawData: BingoQueryResult[], dateStr: string): Pr
     const superNumber = Number(res.bullEyeTop) || (numbers[0] ?? 0);
     const total = numbers.reduce((sum, n) => sum + n, 0);
     
-    // 優先使用 API 返回的大小單雙結果
-    const bigSmall = res.highLowTop === '大' ? 'big' : res.highLowTop === '小' ? 'small' : (total > 810 ? 'big' : 'small');
-    const oddEven = res.oddEvenTop === '單' ? 'odd' : res.oddEvenTop === '雙' ? 'even' : (total % 2 === 0 ? 'even' : 'odd');
+    // 使用總和計算大小和單雙（更可靠，不依賴 API 的準確性）
+    const bigSmall = total > 810 ? 'big' : 'small';
+    const oddEven = total % 2 === 0 ? 'even' : 'odd';
     
     return {
       drawNumber,
