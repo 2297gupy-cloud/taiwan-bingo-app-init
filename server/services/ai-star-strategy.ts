@@ -7,6 +7,7 @@ import { getDb } from "../db";
 import { drawRecords, aiStarPredictions, aiStarVerificationRecords, aiStarHitRateSummary, type DrawRecord } from "../../drizzle/schema";
 import { eq, and, desc, like, gte } from "drizzle-orm";
 import { invokeLLM } from "../_core/llm";
+import { getDrawsByDate } from "../google-api";
 
 // Helper to get db instance
 async function db() {
@@ -125,49 +126,57 @@ function formatBigSmall(val: string): string {
   return "―";
 }
 
-/** 取得指定時段的開獎數據（最近 10 期） */
+/** 取得指定時段的開獎數據（最近 10 期） - 從 Google API 獲取 */
 export async function getHourDraws(
   dateStr: string,
   targetHour: string,
   limit: number = 10
 ): Promise<{ term: string; time: string; numbers: number[]; superNumber: number }[]> {
-  const database = await db();
-  const rocDate = toROCDateStr(dateStr);
-  const hourNum = parseInt(targetHour, 10);
-
-  const allDraws = await database
-    .select()
-    .from(drawRecords)
-    .where(
-      and(
-        like(drawRecords.drawTime, `${rocDate}%`),
-        like(drawRecords.drawTime, `% ${String(hourNum).padStart(2, "0")}:%`)
-      )
-    )
-    .orderBy(desc(drawRecords.drawTime))
-    .limit(30);
-
-  // 用 drawTime 去重，建立時間→開獎記錄的 Map
-  const drawMap = new Map<string, typeof allDraws[0]>();
-  for (const d of allDraws) {
-    const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
-    if (!drawMap.has(timeKey)) {
-      drawMap.set(timeKey, d);
+  try {
+    // 從 Google API 獲取指定日期的所有開獎數據
+    const allDraws = await getDrawsByDate(dateStr);
+    
+    if (!allDraws || allDraws.length === 0) {
+      console.log(`[getHourDraws] No draws found for ${dateStr}`);
+      return [];
     }
+
+    const hourNum = parseInt(targetHour, 10);
+    const hourStr = String(hourNum).padStart(2, "0");
+
+    // 篩選指定時段的開獎數據
+    // drawTime 格式："115/03/15 07:05:00"
+    const drawMap = new Map<string, typeof allDraws[0]>();
+    for (const d of allDraws) {
+      const timeStr = d.drawTime.split(" ")[1] || "";
+      const [hours] = timeStr.split(":");
+      
+      // 只保留指定時段的開獎
+      if (hours === hourStr) {
+        const timeKey = timeStr.substring(0, 5); // HH:MM
+        if (!drawMap.has(timeKey)) {
+          drawMap.set(timeKey, d);
+        }
+      }
+    }
+
+    // 轉換為陣列並排序（從舊到新）
+    const result = Array.from(drawMap.values())
+      .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
+      .slice(0, limit)
+      .map((d) => ({
+        term: d.drawNumber,
+        time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
+        numbers: d.numbers as number[],
+        superNumber: d.superNumber as number,
+      }));
+
+    console.log(`[getHourDraws] Found ${result.length} draws for ${dateStr} hour ${hourStr}`);
+    return result;
+  } catch (error) {
+    console.error(`[getHourDraws] Error fetching draws for ${dateStr} hour ${targetHour}:`, error);
+    return [];
   }
-
-  // 轉換為陣列並排序（從舊到新）
-  const result = Array.from(drawMap.values())
-    .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
-    .slice(0, limit)
-    .map((d) => ({
-      term: d.drawNumber,
-      time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
-      numbers: d.numbers as number[],
-      superNumber: d.superNumber as number,
-    }));
-
-  return result;
 }
 
 /** 取得指定日期的所有 AI 一星預測 */
@@ -1066,44 +1075,56 @@ export async function deleteAiSuperPrizePrediction(dateStr: string, sourceHour: 
     );
 }
 
-/** 取得指定時段的超級獎開獎數據 */
+/** 取得指定時段的超級獎開獎數據 - 從 Google API 獲取 */
 export async function getHourDrawsWithSuper(
   dateStr: string,
   targetHour: string,
   limit: number = 10
 ): Promise<{ term: string; time: string; superNumber: number }[]> {
-  const database = await db();
-  const rocDate = toROCDateStr(dateStr);
-  const hourNum = parseInt(targetHour, 10);
-
-  const allDraws = await database
-    .select()
-    .from(drawRecords)
-    .where(
-      and(
-        like(drawRecords.drawTime, `${rocDate}%`),
-        like(drawRecords.drawTime, `% ${String(hourNum).padStart(2, "0")}:%`)
-      )
-    )
-    .orderBy(desc(drawRecords.drawTime))
-    .limit(30);
-
-  const drawMap = new Map<string, typeof allDraws[0]>();
-  for (const d of allDraws) {
-    const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
-    if (!drawMap.has(timeKey)) {
-      drawMap.set(timeKey, d);
+  try {
+    // 從 Google API 獲取指定日期的所有開獎數據
+    const allDraws = await getDrawsByDate(dateStr);
+    
+    if (!allDraws || allDraws.length === 0) {
+      console.log(`[getHourDrawsWithSuper] No draws found for ${dateStr}`);
+      return [];
     }
-  }
 
-  return Array.from(drawMap.values())
-    .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
-    .slice(0, limit)
-    .map((d) => ({
-      term: d.drawNumber,
-      time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
-      superNumber: d.superNumber as number,
-    }));
+    const hourNum = parseInt(targetHour, 10);
+    const hourStr = String(hourNum).padStart(2, "0");
+
+    // 篩選指定時段的開獎數據
+    // drawTime 格式："115/03/15 07:05:00"
+    const drawMap = new Map<string, typeof allDraws[0]>();
+    for (const d of allDraws) {
+      const timeStr = d.drawTime.split(" ")[1] || "";
+      const [hours] = timeStr.split(":");
+      
+      // 只保留指定時段的開獎
+      if (hours === hourStr) {
+        const timeKey = timeStr.substring(0, 5); // HH:MM
+        if (!drawMap.has(timeKey)) {
+          drawMap.set(timeKey, d);
+        }
+      }
+    }
+
+    // 轉換為陣列並排序（從舊到新）
+    const result = Array.from(drawMap.values())
+      .sort((a, b) => a.drawTime.localeCompare(b.drawTime))
+      .slice(0, limit)
+      .map((d) => ({
+        term: d.drawNumber,
+        time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
+        superNumber: d.superNumber as number,
+      }));
+
+    console.log(`[getHourDrawsWithSuper] Found ${result.length} draws for ${dateStr} hour ${hourStr}`);
+    return result;
+  } catch (error) {
+    console.error(`[getHourDrawsWithSuper] Error fetching draws for ${dateStr} hour ${targetHour}:`, error);
+    return [];
+  }
 }
 
 /** 驗證超級獎預測 */
