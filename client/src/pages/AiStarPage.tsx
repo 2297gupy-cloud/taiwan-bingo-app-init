@@ -398,13 +398,20 @@ function SlotCard({
       navigator.clipboard.writeText(formattedData.text).then(() => {
         setCopied(true);
         // 顯示卡片標籤（target 時段）
-        toast.success(`已複製 ${slot.target}時 (${slot.copyRange || slot.source + "00~" + slot.source + "55"}) 數據`);
+        toast.success(`已複製 ${slot.target}時 (${slot.copyRange || slot.source + "00~" + slot.source + "55"}) 數據，自動分析中...`);
         setTimeout(() => setCopied(false), 2000);
+        
+        // 複製後自動執行分析
+        setTimeout(() => {
+          const encodedData = encodeURIComponent(formattedData.text);
+          const url = `/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`;
+          setLocation(url);
+        }, 500);
       });
     } else {
       toast.error("此時段尚無數據可複製");
     }
-  }, [formattedData, slot.source, slot.target, slot.copyRange]);
+  }, [formattedData, slot.source, slot.target, slot.copyRange, setLocation]);
 
   const handleCopyToAnalyze = useCallback(() => {
     if (formattedData?.text) {
@@ -420,6 +427,17 @@ function SlotCard({
   }, [formattedData, setLocation]);
 
   const longPress = useLongPress(handleCopy, 300);
+  // 禁用長按功能，改為單擊複製並自動分析
+  const simpleLongPress = {
+    handlers: {
+      onClick: (e: React.MouseEvent) => {
+        e.stopPropagation();
+        handleCopy();
+      }
+    },
+    pressing: false,
+    progress: 0
+  };
 
   return (
     <div
