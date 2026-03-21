@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ApiKeyPanel } from "@/components/ApiKeyPanel";
 import { AnalysisResultModal } from "@/components/AnalysisResultModal";
 import { AiUrlManager } from "@/components/AiUrlManager";
+import { AiUrlQuickSwitch } from "@/components/AiUrlQuickSwitch";
 import {
   Loader2, Sparkles, Copy, CheckCircle2, XCircle, ChevronLeft, ChevronRight,
   CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, Settings,
@@ -767,6 +768,7 @@ export default function AiStarPage() {
                   <Brain className="h-3 w-3" />
                   <span>AI手動計算</span>
                 </a>
+                <AiUrlQuickSwitch />
                 <AiUrlManager />
               </>
               <button
