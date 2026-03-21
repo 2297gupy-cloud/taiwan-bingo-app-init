@@ -151,7 +151,7 @@ export function AiManualCalculation() {
             title={`當前 AI：${currentName}`}
           >
             <Brain className="w-3 h-3" />
-            <span className="truncate max-w-[80px]">{currentName}</span>
+            <span className="truncate max-w-[80px]">AI手動網址</span>
             <ChevronDown className="w-3 h-3" />
           </Button>
         </DropdownMenuTrigger>
