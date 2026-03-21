@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiKeyPanel } from "@/components/ApiKeyPanel";
 import { AnalysisResultModal } from "@/components/AnalysisResultModal";
+import { AiUrlManager } from "@/components/AiUrlManager";
 import {
   Loader2, Sparkles, Copy, CheckCircle2, XCircle, ChevronLeft, ChevronRight,
   CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, Settings,
@@ -756,15 +757,18 @@ export default function AiStarPage() {
               {predictions?.length || 0} 個已分析
             </span>
             <div className="ml-auto flex items-center gap-1">
-              <a
-                href="https://gemini.google.com/app/a35bb8c4886f6949"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0 no-underline"
-              >
-                <Brain className="h-3 w-3" />
-                <span>AI手動計算</span>
-              </a>
+              <>
+                <a
+                  href="https://gemini.google.com/app/a35bb8c4886f6949"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0 no-underline"
+                >
+                  <Brain className="h-3 w-3" />
+                  <span>AI手動計算</span>
+                </a>
+                <AiUrlManager />
+              </>
               <button
                 onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
                 disabled={batchAnalyzeMutation.isPending}
