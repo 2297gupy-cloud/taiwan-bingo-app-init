@@ -9,9 +9,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 describe("AI 一星策略 - 工具函數", () => {
   describe("HOUR_SLOTS 時段配置", () => {
-    it("應有 15 個時段（08-22時）", async () => {
+    it("應有 16 個時段（07-22時）", async () => {
       const { HOUR_SLOTS } = await import("./services/ai-star-strategy");
-      expect(HOUR_SLOTS).toHaveLength(15);
+      expect(HOUR_SLOTS).toHaveLength(16);
     });
 
     it("第一個時段應為 07→08", async () => {
@@ -20,11 +20,11 @@ describe("AI 一星策略 - 工具函數", () => {
       expect(HOUR_SLOTS[0].target).toBe("08");
     });
 
-    it("最後一個時段應為 21→22", async () => {
+    it("最後一個時段應為 22→23", async () => {
       const { HOUR_SLOTS } = await import("./services/ai-star-strategy");
       const last = HOUR_SLOTS[HOUR_SLOTS.length - 1];
-      expect(last.source).toBe("21");
-      expect(last.target).toBe("22");
+      expect(last.source).toBe("22");
+      expect(last.target).toBe("23");
     });
 
     it("每個時段都有 label 和 draws 屬性", async () => {

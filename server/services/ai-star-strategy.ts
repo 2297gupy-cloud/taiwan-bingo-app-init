@@ -366,8 +366,7 @@ export async function getFormattedHourData(
       superNumber: d.superNumber as number,
       bigSmall: formatBigSmall(d.bigSmall),
       oddEven: "－",  // 始終顯示「－」，因為超級獎號碼沒有中獎
-    }))
-    .sort((a, b) => a.time.localeCompare(b.time));  // 按時間由小到大排序（07:05 → 07:55）
+    }));
 
   // 計算民國年份和時間範圍
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -415,7 +414,7 @@ export async function getFormattedHourData(
   // 表格標題（移除日期欄位，使用更好的間距）
   const header = `期別\t時間\t開獎號碼（20顆）\t\t超級獎\t大小\t單雙`;
 
-  // 使用 reverse() 確保從大到小排列（07:55 → 07:05）
+  // 使用 reverse() 確保從新到舊排列（07:55 → 07:05）
   const sortedDraws = [...draws].reverse();
 
   const lines = sortedDraws.map((d, i) => {
