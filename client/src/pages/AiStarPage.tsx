@@ -197,12 +197,12 @@ function NumberDistributionBlock({
             <table className="border-collapse" style={{ minWidth: `${80 * 13 + 20}px` }}>
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 bg-card text-[6px] text-muted-foreground/60 font-normal px-0 py-0.5 text-right border-r border-white/20 min-w-[20px]">時</th>
+                  <th className="sticky left-0 z-10 bg-card text-[6px] text-muted-foreground/60 font-normal px-0 py-1 text-right border-r border-white/20 min-w-[20px]">時</th>
                   {NUMS.map(n => (
                     <th
                       key={n}
                       className={cn(
-                        "text-[7px] font-mono font-normal text-center px-0 py-0.5 w-[13px] min-w-[13px] border-r border-b border-white/10",
+                        "text-[7px] font-mono font-normal text-center px-0 py-1 w-[13px] min-w-[13px] border-r border-b border-white/10",
                         goldenSet.has(n) ? "text-emerald-400 font-bold" : "text-muted-foreground/40"
                       )}
                     >
@@ -216,7 +216,7 @@ function NumberDistributionBlock({
                   const isPending = false;
                   return (
                     <tr key={draw.term || draw.time} className={cn("border-t border-white/10", isPending && "opacity-50")}>
-                      <td className={cn("sticky left-0 z-10 bg-card text-[6px] font-mono px-0 py-0.5 text-right border-r border-white/20 whitespace-nowrap", isPending ? "text-muted-foreground/30" : "text-muted-foreground/60")}>
+                      <td className={cn("sticky left-0 z-10 bg-card text-[6px] font-mono px-0 py-1.5 text-right border-r border-white/20 whitespace-nowrap", isPending ? "text-muted-foreground/30" : "text-muted-foreground/60")}>
                         {draw.time || "-"}
                       </td>
                       {NUMS.map(n => {
@@ -225,22 +225,22 @@ function NumberDistributionBlock({
                         const isSuperNumber = !isPending && (draw as { superNumber?: number }).superNumber === n;
                         return (
                           <td key={n} className={cn(
-                            "text-center p-0 w-[13px] border-r border-b border-white/10",
+                            "text-center py-1.5 px-0 w-[13px] border-r border-b border-white/10",
                             isSuperNumber && "ring-1 ring-red-500 ring-inset"
                           )}>
                             {isDrawn ? (
                               <div
                                 className={cn(
-                                  "mx-auto my-0.5 w-2 h-2",
+                                  "mx-auto w-2.5 h-2.5",
                                   isGolden
                                     ? "bg-emerald-400 ring-1 ring-emerald-300 shadow-[0_0_4px_rgba(52,211,153,0.8)]"
                                     : "bg-emerald-600/70"
                                 )}
                               />
                             ) : isSuperNumber ? (
-                              <div className="mx-auto my-0.5 w-2 h-2 border border-red-500/60 rounded-sm" />
+                              <div className="mx-auto w-2.5 h-2.5 border border-red-500/60 rounded-sm" />
                             ) : (
-                              <div className="mx-auto my-0.5 w-2 h-2" />
+                              <div className="mx-auto w-2.5 h-2.5" />
                             )}
                           </td>
                         );
