@@ -181,24 +181,30 @@ export function processRawData(rawData: BingoQueryResult[], dateStr: string): Pr
     const superNumber = Number(res.bullEyeTop) || (numbers[0] ?? 0);
     const total = numbers.reduce((sum, n) => sum + n, 0);
     
-    // 直接使用 API 返回的大小和單雙值
-    // 如果 API 返回空值，則設置為「－」（表示無數據）
+    // 當 API 返回空值或無效值時，保持為「－」（表示無數據）
+    // 只有在 API 明確返回「大」、「小」、「單」、「雙」時才使用實際值
     let bigSmall = '－';
     let oddEven = '－';
     
-    if (res.highLowTop === '大') {
-      bigSmall = 'big';
-    } else if (res.highLowTop === '小') {
-      bigSmall = 'small';
+    // 檢查 API 返回的大小值
+    if (res.highLowTop && res.highLowTop.trim()) {
+      if (res.highLowTop === '大') {
+        bigSmall = 'big';
+      } else if (res.highLowTop === '小') {
+        bigSmall = 'small';
+      }
+      // 其他值保持為「－」
     }
-    // 如果 API 返回空值或其他值，保持為「－」
     
-    if (res.oddEvenTop === '單') {
-      oddEven = 'odd';
-    } else if (res.oddEvenTop === '雙') {
-      oddEven = 'even';
+    // 檢查 API 返回的單雙值
+    if (res.oddEvenTop && res.oddEvenTop.trim()) {
+      if (res.oddEvenTop === '單') {
+        oddEven = 'odd';
+      } else if (res.oddEvenTop === '雙') {
+        oddEven = 'even';
+      }
+      // 其他值保持為「－」
     }
-    // 如果 API 返回空值或其他值，保持為「－」
     
     return {
       drawNumber,
