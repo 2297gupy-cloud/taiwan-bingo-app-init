@@ -774,12 +774,12 @@ export default function AiStarPage() {
             <span className="text-[10px] text-muted-foreground">
               {predictions?.length || 0} 個已分析
             </span>
-            <div className="ml-auto flex items-center gap-0.5 justify-end overflow-x-auto scrollbar-none">
+            <div className="ml-auto flex items-center gap-1 justify-end overflow-x-auto scrollbar-none">
               <AiManualCalculation />
               <button
                 onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
                 disabled={batchAnalyzeMutation.isPending}
-                className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0 whitespace-nowrap"
+                className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0 whitespace-nowrap"
               >
                 {batchAnalyzeMutation.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -808,7 +808,7 @@ export default function AiStarPage() {
                     toast.error("清除失敗");
                   }
                 }}
-                className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0 whitespace-nowrap"
+                className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0 whitespace-nowrap"
               >
                 <Trash2 className="h-3 w-3" />
                 <span className="hidden sm:inline">清除全部</span>
@@ -816,7 +816,7 @@ export default function AiStarPage() {
               </button>
               <button
                 onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-                className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-colors shrink-0 whitespace-nowrap"
+                className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-colors shrink-0 whitespace-nowrap"
               >
                 <Settings className="h-3 w-3" />
                 <span className="hidden sm:inline">API Key</span>
