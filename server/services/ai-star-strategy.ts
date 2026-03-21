@@ -364,8 +364,8 @@ export async function getFormattedHourData(
       time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
       numbers: d.numbers as number[],
       superNumber: d.superNumber as number,
-      bigSmall: formatBigSmall(d.bigSmall),
-      oddEven: "－",  // 始終顯示「－」，因為超級獎號碼沒有中獎
+      bigSmall: d.bigSmall || "",  // 直接使用數據庫中的值
+      oddEven: d.oddEven || "",  // 直接使用數據庫中的值
     }));
 
   // 計算民國年份和時間範圍
@@ -419,9 +419,9 @@ export async function getFormattedHourData(
 
   const lines = sortedDraws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
-    // 使用格式化函數轉換數據庫的大小和單雙值
-    const bigSmallDisplay = formatBigSmall(d.bigSmall);
-    const oddEvenDisplay = formatOddEven(d.oddEven);
+    // 直接使用數據庫中的大小和單雙值
+    const bigSmallDisplay = d.bigSmall || "－";
+    const oddEvenDisplay = d.oddEven || "－";
     // 格式：期別 \t 時間 \t 開獎號碼 \t 超級獎 \t 大小 \t 單雙（移除日期）
     const superAwardStr = `超級獎${String(d.superNumber).padStart(2, "0")}`;
     return `${d.term}\t${d.time}\t ${numsStr}\t\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
