@@ -370,8 +370,9 @@ export async function getFormattedHourData(
 
   // 使用 2026 年份格式而不是民國年份
   const [year, month, day] = dateStr.split("-").map(Number);
-  const header = `BINGO BINGO 專業數據演算報告 (${copyRange || sourceHour}:00~${sourceHour}:55)\n報告日期：${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const header = `期別\t日期\t時間\t開獎號碼（20顆）\t超級獎\t大小\t單雙`;
   const separator = "─".repeat(90);
+  // 移除不必要的分隔符和頁腳（用戶只需要表格數據）
   const FIXED_ANALYSIS_FOOTER = `
 1. 演算之後 12 期出至最佳三顆黃金球數字，展開以下說明
 2. 強勢熱門號，「尾數共振」偵測
@@ -386,11 +387,12 @@ export async function getFormattedHourData(
     // 使用格式化函數轉換數據庫的大小和單雙值
     const bigSmallDisplay = formatBigSmall(d.bigSmall);
     const oddEvenDisplay = formatOddEven(d.oddEven);
-    // 格式：期數 \t 日期 \t 時間 \t 號碼 \t 超級獎 \t 大小 \t 單雙
-    return `${d.term}\t${dateStr}\t${d.time}\t${numsStr}\t超級獎${String(d.superNumber).padStart(2, "0")}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
+    // 格式：期別 \t 日期 \t 時間 \t 開獎號碼 \t 超級獎 \t 大小 \t 單雙
+    const superAwardStr = `超級獎${String(d.superNumber).padStart(2, "0")}`;
+    return `${d.term}\t${dateStr}\t${d.time}\t${numsStr}\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
-  const text = `${header}\n${separator}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
+  const text = `${header}\n${lines.join("\n")}`;
   return { text };
 }
 
