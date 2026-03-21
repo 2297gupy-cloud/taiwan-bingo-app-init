@@ -50,7 +50,7 @@ import {
   getHourDrawsWithSuper,
   verifySuperPrizePrediction,
 } from "./services/ai-star-strategy";
-import { aiApiKeys, drawRecords } from "../drizzle/schema";
+import { aiApiKeys, drawRecords, aiUrlConfigs } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
 import { validateApiKey, validateCustomApiKey, validateGeminiKey } from "./api-key-validator";
@@ -551,6 +551,101 @@ export const appRouter = router({
         // 注意：這裡假設 input.rawText 是格式化的時段數據
         // 實際使用中應該先解析 rawText 中的時段信息
         return analyzeHourSlot(getTodayDateStr(), '08', userApiKey, customBaseUrl, customModel);
+      }),
+
+    /** 取得用戶的所有 AI 網址配置 */
+    getUrls: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db.select().from(aiUrlConfigs).where(eq(aiUrlConfigs.userId, ctx.user.id));
+      return rows;
+    }),
+
+    /** 添加新的 AI 網址 */
+    addUrl: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        url: z.string().url(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("資料庫不可用");
+        const result = await db.insert(aiUrlConfigs).values({
+          userId: ctx.user.id,
+          name: input.name,
+          url: input.url,
+          isDefault: 0,
+        });
+        return { success: true };
+      }),
+
+    /** 更新 AI 網址 */
+    updateUrl: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(255).optional(),
+        url: z.string().url().optional(),
+        isDefault: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("資料庫不可用");
+        
+        // 檢查該記錄是否屬於當前用戶
+        const existing = await db.select().from(aiUrlConfigs).where(eq(aiUrlConfigs.id, input.id)).limit(1);
+        if (existing.length === 0 || existing[0].userId !== ctx.user.id) {
+          throw new Error("無權限修改此記錄");
+        }
+
+        // 如果設置為默認，需要取消其他記錄的默認狀態
+        if (input.isDefault === 1) {
+          await db.update(aiUrlConfigs).set({ isDefault: 0 }).where(eq(aiUrlConfigs.userId, ctx.user.id));
+        }
+
+        const updateData: any = {};
+        if (input.name) updateData.name = input.name;
+        if (input.url) updateData.url = input.url;
+        if (input.isDefault !== undefined) updateData.isDefault = input.isDefault;
+
+        await db.update(aiUrlConfigs).set(updateData).where(eq(aiUrlConfigs.id, input.id));
+        return { success: true };
+      }),
+
+    /** 刪除 AI 網址 */
+    deleteUrl: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("資料庫不可用");
+        
+        // 檢查該記錄是否屬於當前用戶
+        const existing = await db.select().from(aiUrlConfigs).where(eq(aiUrlConfigs.id, input.id)).limit(1);
+        if (existing.length === 0 || existing[0].userId !== ctx.user.id) {
+          throw new Error("無權限刪除此記錄");
+        }
+
+        await db.delete(aiUrlConfigs).where(eq(aiUrlConfigs.id, input.id));
+        return { success: true };
+      }),
+
+    /** 設置默認 AI 網址 */
+    setDefaultUrl: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("資料庫不可用");
+        
+        // 檢查該記錄是否屬於當前用戶
+        const existing = await db.select().from(aiUrlConfigs).where(eq(aiUrlConfigs.id, input.id)).limit(1);
+        if (existing.length === 0 || existing[0].userId !== ctx.user.id) {
+          throw new Error("無權限修改此記錄");
+        }
+
+        // 取消所有其他記錄的默認狀態
+        await db.update(aiUrlConfigs).set({ isDefault: 0 }).where(eq(aiUrlConfigs.userId, ctx.user.id));
+        // 設置此記錄為默認
+        await db.update(aiUrlConfigs).set({ isDefault: 1 }).where(eq(aiUrlConfigs.id, input.id));
+        return { success: true };
       }),
   }),
   /** AI 超級獎預測 */

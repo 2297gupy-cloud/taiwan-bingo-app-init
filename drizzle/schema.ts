@@ -342,3 +342,26 @@ export const aiStarHitRateSummary = mysqlTable("ai_star_hit_rate_summary", {
 
 export type AiStarHitRateSummary = typeof aiStarHitRateSummary.$inferSelect;
 export type InsertAiStarHitRateSummary = typeof aiStarHitRateSummary.$inferInsert;
+
+/**
+ * AI 網址管理表
+ * 存儲用戶自定義的 AI 網址配置
+ */
+export const aiUrlConfigs = mysqlTable("ai_url_configs", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 用戶 ID */
+  userId: int("userId").notNull(),
+  /** 網址名稱（用戶自定義） */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** AI 網址 */
+  url: varchar("url", { length: 512 }).notNull(),
+  /** 是否為默認選擇 */
+  isDefault: int("isDefault").default(0).notNull(),
+  /** 創建時間 */
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  /** 更新時間 */
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AiUrlConfig = typeof aiUrlConfigs.$inferSelect;
+export type InsertAiUrlConfig = typeof aiUrlConfigs.$inferInsert;
