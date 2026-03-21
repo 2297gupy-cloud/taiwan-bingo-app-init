@@ -47,7 +47,8 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
   // 判斷 Key 類型
   const detectKeyType = (key: string): string => {
     if (!key) return "";
-    if (key.startsWith("sk-")) return "OpenAI / 第三方代理";
+    if (key.startsWith("sk-ant-api")) return "Claude (Anthropic)";
+    if (key.startsWith("sk-")) return "OpenAI / Monica / DeepSeek";
     if (key.startsWith("AIza")) return "Google Gemini";
     return "未知格式";
   };
@@ -55,7 +56,7 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
   // 已儲存的 Key（優先顯示 openaiKey，其次 geminiKey）
   const savedKey = savedKeys?.openaiKey || savedKeys?.geminiKey || null;
   const savedKeyType = savedKeys?.openaiKey
-    ? (savedKeys.customBaseUrl ? "第三方代理" : "OpenAI")
+    ? (savedKeys.openaiKey?.startsWith("sk-ant-api") ? "Claude (Anthropic)" : (savedKeys.customBaseUrl ? "第三方代理" : "OpenAI / Monica / DeepSeek"))
     : savedKeys?.geminiKey ? "Google Gemini" : null;
   const hasKey = !!savedKey;
 
@@ -212,7 +213,7 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
                     autoFocus
                   />
                   <p className="text-[10px] text-muted-foreground/60 mt-1">
-                    支援 OpenAI（sk-）、Google Gemini（AIza）、第三方代理（sk-）等格式
+                    支援 ChatGPT、Claude、Gemini、Monica、DeepSeek 等
                   </p>
                 </div>
 
