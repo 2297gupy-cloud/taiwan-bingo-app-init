@@ -1,0 +1,31 @@
+{
+  "query": "SELECT drawNumber, drawTime, oddEven, bigSmall, numbers FROM draw_records ORDER BY drawTime DESC LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, oddEven, bigSmall, numbers FROM draw_records ORDER BY drawTime DESC LIMIT 3;",
+  "rows": [
+    {
+      "drawNumber": "115016166",
+      "drawTime": "115/03/21 17:45:00",
+      "oddEven": "－",
+      "bigSmall": "－",
+      "numbers": "[1, 6, 7, 9, 10, 16, 20, 21, 24, 27, 48, 50, 55, 58, 62, 64, 65, 67, 73, 74]"
+    },
+    {
+      "drawNumber": "115016165",
+      "drawTime": "115/03/21 17:40:00",
+      "oddEven": "－",
+      "bigSmall": "big",
+      "numbers": "[7, 8, 10, 14, 17, 22, 24, 42, 43, 44, 52, 53, 55, 59, 65, 67, 69, 71, 72, 75]"
+    },
+    {
+      "drawNumber": "115016164",
+      "drawTime": "115/03/21 17:35:00",
+      "oddEven": "－",
+      "bigSmall": "big",
+      "numbers": "[10, 14, 15, 16, 23, 33, 37, 56, 58, 59, 61, 62, 65, 66, 68, 69, 72, 73, 74, 78]"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\toddEven\tbigSmall\tnumbers\n115016166\t115/03/21 17:45:00\t－\t－\t[1, 6, 7, 9, 10, 16, 20, 21, 24, 27, 48, 50, 55, 58, 62, 64, 65, 67, 73, 74]\n115016165\t115/03/21 17:40:00\t－\tbig\t[7, 8, 10, 14, 17, 22, 24, 42, 43, 44, 52, 53, 55, 59, 65, 67, 69, 71, 72, 75]\n115016164\t115/03/21 17:35:00\t－\tbig\t[10, 14, 15, 16, 23, 33, 37, 56, 58, 59, 61, 62, 65, 66, 68, 69, 72, 73, 74, 78]\n",
+  "stderr": "",
+  "execution_time_ms": 1639
+}

@@ -359,14 +359,21 @@ export async function getFormattedHourData(
   const draws = Array.from(drawMap.values())
     .sort((a, b) => b.drawTime.localeCompare(a.drawTime))
     .slice(0, periodCount)
-    .map((d) => ({
-      term: d.drawNumber,
-      time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
-      numbers: d.numbers as number[],
-      superNumber: d.superNumber as number,
-      bigSmall: d.bigSmall || "",  // 直接使用數據庫中的值
-      oddEven: d.oddEven || "",  // 直接使用數據庫中的值
-    }));
+    .map((d) => {
+      // 計算單雙：號碼總和為奇數=單，偶數=雙
+      const numbers = d.numbers as number[];
+      const sum = numbers.reduce((a, b) => a + b, 0);
+      const calculatedOddEven = sum % 2 === 1 ? "odd" : "even";
+      
+      return {
+        term: d.drawNumber,
+        time: d.drawTime.split(" ")[1]?.substring(0, 5) || "",
+        numbers: numbers,
+        superNumber: d.superNumber as number,
+        bigSmall: d.bigSmall || "",  // 直接使用數據庫中的值
+        oddEven: d.oddEven === "－" || !d.oddEven ? calculatedOddEven : d.oddEven,  // 優先使用計算值
+      };
+    });
 
   // 計算民國年份和時間範圍
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -419,9 +426,9 @@ export async function getFormattedHourData(
 
   const lines = sortedDraws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
-    // 直接使用數據庫中的大小和單雙值
-    const bigSmallDisplay = d.bigSmall || "－";
-    const oddEvenDisplay = d.oddEven || "－";
+    // 使用格式化函數轉換數據庫的大小和單雙值
+    const bigSmallDisplay = formatBigSmall(d.bigSmall);
+    const oddEvenDisplay = formatOddEven(d.oddEven);
     // 格式：期別 \t 時間 \t 開獎號碼 \t 超級獎 \t 大小 \t 單雙（移除日期）
     const superAwardStr = `超級獎${String(d.superNumber).padStart(2, "0")}`;
     return `${d.term}\t${d.time}\t ${numsStr}\t\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;

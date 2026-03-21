@@ -1,0 +1,40 @@
+{
+  "query": "SELECT drawNumber, drawTime, oddEven, bigSmall FROM draw_records WHERE drawTime LIKE '115/03/21%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, oddEven, bigSmall FROM draw_records WHERE drawTime LIKE '115/03/21%' LIMIT 5;",
+  "rows": [
+    {
+      "drawNumber": "115016038",
+      "drawTime": "115/03/21 07:05:00",
+      "oddEven": "－",
+      "bigSmall": "－"
+    },
+    {
+      "drawNumber": "115016039",
+      "drawTime": "115/03/21 07:10:00",
+      "oddEven": "－",
+      "bigSmall": "－"
+    },
+    {
+      "drawNumber": "115016040",
+      "drawTime": "115/03/21 07:15:00",
+      "oddEven": "－",
+      "bigSmall": "－"
+    },
+    {
+      "drawNumber": "115016041",
+      "drawTime": "115/03/21 07:20:00",
+      "oddEven": "－",
+      "bigSmall": "－"
+    },
+    {
+      "drawNumber": "115016042",
+      "drawTime": "115/03/21 07:25:00",
+      "oddEven": "－",
+      "bigSmall": "－"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\toddEven\tbigSmall\n115016038\t115/03/21 07:05:00\t－\t－\n115016039\t115/03/21 07:10:00\t－\t－\n115016040\t115/03/21 07:15:00\t－\t－\n115016041\t115/03/21 07:20:00\t－\t－\n115016042\t115/03/21 07:25:00\t－\t－\n",
+  "stderr": "",
+  "execution_time_ms": 1640
+}
