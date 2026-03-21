@@ -159,14 +159,27 @@ export function AiManualCalculation() {
           <DropdownMenuLabel className="text-xs">AI 手動計算 - 快速切換</DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          {/* 默認 Gemini 選項 */}
-          <DropdownMenuItem
-            onClick={() => handleOpenUrl(defaultUrl)}
-            className="flex items-center justify-between text-xs"
-          >
-            <span className="flex-1">{defaultName}</span>
-            <ExternalLink className="w-3 h-3 ml-2" />
-          </DropdownMenuItem>
+          {/* 預設 AI 網址 */}
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            預設網址
+          </DropdownMenuLabel>
+          {[
+            { name: "ChatGPT", url: "https://chatgpt.com/" },
+            { name: "Monica", url: "https://monica.im/" },
+            { name: "Gemini", url: "https://gemini.google.com/" },
+            { name: "Claude", url: "https://claude.ai/" },
+            { name: "DeepSeek", url: "https://chat.deepseek.com/" },
+          ].map((preset) => (
+            <DropdownMenuItem
+              key={preset.name}
+              onClick={() => handleOpenUrl(preset.url)}
+              className="flex items-center justify-between text-xs"
+            >
+              <span className="flex-1">{preset.name}</span>
+              <ExternalLink className="w-3 h-3 ml-2" />
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
 
           {/* 用戶保存的網址 */}
           {urls && urls.length > 0 && (
