@@ -509,8 +509,9 @@ function SlotCard({
 
 export default function AiStarPage() {
   const todayStr = useMemo(() => getTodayDateStr(), []);
-  const [dateStr, setDateStr] = useState(todayStr);
+  const [dateStr, setDateStr] = useState<string | null>(todayStr); // 初始化為今日
   const isToday = dateStr === todayStr;
+  const hasDateSelected = dateStr !== null; // 檢查是否選擇了日期
 
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [verifySlot, setVerifySlot] = useState<string | null>(null);
@@ -529,9 +530,9 @@ export default function AiStarPage() {
     refetchInterval: 30000,
   });
 
-  // 查詢指定日期的所有預測
+  // 查詢指定日期的所有預測（只有選擇了日期才查詢）
   const { data: predictions, refetch: refetchPredictions } = trpc.aiStar.getPredictions.useQuery(
-    { dateStr },
+    { dateStr: dateStr || todayStr },
     { staleTime: 0, refetchInterval: 30000 }
   );
 
@@ -564,16 +565,16 @@ export default function AiStarPage() {
     ? predictions?.find(p => p.targetHour === effectiveVerifySlot)
     : currentPrediction;
 
-  // 驗證結果查詢：用 verifyHour（卡片顯示時段+1）查詢
+  // 驗證結果查詢：用 verifyHour（卡片顯示時段+1）查詢（只有選擇了日期才查詢）
   const actualVerifyHour = verifySlotInfo?.verifyHour || "";
   const { data: verifyResult } = trpc.aiStar.verify.useQuery(
     {
-      dateStr,
+      dateStr: dateStr || todayStr,
       verifyHour: actualVerifyHour,
       goldenBalls: verifyPrediction?.goldenBalls || [],
     },
     {
-      enabled: !!verifyPrediction && !!actualVerifyHour,
+      enabled: !!verifyPrediction && !!actualVerifyHour && hasDateSelected,
       staleTime: 0,
       refetchInterval: 30000,
     }
@@ -642,10 +643,10 @@ export default function AiStarPage() {
     },
   });
 
-  // 取得格式化時段數據（用於複製）
+  // 取得格式化時段數據（用於複製）（只有選擇了日期才查詢）
   const { data: hourDataForCopy } = trpc.aiStar.getHourData.useQuery(
-    { dateStr, sourceHour: effectiveSlot, copyRange: currentSlotInfo?.copyRange },
-    { staleTime: 30000 }
+    { dateStr: dateStr || todayStr, sourceHour: effectiveSlot, copyRange: currentSlotInfo?.copyRange },
+    { staleTime: 30000, enabled: hasDateSelected }
   );
 
   // 解析手動輸入
@@ -657,7 +658,7 @@ export default function AiStarPage() {
   const handleManualSubmit = () => {
     if (!effectiveSlot || parsedBalls.length === 0) return;
     saveManualMutation.mutate({
-      dateStr,
+      dateStr: dateStr || todayStr,
       sourceHour: effectiveSlot,
       goldenBalls: parsedBalls,
     });
@@ -691,7 +692,7 @@ export default function AiStarPage() {
             {/* 日期切換 */}
             <div className="flex items-center gap-0.5">
               <button
-                onClick={() => setDateStr(prev => shiftDate(prev, -1))}
+                onClick={() => setDateStr(prev => shiftDate(prev || todayStr, -1))}
                 className="p-0.5 rounded hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -699,11 +700,11 @@ export default function AiStarPage() {
               <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/40 border border-border/20 min-w-[80px] justify-center">
                 <CalendarDays className="h-3 w-3 text-amber-400" />
                 <span className="text-[10px] font-mono text-foreground">
-                  {formatDateDisplay(dateStr)}
+                  {formatDateDisplay(dateStr || todayStr)}
                 </span>
               </div>
               <button
-                onClick={() => { if (!isToday) setDateStr(prev => shiftDate(prev, 1)); }}
+                onClick={() => { if (dateStr && !isToday) setDateStr(prev => shiftDate(prev || todayStr, 1)); }}
                 disabled={isToday}
                 className={cn(
                   "p-0.5 rounded transition-colors",
@@ -765,7 +766,7 @@ export default function AiStarPage() {
                 <span>AI手動計算</span>
               </a>
               <button
-                onClick={() => batchAnalyzeMutation.mutate({ dateStr })}
+                onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
                 disabled={batchAnalyzeMutation.isPending}
                 className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0"
               >
@@ -782,7 +783,7 @@ export default function AiStarPage() {
                     if (predictions && predictions.length > 0) {
                       await Promise.all(
                         predictions.map(pred =>
-                          deleteMutation.mutateAsync({ dateStr, sourceHour: pred.sourceHour })
+                          deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: pred.sourceHour })
                         )
                       );
                     }
@@ -833,13 +834,13 @@ export default function AiStarPage() {
                   }}
                   onDelete={pred ? async () => {
                     try {
-                      await deleteMutation.mutateAsync({ dateStr, sourceHour: slot.source });
+                      await deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: slot.source });
                       toast.success(`已清除 ${slot.source.padStart(2, "0")}時段球號`);
                     } catch {
                       toast.error("清除失敗");
                     }
                   } : undefined}
-                  dateStr={dateStr}
+                  dateStr={dateStr || todayStr}
                 />
               );
             })}
@@ -874,7 +875,7 @@ export default function AiStarPage() {
               )}
               <div className="relative">
                 <Button
-                  onClick={() => analyzeMutation.mutate({ dateStr, sourceHour: safeEffectiveSlot })}
+                  onClick={() => analyzeMutation.mutate({ dateStr: dateStr || todayStr, sourceHour: safeEffectiveSlot })}
                   disabled={analyzeMutation.isPending}
                   className="gap-1.5 text-xs px-3 py-1.5 h-8 font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-md border-0 hover:scale-105"
                 >
@@ -981,7 +982,7 @@ export default function AiStarPage() {
       </Card>
 
       {/* ── 即時數字分布矩陣 ── */}
-      {currentSlot?.hour && (
+      {currentSlot?.hour && dateStr && (
         <NumberDistributionBlock
           dateStr={dateStr}
           targetHour={currentSlot.hour}
@@ -996,7 +997,7 @@ export default function AiStarPage() {
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
               <span className="text-xs font-medium text-foreground">驗證結果</span>
-              <span className="text-[10px] text-muted-foreground font-mono">{formatDateDisplay(dateStr)}</span>
+              <span className="text-[10px] text-muted-foreground font-mono">{formatDateDisplay(dateStr || todayStr)}</span>
             </div>
           </div>
 
