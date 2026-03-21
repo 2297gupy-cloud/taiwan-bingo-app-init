@@ -328,8 +328,8 @@ export async function getFormattedHourData(
   copyRange?: string
 ): Promise<{ text: string }> {
   const database = await db();
-  const rocDate = toROCDateStr(dateStr);
-  const hourNum = parseInt(sourceHour, 10);
+  const rocDateForQuery = toROCDateStr(dateStr);
+  const hourNumForQuery = parseInt(sourceHour, 10);
 
   // 查詢該時段的開獎記錄
   const allDraws = await database
@@ -337,8 +337,8 @@ export async function getFormattedHourData(
     .from(drawRecords)
     .where(
       and(
-        like(drawRecords.drawTime, `${rocDate}%`),
-        like(drawRecords.drawTime, `% ${String(hourNum).padStart(2, "0")}:%`)
+        like(drawRecords.drawTime, `${rocDateForQuery}%`),
+        like(drawRecords.drawTime, `% ${String(hourNumForQuery).padStart(2, "0")}:%`)
       )
     )
     .orderBy(desc(drawRecords.drawTime))
@@ -368,11 +368,36 @@ export async function getFormattedHourData(
       oddEven: "－",  // 始終顯示「－」，因為超級獎號碼沒有中獎
     }));
 
-  // 使用 2026 年份格式而不是民國年份
+  // 計算民國年份和時間範圍
   const [year, month, day] = dateStr.split("-").map(Number);
-  const header = `期別\t日期\t時間\t開獎號碼（20顆）\t超級獎\t大小\t單雙`;
-  const separator = "─".repeat(90);
-  // 移除不必要的分隔符和頁腳（用戶只需要表格數據）
+  const rocYear = year - 1911;
+  const rocDate = `${rocYear}/${String(month).padStart(2, "0")}/${String(day).padStart(2, "0")}`;
+  
+  // 計算時間範圍（用於標題）
+  const hourNum = parseInt(sourceHour, 10);
+  let startTime = "";
+  let endTime = "";
+  
+  if (hourNum === 7) {
+    // 07 時：07:05~07:55
+    startTime = "07:05";
+    endTime = "07:55";
+  } else if (hourNum === 8) {
+    // 08 時：08:00~08:55
+    startTime = "08:00";
+    endTime = "08:55";
+  } else {
+    // 其他時段：HH:00~HH:55
+    startTime = `${String(hourNum).padStart(2, "0")}:00`;
+    endTime = `${String(hourNum).padStart(2, "0")}:55`;
+  }
+  
+  // 標題和報告日期
+  const reportTitle = `BINGO BINGO 專業數據演算報告 (${startTime}~${endTime})`;
+  const reportDate = `報告日期：${rocDate}`;
+  const separator = "-".repeat(90);
+  
+  // 7 個重點文字分析
   const FIXED_ANALYSIS_FOOTER = `
 1. 演算之後 12 期出至最佳三顆黃金球數字，展開以下說明
 2. 強勢熱門號，「尾數共振」偵測
@@ -380,7 +405,10 @@ export async function getFormattedHourData(
 4. 捕捉斜連交會點，鎖定高機率落球區
 5. 縮小斜連跨度執行與精準死碼排除，強化防禦邏輯
 6. 核心演算邏輯穩定，不用回測驗證
-7. 核心演算結論 (5期策略) 預計期數/推視組合重點/策略邂輯`;
+7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯`;
+
+  // 表格標題
+  const header = `期別\t日期\t時間\t開獎號碼（20顆）\t超級獎\t大小\t單雙`;
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
@@ -392,7 +420,8 @@ export async function getFormattedHourData(
     return `${d.term}\t${dateStr}\t${d.time}\t${numsStr}\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
-  const text = `${header}\n${lines.join("\n")}`;
+  // 組合完整的複製文本
+  const text = `${reportTitle}\n${reportDate}\n${separator}\n${header}\n${lines.join("\n")}\n${separator}\n${FIXED_ANALYSIS_FOOTER}`;
   return { text };
 }
 
