@@ -122,7 +122,13 @@ function toROCDateStr(dateStr: string): string {
 function formatBigSmall(val: string): string {
   if (val === "big") return "大";
   if (val === "small") return "小";
-  return "―";
+  return "－";
+}
+
+function formatOddEven(val: string): string {
+  if (val === "odd") return "單";
+  if (val === "even") return "雙";
+  return "－";
 }
 
 /** 取得指定時段的開獎數據（最近 10 期） */
@@ -377,9 +383,9 @@ export async function getFormattedHourData(
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
-    // 直接使用數據庫的大小和單雙值，沒有時顯示「－」
-    const bigSmallDisplay = d.bigSmall && d.bigSmall !== "－" ? d.bigSmall : "－";
-    const oddEvenDisplay = d.oddEven && d.oddEven !== "－" ? d.oddEven : "－";
+    // 使用格式化函數轉換數據庫的大小和單雙值
+    const bigSmallDisplay = formatBigSmall(d.bigSmall);
+    const oddEvenDisplay = formatOddEven(d.oddEven);
     return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎${String(d.superNumber).padStart(2, "0")}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
