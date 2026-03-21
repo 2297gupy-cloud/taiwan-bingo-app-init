@@ -774,54 +774,59 @@ export default function AiStarPage() {
             <span className="text-[10px] text-muted-foreground">
               {predictions?.length || 0} 個已分析
             </span>
-            <div className="ml-auto flex items-center gap-1">
-              <AiManualCalculation />
-              <button
-                onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
-                disabled={batchAnalyzeMutation.isPending}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0"
-              >
-                {batchAnalyzeMutation.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3 w-3" />
-                )}
-                <span>一鍵全部分析</span>
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    if (predictions && predictions.length > 0) {
-                      await Promise.all(
-                        predictions.map(pred =>
-                          deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: pred.sourceHour })
-                        )
-                      );
+            <div className="ml-auto flex items-center gap-0.5 flex-wrap justify-end">
+              <div className="flex items-center gap-0.5 flex-wrap justify-end w-full sm:w-auto">
+                <AiManualCalculation />
+                <button
+                  onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
+                  disabled={batchAnalyzeMutation.isPending}
+                  className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0 whitespace-nowrap"
+                >
+                  {batchAnalyzeMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  <span className="hidden sm:inline">一鍵全部分析</span>
+                  <span className="sm:hidden">分析</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      if (predictions && predictions.length > 0) {
+                        await Promise.all(
+                          predictions.map(pred =>
+                            deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: pred.sourceHour })
+                          )
+                        );
+                      }
+                      setManualText("");
+                      setParsedBalls([]);
+                      setSelectedSlot(safeEffectiveSlot);
+                      setVerifySlot(null);
+                      toast.success(`已清除所有時段球號`);
+                    } catch {
+                      toast.error("清除失敗");
                     }
-                    setManualText("");
-                    setParsedBalls([]);
-                    setSelectedSlot(safeEffectiveSlot);
-                    setVerifySlot(null);
-                    toast.success(`已清除所有時段球號`);
-                  } catch {
-                    toast.error("清除失敗");
-                  }
-                }}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0"
-              >
-                <Trash2 className="h-3 w-3" />
-                <span>清除全部</span>
-              </button>
-              <button
-                onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-colors shrink-0"
-              >
-                <Settings className="h-3 w-3" />
-                API Key
-                {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 5px rgba(239,68,68,0.8)" }} />
-                )}
-              </button>
+                  }}
+                  className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0 whitespace-nowrap"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  <span className="hidden sm:inline">清除全部</span>
+                  <span className="sm:hidden">清除</span>
+                </button>
+                <button
+                  onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
+                  className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-colors shrink-0 whitespace-nowrap"
+                >
+                  <Settings className="h-3 w-3" />
+                  <span className="hidden sm:inline">API Key</span>
+                  <span className="sm:hidden">設定</span>
+                  {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 5px rgba(239,68,68,0.8)" }} />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
