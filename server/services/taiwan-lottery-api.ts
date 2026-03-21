@@ -182,27 +182,23 @@ export function processRawData(rawData: BingoQueryResult[], dateStr: string): Pr
     const total = numbers.reduce((sum, n) => sum + n, 0);
     
     // 直接使用 API 返回的大小和單雙值
-    // 如果 API 返回空值，則使用備用邏輯
-    let bigSmall = 'small';
-    let oddEven = 'even';
+    // 如果 API 返回空值，則設置為「－」（表示無數據）
+    let bigSmall = '－';
+    let oddEven = '－';
     
     if (res.highLowTop === '大') {
       bigSmall = 'big';
     } else if (res.highLowTop === '小') {
       bigSmall = 'small';
-    } else {
-      // API 返回空值時，使用備用計算
-      bigSmall = total > 810 ? 'big' : 'small';
     }
+    // 如果 API 返回空值或其他值，保持為「－」
     
     if (res.oddEvenTop === '單') {
       oddEven = 'odd';
     } else if (res.oddEvenTop === '雙') {
       oddEven = 'even';
-    } else {
-      // API 返回空值時，使用備用計算
-      oddEven = total % 2 === 0 ? 'even' : 'odd';
     }
+    // 如果 API 返回空值或其他值，保持為「－」
     
     return {
       drawNumber,
