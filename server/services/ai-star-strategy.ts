@@ -413,7 +413,10 @@ export async function getFormattedHourData(
   // 表格標題（移除日期欄位）
   const header = `期別\t時間\t開獎號碼（20顆）\t超級獎\t大小\t單雙`;
 
-  const lines = draws.map((d, i) => {
+  // 使用 reverse() 確保從新到舊排列（07:55 → 07:05）
+  const sortedDraws = [...draws].reverse();
+
+  const lines = sortedDraws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
     // 使用格式化函數轉換數據庫的大小和單雙值
     const bigSmallDisplay = formatBigSmall(d.bigSmall);
