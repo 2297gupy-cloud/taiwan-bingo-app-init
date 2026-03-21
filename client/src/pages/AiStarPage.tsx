@@ -744,8 +744,8 @@ export default function AiStarPage() {
         </CardContent>
       </Card>
 
-      {/* API Key 設定面板 */}
-      {showApiKeyPanel && <ApiKeyPanel onClose={() => setShowApiKeyPanel(false)} />}
+          {/* API Key 設定面板 */}
+          {showApiKeyPanel && <ApiKeyPanel onClose={() => setShowApiKeyPanel(false)} />}
 
       {/* ── 時段總覽網格 ── */}
       <Card className="border-border/30">
@@ -793,6 +793,16 @@ export default function AiStarPage() {
               >
                 <Trash2 className="h-3 w-3" />
                 <span>清除全部</span>
+              </button>
+              <button
+                onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-colors shrink-0"
+              >
+                <Settings className="h-3 w-3" />
+                API Key
+                {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 5px rgba(239,68,68,0.8)" }} />
+                )}
               </button>
             </div>
           </div>
