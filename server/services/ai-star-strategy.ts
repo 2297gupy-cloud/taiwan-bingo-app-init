@@ -414,8 +414,8 @@ export async function getFormattedHourData(
   // 表格標題（移除日期欄位，使用更好的間距）
   const header = `期別\t時間\t開獎號碼（20顆）\t\t超級獎\t大小\t單雙`;
 
-  // 使用 reverse() 確保從新到舊排列（07:55 → 07:05）
-  const sortedDraws = [...draws].reverse();
+  // 不使用 reverse()，直接按時間由小到大排序（07:05 → 07:55）
+  const sortedDraws = [...draws].sort((a, b) => a.time.localeCompare(b.time));
 
   const lines = sortedDraws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
@@ -424,7 +424,7 @@ export async function getFormattedHourData(
     const oddEvenDisplay = formatOddEven(d.oddEven);
     // 格式：期別 \t 時間 \t 開獎號碼 \t 超級獎 \t 大小 \t 單雙（移除日期）
     const superAwardStr = `超級獎${String(d.superNumber).padStart(2, "0")}`;
-    return `${d.term}\t${d.time}\t${numsStr}\t\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
+    return `${d.term}\t${d.time}\t ${numsStr}\t\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
   // 組合完整的複製文本
