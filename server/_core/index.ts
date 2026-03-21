@@ -71,9 +71,9 @@ async function startServer() {
   }, 2000);
 
   // 啟動 Google Sheets 定期同步
-  // 每 30 分鐘同步一次 Google Sheets 數據
+  // 每 30 秒同步一次 Google Sheets 數據
   setTimeout(() => {
-    startGoogleSheetsSync(30);
+    startGoogleSheetsSync(0.5); // 0.5 分鐘 = 30 秒
   }, 3000);
 }
 
