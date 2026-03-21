@@ -492,11 +492,11 @@ function SlotCard({
           </span>
         </div>
       ) : (
-        <div className="flex items-center justify-center py-0.5">
-          <span className="text-[10px] text-muted-foreground/40">尚未分析</span>
+        <div className="flex items-center justify-center py-1">
+          <span className="text-[9px] text-muted-foreground/50">尚未分析</span>
         </div>
       )}
-      <p className="text-[6px] text-muted-foreground/20 text-center mt-0.5">長按複製</p>
+      <p className="text-[6px] text-muted-foreground/30 text-center mt-1">長按複製</p>
     </div>
   );
 }
