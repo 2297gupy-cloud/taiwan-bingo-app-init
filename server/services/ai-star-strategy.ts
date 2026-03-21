@@ -398,7 +398,7 @@ export async function getFormattedHourData(
   const endTimeNoColon = endTime.replace(":", "");
   const reportTitle = `BINGO BINGO 專業數據演算報告 (${startTimeNoColon}~${endTimeNoColon})`;
   const reportDate = `報告日期：${rocDate}`;
-  const separator = "-".repeat(90);
+  const separator = "-".repeat(98);
   
   // 7 個重點文字分析
   const FIXED_ANALYSIS_FOOTER = `
@@ -408,10 +408,11 @@ export async function getFormattedHourData(
 4. 捕捉斜連交會點，鎖定高機率落球區
 5. 縮小斜連跨度執行與精準死碼排除，強化防禦邏輯
 6. 核心演算邏輯穩定，不用回測驗證
-7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯`;
+7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯
+`;
 
-  // 表格標題（移除日期欄位）
-  const header = `期別\t時間\t開獎號碼（20顆）\t超級獎\t大小\t單雙`;
+  // 表格標題（移除日期欄位，使用更好的間距）
+  const header = `期別\t時間\t開獎號碼（20顆）\t\t超級獎\t大小\t單雙`;
 
   // 使用 reverse() 確保從新到舊排列（07:55 → 07:05）
   const sortedDraws = [...draws].reverse();
@@ -423,7 +424,7 @@ export async function getFormattedHourData(
     const oddEvenDisplay = formatOddEven(d.oddEven);
     // 格式：期別 \t 時間 \t 開獎號碼 \t 超級獎 \t 大小 \t 單雙（移除日期）
     const superAwardStr = `超級獎${String(d.superNumber).padStart(2, "0")}`;
-    return `${d.term}\t${d.time}\t${numsStr}\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
+    return `${d.term}\t${d.time}\t${numsStr}\t\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
   // 組合完整的複製文本
