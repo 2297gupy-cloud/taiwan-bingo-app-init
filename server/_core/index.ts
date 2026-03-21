@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startLiveDrawPolling } from "../services/live-draw-simulator";
+import { startGoogleSheetsSync } from "../services/google-sheets-scheduler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -68,6 +69,12 @@ async function startServer() {
   setTimeout(() => {
     startLiveDrawPolling(20); // 每 20 秒檢查一次
   }, 2000);
+
+  // 啟動 Google Sheets 定期同步
+  // 每 30 分鐘同步一次 Google Sheets 數據
+  setTimeout(() => {
+    startGoogleSheetsSync(30);
+  }, 3000);
 }
 
 startServer().catch(console.error);

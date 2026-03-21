@@ -27,6 +27,7 @@ import {
 } from "./bingo-db";
 import { backupCsvRouter } from "./backup-csv-router";
 import { syncRecentDays, syncBingoDataForDate, getTaiwanDateStr } from "./services/taiwan-lottery-api";
+import { syncGoogleSheetsData } from "./services/google-sheets-sync";
 import { resetAPIMode, getTodayDrawSchedule, getCurrentDrawIndex } from "./services/live-draw-simulator";
 import { generateAIPrediction } from "./services/ai-predictor";
 import {
@@ -68,6 +69,16 @@ export const appRouter = router({
   }),
 
   system: systemRouter,
+  
+  // Google Sheets 同步路由
+  googleSheets: router({
+    sync: protectedProcedure
+      .mutation(async () => {
+        const result = await syncGoogleSheetsData();
+        return result;
+      }),
+  }),
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
