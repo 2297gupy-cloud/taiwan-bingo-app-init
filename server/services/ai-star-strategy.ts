@@ -393,7 +393,10 @@ export async function getFormattedHourData(
   }
   
   // 標題和報告日期
-  const reportTitle = `BINGO BINGO 專業數據演算報告 (${startTime}~${endTime})`;
+  // 移除冒號，只保留時間範圍（例如：0705~0755）
+  const startTimeNoColon = startTime.replace(":", "");
+  const endTimeNoColon = endTime.replace(":", "");
+  const reportTitle = `BINGO BINGO 專業數據演算報告 (${startTimeNoColon}~${endTimeNoColon})`;
   const reportDate = `報告日期：${rocDate}`;
   const separator = "-".repeat(90);
   
@@ -407,17 +410,17 @@ export async function getFormattedHourData(
 6. 核心演算邏輯穩定，不用回測驗證
 7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯`;
 
-  // 表格標題
-  const header = `期別\t日期\t時間\t開獎號碼（20顆）\t超級獎\t大小\t單雙`;
+  // 表格標題（移除日期欄位）
+  const header = `期別\t時間\t開獎號碼（20顆）\t超級獎\t大小\t單雙`;
 
   const lines = draws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
     // 使用格式化函數轉換數據庫的大小和單雙值
     const bigSmallDisplay = formatBigSmall(d.bigSmall);
     const oddEvenDisplay = formatOddEven(d.oddEven);
-    // 格式：期別 \t 日期 \t 時間 \t 開獎號碼 \t 超級獎 \t 大小 \t 單雙
+    // 格式：期別 \t 時間 \t 開獎號碼 \t 超級獎 \t 大小 \t 單雙（移除日期）
     const superAwardStr = `超級獎${String(d.superNumber).padStart(2, "0")}`;
-    return `${d.term}\t${dateStr}\t${d.time}\t${numsStr}\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
+    return `${d.term}\t${d.time}\t${numsStr}\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
   // 組合完整的複製文本
