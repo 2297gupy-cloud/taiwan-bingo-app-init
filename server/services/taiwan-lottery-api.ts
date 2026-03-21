@@ -190,9 +190,9 @@ export function processRawData(rawData: BingoQueryResult[], dateStr: string): Pr
         bigSmall = 'small';
       }
     } else {
-      // API 沒有返回大小值，根據號碼範圍計算：51-80 範圍 ≥13 顆 = 大，1-50 範圍 ≥13 顆 = 小
-      const bigCount = numbers.filter(n => n >= 51 && n <= 80).length;
-      const smallCount = numbers.filter(n => n >= 1 && n <= 50).length;
+      // API 沒有返回大小值，根據號碼範圍計算：01-40 範圍 ≥13 顆 = 小，41-80 範圍 ≥13 顆 = 大
+      const smallCount = numbers.filter(n => n >= 1 && n <= 40).length;
+      const bigCount = numbers.filter(n => n >= 41 && n <= 80).length;
       if (bigCount >= 13) {
         bigSmall = 'big';
       } else if (smallCount >= 13) {
@@ -212,8 +212,17 @@ export function processRawData(rawData: BingoQueryResult[], dateStr: string): Pr
         oddEven = 'even';
       }
     } else {
-      // API 沒有返回單雙值，根據總和計算：奇數 = 單，偶數 = 雙
-      oddEven = total % 2 === 1 ? 'odd' : 'even';
+      // API 沒有返回單雙值，根據號碼个數計算：單數号 ≥13 個 = 單，雙數号 ≥13 個 = 雙
+      const oddCount = numbers.filter(n => n % 2 === 1).length;
+      const evenCount = numbers.filter(n => n % 2 === 0).length;
+      if (oddCount >= 13) {
+        oddEven = 'odd';
+      } else if (evenCount >= 13) {
+        oddEven = 'even';
+      } else {
+        // 都不滿足 13 個的條件，保持為「－」
+        oddEven = '－';
+      }
     }
     
     return {
