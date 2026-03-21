@@ -1,0 +1,40 @@
+{
+  "query": "SELECT drawNumber, drawTime, bigSmall, numbers FROM draw_records ORDER BY drawTime DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, bigSmall, numbers FROM draw_records ORDER BY drawTime DESC LIMIT 5;",
+  "rows": [
+    {
+      "drawNumber": "115016172",
+      "drawTime": "115/03/21 18:15:00",
+      "bigSmall": "big",
+      "numbers": "[10, 11, 14, 25, 28, 29, 36, 44, 46, 51, 58, 60, 62, 63, 65, 69, 70, 74, 75, 76]"
+    },
+    {
+      "drawNumber": "115016171",
+      "drawTime": "115/03/21 18:10:00",
+      "bigSmall": "－",
+      "numbers": "[2, 4, 14, 18, 21, 22, 24, 27, 28, 30, 38, 40, 43, 44, 49, 51, 58, 65, 72, 80]"
+    },
+    {
+      "drawNumber": "115016170",
+      "drawTime": "115/03/21 18:05:00",
+      "bigSmall": "－",
+      "numbers": "[4, 7, 12, 17, 19, 23, 25, 28, 30, 32, 33, 38, 44, 45, 56, 60, 61, 64, 68, 79]"
+    },
+    {
+      "drawNumber": "115016169",
+      "drawTime": "115/03/21 18:00:00",
+      "bigSmall": "－",
+      "numbers": "[2, 3, 4, 6, 8, 13, 14, 17, 19, 31, 39, 44, 51, 55, 58, 66, 67, 69, 70, 76]"
+    },
+    {
+      "drawNumber": "115016168",
+      "drawTime": "115/03/21 17:55:00",
+      "bigSmall": "－",
+      "numbers": "[9, 11, 15, 16, 17, 18, 19, 28, 38, 43, 44, 47, 50, 53, 56, 62, 67, 73, 74, 77]"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\tbigSmall\tnumbers\n115016172\t115/03/21 18:15:00\tbig\t[10, 11, 14, 25, 28, 29, 36, 44, 46, 51, 58, 60, 62, 63, 65, 69, 70, 74, 75, 76]\n115016171\t115/03/21 18:10:00\t－\t[2, 4, 14, 18, 21, 22, 24, 27, 28, 30, 38, 40, 43, 44, 49, 51, 58, 65, 72, 80]\n115016170\t115/03/21 18:05:00\t－\t[4, 7, 12, 17, 19, 23, 25, 28, 30, 32, 33, 38, 44, 45, 56, 60, 61, 64, 68, 79]\n115016169\t115/03/21 18:00:00\t－\t[2, 3, 4, 6, 8, 13, 14, 17, 19, 31, 39, 44, 51, 55, 58, 66, 67, 69, 70, 76]\n115016168\t115/03/21 17:55:00\t－\t[9, 11, 15, 16, 17, 18, 19, 28, 38, 43, 44, 47, 50, 53, 56, 62, 67, 73, 74, 77]\n",
+  "stderr": "",
+  "execution_time_ms": 1573
+}

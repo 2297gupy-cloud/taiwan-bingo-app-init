@@ -190,8 +190,17 @@ export function processRawData(rawData: BingoQueryResult[], dateStr: string): Pr
         bigSmall = 'small';
       }
     } else {
-      // API 沒有返回大小值，根據總和計算：> 50 = 大，≤ 50 = 小
-      bigSmall = total > 50 ? 'big' : 'small';
+      // API 沒有返回大小值，根據號碼範圍計算：51-80 範圍 ≥13 顆 = 大，1-50 範圍 ≥13 顆 = 小
+      const bigCount = numbers.filter(n => n >= 51 && n <= 80).length;
+      const smallCount = numbers.filter(n => n >= 1 && n <= 50).length;
+      if (bigCount >= 13) {
+        bigSmall = 'big';
+      } else if (smallCount >= 13) {
+        bigSmall = 'small';
+      } else {
+        // 都不滿足 13 顆的條件，保持為「－」
+        bigSmall = '－';
+      }
     }
     
     // 棄查 API 返回的單雙值，如果沒有則根據總和計算
