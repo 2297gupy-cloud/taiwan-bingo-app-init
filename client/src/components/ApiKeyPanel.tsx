@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Settings, ChevronDown, ChevronUp, Key, CheckCircle2, Trash2, RefreshCw, Zap } from "lucide-react";
+import { Loader2, Settings, ChevronDown, ChevronUp, Key, CheckCircle2, Trash2, RefreshCw, Zap, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface ApiKeyPanelProps {
@@ -17,6 +17,7 @@ interface ApiKeyPanelProps {
  * - 可選填 Base URL 和模型名稱（第三方代理用）
  * - 已儲存 Key 顯示「更換」和「刪除」按鈕
  * - 驗證通過後才顯示紅色閃爍小球
+ * - 為每個 AI 服務提供「如何取得？」連結
  */
 export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPanelProps) {
   const [apiKey, setApiKey] = useState("");
@@ -51,6 +52,21 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
     if (key.startsWith("sk-")) return "OpenAI / Monica / DeepSeek";
     if (key.startsWith("AIza")) return "Google Gemini";
     return "未知格式";
+  };
+
+  // 獲取文檔連結
+  const getDocumentationLink = (key: string): { service: string; url: string } | null => {
+    if (!key) return null;
+    if (key.startsWith("sk-ant-api")) {
+      return { service: "Claude", url: "https://platform.claude.com/docs/en/api/admin/api_keys/retrieve" };
+    }
+    if (key.startsWith("sk-")) {
+      return { service: "OpenAI", url: "https://platform.openai.com/account/api-keys" };
+    }
+    if (key.startsWith("AIza")) {
+      return { service: "Google Gemini", url: "https://aistudio.google.com/app/apikey" };
+    }
+    return null;
   };
 
   // 已儲存的 Key（優先顯示 openaiKey，其次 geminiKey）
@@ -106,6 +122,7 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
   };
 
   const keyType = detectKeyType(apiKey);
+  const docLink = getDocumentationLink(apiKey);
 
   return (
     <Card className="border-amber-500/30 bg-card">
@@ -204,14 +221,28 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
                       </span>
                     )}
                   </div>
-                  <Input
-                    type="password"
-                    placeholder="輸入 sk-... 或 AIza... 或第三方代理 Key"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="h-9 text-xs font-mono"
-                    autoFocus
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      placeholder="輸入 sk-... 或 sk-ant-api... 或 AIza..."
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="h-9 text-xs font-mono flex-1"
+                      autoFocus
+                    />
+                    {docLink && (
+                      <a
+                        href={docLink.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 px-2 py-2 rounded text-[10px] text-blue-400 hover:bg-blue-500/10 transition-colors whitespace-nowrap"
+                        title={`如何取得 ${docLink.service} API Key`}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span className="hidden sm:inline">如何取得？</span>
+                      </a>
+                    )}
+                  </div>
                   <p className="text-[10px] text-muted-foreground/60 mt-1">
                     支援 ChatGPT、Claude、Gemini、Monica、DeepSeek 等
                   </p>
@@ -231,7 +262,7 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
                   {showAdvanced && (
                     <div className="mt-2 space-y-2 p-2.5 rounded-lg border border-blue-500/20 bg-blue-500/5">
                       <p className="text-[10px] text-blue-400/80">
-                        設定後，Key 將通過自訂端點發送請求，支援向量引擎等 OpenAI 相容代理服務。
+                        用於 Monica、DeepSeek 等第三方代理服務。設定後，Key 將通過自訂端點發送請求。
                       </p>
                       <div>
                         <div className="text-[10px] text-muted-foreground mb-1">API Base URL</div>
@@ -257,44 +288,30 @@ export function ApiKeyPanel({ onClose, title = "AI API Key 設定" }: ApiKeyPane
                   )}
                 </div>
 
-                {/* 操作按鈕 */}
+                {/* 保存 / 取消按鈕 */}
                 <div className="flex gap-2">
-                  {isEditing && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCancel}
-                      className="h-9 text-xs border-border/30 text-muted-foreground hover:text-foreground"
-                    >
-                      取消
-                    </Button>
-                  )}
                   <Button
-                    size="sm"
                     onClick={handleSave}
-                    disabled={saveKey.isPending || !apiKey.trim()}
-                    className="flex-1 h-9 text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold gap-1.5"
+                    disabled={!apiKey.trim() || saveKey.isPending}
+                    className="flex-1 h-8 text-xs gap-1.5 bg-green-600 hover:bg-green-700"
                   >
                     {saveKey.isPending ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        驗證中...
-                      </>
+                      <Loader2 className="h-3 w-3 animate-spin" />
                     ) : (
-                      <>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        驗證並儲存
-                      </>
+                      <CheckCircle2 className="h-3 w-3" />
                     )}
+                    {saveKey.isPending ? "驗證中..." : "保存"}
+                  </Button>
+                  <Button
+                    onClick={handleCancel}
+                    variant="outline"
+                    className="flex-1 h-8 text-xs"
+                  >
+                    取消
                   </Button>
                 </div>
               </div>
             )}
-
-            {/* 說明文字 */}
-            <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-              API Key 加密儲存於伺服器。驗證通過後，AI 分析將優先使用您的 Key；未儲存則使用系統內建 Key。
-            </p>
           </div>
         )}
       </CardContent>
