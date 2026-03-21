@@ -185,8 +185,8 @@ function LiveDraw() {
             </span>
           </span>
           <span className="text-muted-foreground">
-            超級 <span className={`font-bold ${getBigSmallClass(latest.bigSmall)}`}>
-              {getBigSmallLabel(latest.bigSmall)}
+            超級 <span className="font-bold text-destructive">
+              {padNumber(latest.superNumber)}
             </span>
           </span>
         </div>
