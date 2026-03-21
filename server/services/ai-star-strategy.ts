@@ -360,10 +360,16 @@ export async function getFormattedHourData(
     .sort((a, b) => b.drawTime.localeCompare(a.drawTime))
     .slice(0, periodCount)
     .map((d) => {
-      // 計算單雙：號碼總和為奇數=單，偶數=雙
+      // 計算單雙：單數號碼 ≥13 個 = 單，雙數號碼 ≥13 個 = 雙
       const numbers = d.numbers as number[];
-      const sum = numbers.reduce((a, b) => a + b, 0);
-      const calculatedOddEven = sum % 2 === 1 ? "odd" : "even";
+      const oddCount = numbers.filter(n => n % 2 === 1).length;
+      const evenCount = numbers.filter(n => n % 2 === 0).length;
+      let calculatedOddEven = "－";
+      if (oddCount >= 13) {
+        calculatedOddEven = "odd";
+      } else if (evenCount >= 13) {
+        calculatedOddEven = "even";
+      }
       
       return {
         term: d.drawNumber,
@@ -371,7 +377,7 @@ export async function getFormattedHourData(
         numbers: numbers,
         superNumber: d.superNumber as number,
         bigSmall: d.bigSmall || "",  // 直接使用數據庫中的值
-        oddEven: d.oddEven === "－" || !d.oddEven ? calculatedOddEven : d.oddEven,  // 優先使用計算值
+        oddEven: d.oddEven === "－" || !d.oddEven ? calculatedOddEven : d.oddEven,  // 優先使用數據庫值，如果為空則使用計算值
       };
     });
 
