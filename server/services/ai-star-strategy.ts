@@ -414,8 +414,8 @@ export async function getFormattedHourData(
   // 表格標題（移除日期欄位，使用更好的間距）
   const header = `期別\t時間\t開獎號碼（20顆）\t\t超級獎\t大小\t單雙`;
 
-  // 不使用 reverse()，直接按時間由小到大排序（07:05 → 07:55）
-  const sortedDraws = [...draws].sort((a, b) => a.time.localeCompare(b.time));
+  // 使用 reverse() 確保從大到小排序（07:55 → 07:05）
+  const sortedDraws = [...draws].sort((a, b) => b.time.localeCompare(a.time));
 
   const lines = sortedDraws.map((d, i) => {
     const numsStr = d.numbers.map(n => String(n).padStart(2, "0")).join(" ");
