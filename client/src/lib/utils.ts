@@ -65,7 +65,9 @@ export function getBigSmallLabel(val: string): string {
 }
 
 export function getOddEvenLabel(val: string): string {
-  return val === "odd" ? "單" : "雙";
+  if (val === "odd") return "單";
+  if (val === "even") return "雙";
+  return "－";  // 當數據為空或「－」時返回「－」
 }
 
 export function getPlateLabel(val: string): string {
