@@ -354,8 +354,8 @@ export async function getFormattedHourData(
   }
 
   // 轉換為陣列並排序（從新到舊，用於 AI 分析）
-  // 08 時取 11 期（07:05~07:55），其他時段取 12 期
-  const periodCount = sourceHour === "08" ? 11 : 12;
+  // 07 時取 11 期（07:05~07:55），其他時段取 12 期
+  const periodCount = sourceHour === "07" ? 11 : 12;
   const draws = Array.from(drawMap.values())
     .sort((a, b) => b.drawTime.localeCompare(a.drawTime))
     .slice(0, periodCount)
@@ -368,11 +368,11 @@ export async function getFormattedHourData(
       oddEven: "－",  // 始終顯示「－」，因為超級獎號碼沒有中獎
     }));
 
-  const header = `台灣賓果 ${sourceHour}:00~${sourceHour}:55 時段開獎數據\n日期: ${dateStr}\n時段: ${copyRange || ""}`;
-  const separator = "─".repeat(60);
+  // 使用 2026 年份格式而不是民國年份
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const header = `BINGO BINGO 專業數據演算報告 (${copyRange || sourceHour}:00~${sourceHour}:55)\n報告日期：${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const separator = "─".repeat(90);
   const FIXED_ANALYSIS_FOOTER = `
-專業數據演算報告
-
 1. 演算之後 12 期出至最佳三顆黃金球數字，展開以下說明
 2. 強勢熱門號，「尾數共振」偵測
 3. 穩定的連莊號，捕捉剛起步的二連莊趨勢
@@ -386,10 +386,11 @@ export async function getFormattedHourData(
     // 使用格式化函數轉換數據庫的大小和單雙值
     const bigSmallDisplay = formatBigSmall(d.bigSmall);
     const oddEvenDisplay = formatOddEven(d.oddEven);
-    return `第${i + 1}期 ${d.time} (${d.term}): ${numsStr} 超級獎${String(d.superNumber).padStart(2, "0")}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
+    // 格式：期數 \t 日期 \t 時間 \t 號碼 \t 超級獎 \t 大小 \t 單雙
+    return `${d.term}\t${dateStr}\t${d.time}\t${numsStr}\t超級獎${String(d.superNumber).padStart(2, "0")}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
-  const text = `${header}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
+  const text = `${header}\n${separator}\n${lines.join("\n")}\n${separator}${FIXED_ANALYSIS_FOOTER}`;
   return { text };
 }
 

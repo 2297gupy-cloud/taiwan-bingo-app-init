@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startLiveDrawPolling } from "../services/live-draw-simulator";
 import { startGoogleSheetsSync } from "../services/google-sheets-scheduler";
+import { startDailyDateValidation } from "../services/daily-date-validator-scheduler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -75,6 +76,12 @@ async function startServer() {
   setTimeout(() => {
     startGoogleSheetsSync(0.5); // 0.5 分鐘 = 30 秒
   }, 3000);
+
+  // 啟動每日日期驗證調度器
+  // 每天 00:00 自動檢查 Google Sheets 同步的日期轉換邏輯
+  setTimeout(() => {
+    startDailyDateValidation();
+  }, 4000);
 }
 
 startServer().catch(console.error);

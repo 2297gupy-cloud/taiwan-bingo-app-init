@@ -55,6 +55,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import { predictNumbers, type PredictStrategy } from "./services/number-predictor";
 import { validateApiKey, validateCustomApiKey, validateGeminiKey } from "./api-key-validator";
 import { manualCheckUserApiKey } from "./api-key-monitor";
+import { dateValidatorRouter } from "./services/date-validator-router";
 
 
 export const appRouter = router({
@@ -78,6 +79,9 @@ export const appRouter = router({
         return result;
       }),
   }),
+
+  // 日期驗證路由
+  dateValidator: dateValidatorRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
