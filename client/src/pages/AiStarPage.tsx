@@ -874,16 +874,7 @@ export default function AiStarPage() {
                     )}
                   </div>
                 )}
-                <button
-                  onClick={() => {
-                    if (strategyEditMode === 'star') setStrategyTextStar('');
-                    else if (strategyEditMode === 'super') setStrategyTextSuper('');
-                    setStrategyEditMode(null);
-                  }}
-                  className="mt-1 px-1 py-0.5 rounded text-[7px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-all"
-                >
-                  刪除
-                </button>
+
               </div>
 
 
