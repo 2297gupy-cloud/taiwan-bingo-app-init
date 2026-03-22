@@ -370,6 +370,8 @@ function SlotCard({
   onDelete?: () => void;
   dateStr: string;
   userApiKey?: { openaiKey: string | null; geminiKey: string | null };
+  strategyText?: string;
+  strategyMode?: 'star' | 'super' | null;
 }) {
   const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
@@ -395,15 +397,22 @@ function SlotCard({
 
   const handleCopy = useCallback(() => {
     if (formattedData?.text) {
-      navigator.clipboard.writeText(formattedData.text).then(() => {
+      // 附加策略文字（如果有選中的策略）
+      let textToCopy = formattedData.text;
+      if (strategyText && strategyText.trim()) {
+        const strategyLabel = strategyMode === 'star' ? '【AI一星級策略】' : strategyMode === 'super' ? '【AI超級獎策略】' : '【策略文字】';
+        textToCopy = `${textToCopy}\n\n${strategyLabel}\n${strategyText.trim()}`;
+      }
+      navigator.clipboard.writeText(textToCopy).then(() => {
         setCopied(true);
         // 顯示卡片標籤（target 時段）
-        toast.success(`已複製 ${slot.target}時 (${slot.copyRange || slot.source + "00~" + slot.source + "55"}) 數據，自動分析中...`);
+        const strategyHint = strategyText ? ` + ${strategyMode === 'star' ? '一星級' : '超級獎'}策略` : '';
+        toast.success(`已複製 ${slot.target}時 (${slot.copyRange || slot.source + "00~" + slot.source + "55"}) 數據${strategyHint}，自動分析中...`);
         setTimeout(() => setCopied(false), 2000);
         
         // 複製後自動執行分析
         setTimeout(() => {
-          const encodedData = encodeURIComponent(formattedData.text);
+          const encodedData = encodeURIComponent(textToCopy);
           const url = `/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`;
           setLocation(url);
         }, 500);
@@ -411,7 +420,7 @@ function SlotCard({
     } else {
       toast.error("此時段尚無數據可複製");
     }
-  }, [formattedData, slot.source, slot.target, slot.copyRange, setLocation]);
+  }, [formattedData, slot.source, slot.target, slot.copyRange, setLocation, strategyText, strategyMode]);
 
   const handleCopyToAnalyze = useCallback(() => {
     if (formattedData?.text) {
@@ -961,9 +970,12 @@ export default function AiStarPage() {
                     }
                   } : undefined}
                   dateStr={dateStr || todayStr}
+                  strategyText={strategyEditMode === 'star' ? strategyTextStar : strategyEditMode === 'super' ? strategyTextSuper : (strategyTextStar || strategyTextSuper)}
+                  strategyMode={strategyEditMode || (strategyTextStar ? 'star' : strategyTextSuper ? 'super' : null)}
                 />
               );
             })}
+
           </div>
         </CardContent>
       </Card>
