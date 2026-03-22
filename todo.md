@@ -916,3 +916,11 @@
 - [x] 新增 getDailyVerifyDetails publicProcedure（查詢指定日期每時段黃金球及命中詳情）
 - [x] 更新 services/google-sheets-sync.test.ts 使用新日期格式（YYYY-MM-DD）
 - [x] 新增 server/google-sheets-sync.test.ts 完整單元測試（7 個測試全部通過）
+
+## README 文檔撰寫 (2026-03-22)
+- [x] 撰寫完整的 README.md（項目概述、技術架構、快速開始、使用指南）
+- [x] 包含功能說明（即時開獎、AI 預測、驗證追蹤、數據分析、Google 同步）
+- [x] 包含部署指南（本地開發、Manus 部署、自定義域名）
+- [x] 包含 API 參考（開獎查詢、AI 預測、Google 同步）
+- [x] 包含項目結構與設計系統說明
+- [x] 包含已知問題與貢獻指南
