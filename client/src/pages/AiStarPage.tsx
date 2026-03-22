@@ -700,10 +700,11 @@ export default function AiStarPage() {
 
   return (
     <div className="space-y-3 pb-4">
-      {/* ── 標題 & 日期切換 ── */}
+      {/* ── 標題、日期切換 & 各時段總覽 ── */}
       <Card className="border-border/30">
         <CardContent className="p-2.5">
-          <div className="flex items-center justify-between mb-1.5">
+          {/* 第一行：標題 & 日期切換 */}
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <Brain className="h-3.5 w-3.5 text-amber-400" />
               <span className="text-xs font-medium text-foreground">AI 一星策略</span>
@@ -744,37 +745,13 @@ export default function AiStarPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center justify-between">
+
+          {/* 第二行：說明文字 & 按鍵 */}
+          <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] text-muted-foreground/60">
               選擇時段 → AI 分析 → 驗證命中 · 長按卡片可複製數據
             </p>
-            <button
-              onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-              className="relative flex items-center gap-1 text-[10px] text-muted-foreground hover:text-amber-400 transition-colors"
-            >
-              <Settings className="h-3 w-3" />
-              API Key
-              {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 5px rgba(239,68,68,0.8)" }} />
-              )}
-            </button>
-          </div>
-        </CardContent>
-      </Card>
-
-          {/* API Key 設定面板 */}
-          {showApiKeyPanel && <ApiKeyPanel onClose={() => setShowApiKeyPanel(false)} />}
-
-      {/* ── 時段總覽網格 ── */}
-      <Card className="border-border/30">
-        <CardContent className="p-2.5">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-            <span className="text-xs font-medium text-foreground shrink-0">各時段總覽</span>
-            <span className="text-[10px] text-muted-foreground">
-              {predictions?.length || 0} 個已分析
-            </span>
-            <div className="ml-auto flex items-center gap-1 justify-end overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-1 justify-end overflow-x-auto scrollbar-none">
               <AiManualCalculation />
               <button
                 onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
@@ -828,7 +805,10 @@ export default function AiStarPage() {
             </div>
           </div>
 
-          {/* 批量分析進度提示 */}
+          {/* API Key 設定面板 */}
+          {showApiKeyPanel && <ApiKeyPanel onClose={() => setShowApiKeyPanel(false)} />}
+
+          {/* 第三行：批量分析進度提示 */}
           {batchAnalyzeMutation.isPending && (
             <div className="mb-2 p-2 rounded bg-amber-500/10 border border-amber-500/20">
               <div className="flex items-center gap-2">
@@ -837,6 +817,15 @@ export default function AiStarPage() {
               </div>
             </div>
           )}
+
+          {/* 第四行：時段網格 */}
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+            <span className="text-xs font-medium text-foreground shrink-0">各時段總覽</span>
+            <span className="text-[10px] text-muted-foreground">
+              {predictions?.length || 0} 個已分析
+            </span>
+          </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-1">
             {slots.map(slot => {
