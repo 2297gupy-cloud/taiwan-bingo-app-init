@@ -25,6 +25,7 @@ import {
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 // ============================================================
 // 工具函數
@@ -632,11 +633,40 @@ export default function AiStarPage() {
     { staleTime: 0, refetchInterval: 30000 }
   );
 
-  // 7天分析記錄
+  // 7天分析記錄（簡要統計）
   const { data: analysisRecords } = trpc.aiStar.getAnalysisRecords.useQuery(
     { days: 7 },
     { enabled: showAnalysisHistory, staleTime: 60000 }
   );
+
+  // 7天分析記錄 - 每日每時段驗證詳情
+  const [selectedHistoryDate, setSelectedHistoryDate] = useState<string | null>(null);
+  const [selectedHistorySlot, setSelectedHistorySlot] = useState<string | null>(null); // target hour
+  const [isSyncingHistory, setIsSyncingHistory] = useState(false);
+  const { data: dailyVerifyDetails, isLoading: isDailyVerifyLoading, refetch: refetchDailyVerify } = trpc.aiStar.getDailyVerifyDetails.useQuery(
+    { dateStr: selectedHistoryDate || dateStr || todayStr },
+    { enabled: showAnalysisHistory && !!selectedHistoryDate, staleTime: 30000 }
+  );
+
+  // 歷史同步 mutation
+  const syncByDateMutation = trpc.googleSheets.syncByDate.useMutation({
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success(`✅ 同步完成：${result.count} 筆數據`);
+        refetchDailyVerify();
+      } else {
+        toast.error(`❌ 同步失敗：${result.message}`);
+      }
+      setIsSyncingHistory(false);
+    },
+    onError: (err) => {
+      toast.error(`❌ 同步失敗：${err.message}`);
+      setIsSyncingHistory(false);
+    },
+  });
+
+  // 登入狀態（用於顯示同步按鈕）
+  const { isAuthenticated } = useAuth();
   // 查詢用戶已儲存的 APIKey
   const { data: userApiKey, refetch: refetchApiKey } = trpc.aiStar.getApiKey.useQuery(undefined, {
     staleTime: 30000,
@@ -1395,32 +1425,237 @@ export default function AiStarPage() {
           </button>
 
           {showAnalysisHistory && (
-            <div className="mt-2 space-y-1">
-              {analysisRecords ? (
-                analysisRecords.map(record => (
-                  <div
-                    key={record.dateStr}
-                    className="flex items-center justify-between py-1 px-1.5 rounded bg-secondary/20"
-                  >
-                    <span className="text-[10px] font-mono text-foreground">
-                      {formatDateDisplay(record.dateStr)}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground">
-                        {record.analyzedSlots}/{record.totalSlots} 時段
+            <div className="mt-2 space-y-2">
+              {/* 日期選擇列 */}
+              <div className="space-y-1">
+                {analysisRecords ? (
+                  analysisRecords.map(record => (
+                    <div
+                      key={record.dateStr}
+                      onClick={() => {
+                        if (selectedHistoryDate === record.dateStr) {
+                          setSelectedHistoryDate(null);
+                          setSelectedHistorySlot(null);
+                        } else {
+                          setSelectedHistoryDate(record.dateStr);
+                          setSelectedHistorySlot(null);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer transition-all",
+                        selectedHistoryDate === record.dateStr
+                          ? "bg-amber-500/15 border border-amber-500/40"
+                          : "bg-secondary/20 hover:bg-secondary/30 border border-transparent"
+                      )}
+                    >
+                      <span className="text-[10px] font-mono text-foreground">
+                        {formatDateDisplay(record.dateStr)}
                       </span>
-                      <div className="w-16 h-1.5 rounded-full bg-secondary/50">
-                        <div
-                          className="h-full rounded-full bg-amber-400"
-                          style={{ width: `${(record.analyzedSlots / record.totalSlots) * 100}%` }}
-                        />
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground">
+                          {record.analyzedSlots}/{record.totalSlots} 時段
+                        </span>
+                        <div className="w-16 h-1.5 rounded-full bg-secondary/50">
+                          <div
+                            className="h-full rounded-full bg-amber-400"
+                            style={{ width: `${(record.analyzedSlots / record.totalSlots) * 100}%` }}
+                          />
+                        </div>
+                        <ChevronRight className={cn(
+                          "h-3 w-3 text-muted-foreground/50 transition-transform",
+                          selectedHistoryDate === record.dateStr && "rotate-90"
+                        )} />
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="flex justify-center py-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
-                ))
-              ) : (
-                <div className="flex justify-center py-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+
+              {/* 歷史同步按鈕（已登入才顯示） */}
+              {isAuthenticated && selectedHistoryDate && (
+                <div className="flex items-center justify-between px-1 pt-1 border-t border-border/20">
+                  <span className="text-[9px] text-muted-foreground/50">
+                    {formatDateDisplay(selectedHistoryDate)} 數據同步
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSyncingHistory) return;
+                      setIsSyncingHistory(true);
+                      syncByDateMutation.mutate({ date: selectedHistoryDate });
+                    }}
+                    disabled={isSyncingHistory}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-medium transition-all border",
+                      isSyncingHistory
+                        ? "border-amber-500/20 text-amber-400/40 cursor-not-allowed"
+                        : "border-amber-500/40 text-amber-400 hover:bg-amber-500/10 active:scale-95"
+                    )}
+                  >
+                    {isSyncingHistory ? (
+                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                    ) : (
+                      <Zap className="h-2.5 w-2.5" />
+                    )}
+                    {isSyncingHistory ? '同步中...' : '從 Google 同步'}
+                  </button>
+                </div>
+              )}
+
+              {/* 每日每時段驗證詳情 */}
+              {selectedHistoryDate && (
+                <div className="border border-border/30 rounded-lg p-2 bg-card/50">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <CalendarDays className="h-3 w-3 text-amber-400" />
+                    <span className="text-[10px] font-medium text-foreground">
+                      {formatDateDisplay(selectedHistoryDate)} 各時段驗證
+                    </span>
+                    {isDailyVerifyLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                  </div>
+
+                  {/* 時段選擇橫向溻動列 */}
+                  {dailyVerifyDetails && (
+                    <>
+                      <div className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border/20 mb-2">
+                        {dailyVerifyDetails.map(item => {
+                          const isSelected = selectedHistorySlot === item.slot.target;
+                          const hitColor = item.hasPrediction
+                            ? item.hitPeriods > 0
+                              ? "text-green-400"
+                              : item.totalPeriods > 0
+                                ? "text-red-400/70"
+                                : "text-muted-foreground/50"
+                            : "text-muted-foreground/30";
+                          return (
+                            <button
+                              key={item.slot.target}
+                              onClick={() => setSelectedHistorySlot(isSelected ? null : item.slot.target)}
+                              disabled={!item.hasPrediction}
+                              className={cn(
+                                "shrink-0 py-1 px-1.5 text-center text-[10px] font-mono transition-all border-b-2 flex flex-col items-center",
+                                isSelected
+                                  ? "border-amber-400 text-amber-400 bg-amber-400/10"
+                                  : item.hasPrediction
+                                    ? "border-transparent text-muted-foreground hover:text-foreground hover:bg-white/5"
+                                    : "border-transparent text-muted-foreground/30 cursor-not-allowed"
+                              )}
+                            >
+                              <span>{item.slot.target}時</span>
+                              {item.hasPrediction && (
+                                <span className={cn("text-[7px]", hitColor)}>
+                                  {item.totalPeriods > 0
+                                    ? `${item.hitPeriods}/${item.totalPeriods}`
+                                    : "待開"}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* 選中時段的詳情 */}
+                      {selectedHistorySlot && (() => {
+                        const detail = dailyVerifyDetails.find(d => d.slot.target === selectedHistorySlot);
+                        if (!detail) return null;
+                        const completedPeriods = detail.periods.filter(p => !p.pending);
+                        const hitPeriods = completedPeriods.filter(p => p.isHit).length;
+                        const hitRate = completedPeriods.length > 0
+                          ? Math.round(hitPeriods / completedPeriods.length * 100)
+                          : 0;
+
+                        return (
+                          <div className="space-y-1.5">
+                            {/* 標題列 */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-muted-foreground">黃金球：</span>
+                                {detail.goldenBalls.length > 0 ? (
+                                  detail.goldenBalls.map((n) => (
+                                    <GoldenBall key={n} number={n} size="sm" />
+                                  ))
+                                ) : (
+                                  <span className="text-[9px] text-muted-foreground/50">無预測</span>
+                                )}
+                                {detail.isManual && (
+                                  <span className="text-[8px] text-blue-400/70 ml-1">手動</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-muted-foreground">
+                                  命中 <span className="font-bold text-green-400">{hitPeriods}</span>/{completedPeriods.length} 期
+                                  {detail.periods.some(p => p.pending) && (
+                                    <span className="text-muted-foreground/40 ml-1">(待開{detail.periods.filter(p => p.pending).length}期)</span>
+                                  )}
+                                </span>
+                                <span className="text-[10px] text-green-400">{hitRate}%</span>
+                              </div>
+                            </div>
+
+                            {/* 每期驗證詳情 */}
+                            <div className="space-y-0.5">
+                              {detail.periods.map((period, idx) => (
+                                <div
+                                  key={period.time}
+                                  className={cn(
+                                    "flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border",
+                                    period.pending
+                                      ? "border-border/10 bg-transparent opacity-40"
+                                      : period.isHit
+                                        ? "border-green-500/30 bg-green-500/5"
+                                        : "border-border/20 bg-transparent"
+                                  )}
+                                >
+                                  <span className="font-mono text-muted-foreground/40 text-[9px] shrink-0 w-4 text-right">[{idx + 1}]</span>
+                                  <span className="font-mono text-muted-foreground/60 text-[9px] shrink-0 w-9">{period.time}</span>
+                                  <span className="font-mono text-muted-foreground/40 text-[9px] shrink-0 truncate max-w-[60px]">{period.term}</span>
+                                  {period.pending ? (
+                                    <span className="text-[9px] text-muted-foreground/40 italic">未開獎</span>
+                                  ) : period.isHit ? (
+                                    <div className="flex items-center gap-0.5 flex-1">
+                                      {period.hits.map(n => (
+                                        <span key={n} className="font-mono font-bold text-amber-400 text-[10px] shrink-0">
+                                          {String(n).padStart(2, "0")}
+                                        </span>
+                                      ))}
+                                      <CheckCircle2 className="h-3 w-3 text-green-400 shrink-0 ml-0.5" />
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground/50 text-[9px] flex-1">未中獎</span>
+                                  )}
+                                  {/* 超級獎驗證 */}
+                                  {!period.pending && period.superNumber > 0 && (
+                                    <div className={cn(
+                                      "flex items-center gap-0.5 shrink-0 px-1 py-0.5 rounded border text-[8px]",
+                                      period.isSuperHit
+                                        ? "border-red-500/40 bg-red-500/10"
+                                        : "border-border/20 bg-transparent"
+                                    )}>
+                                      <span className="text-muted-foreground/40 text-[7px]">超</span>
+                                      <span className={cn(
+                                        "font-mono font-bold text-[9px]",
+                                        period.isSuperHit ? "text-red-400" : "text-muted-foreground/50"
+                                      )}>
+                                        {String(period.superNumber).padStart(2, "0")}
+                                      </span>
+                                      {period.isSuperHit ? (
+                                        <CheckCircle2 className="h-2.5 w-2.5 text-red-400 shrink-0" />
+                                      ) : (
+                                        <XCircle className="h-2.5 w-2.5 text-muted-foreground/30 shrink-0" />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
                 </div>
               )}
             </div>

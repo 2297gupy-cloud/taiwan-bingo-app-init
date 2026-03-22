@@ -1,6 +1,7 @@
 /**
  * Google Sheets 自動同步服務
  * 定期從 Google Apps Script 拉取數據並更新數據庫
+ * 支援今日同步（action=today）和歷史日期同步（action=date&date=YYYY-MM-DD）
  */
 
 import { sql } from "drizzle-orm";
@@ -10,7 +11,7 @@ import { getDb } from "../db";
 
 interface GoogleSheetsRow {
   period: string;           // 期別，例如 "115016038"
-  date: string;             // ISO 日期字符串
+  date: string;             // ISO 日期字符串，例如 "2026-03-21"
   time: string;             // 時間，例如 "07:05"
   numbers: string[];        // 號碼數組
   superNum: string;         // 超級獎號碼文本，例如 "超級獎49"
@@ -22,10 +23,11 @@ interface GoogleSheetsResponse {
   success: boolean;
   action: string;
   timestamp: string;
-  data: GoogleSheetsRow[];
+  data: GoogleSheetsRow[] | null;
+  error: string | null;
 }
 
-interface SyncedDraw {
+export interface SyncedDraw {
   drawNumber: string;
   drawTime: string;         // 民國年份格式：115/03/15 07:05:00
   numbers: number[];
@@ -33,6 +35,16 @@ interface SyncedDraw {
   bigSmall: string;
   oddEven: string;
 }
+
+export interface SyncResult {
+  success: boolean;
+  count: number;
+  message: string;
+  date?: string;
+}
+
+// Google Apps Script URL
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwTn1ENAOBNtbxX9jQtayBJwiHtA72_1FCpLNYyxPDudU1IF4pJ13sRFd2DevSHe4rfmQ/exec';
 
 // ============ 工具函數 ============
 
@@ -45,15 +57,26 @@ function extractSuperNumber(superNumStr: string): number {
 }
 
 /**
- * 將 ISO 日期和時間轉換為民國年份格式
- * 輸入：date="2026-03-20T16:00:00.000Z"，time="07:05"
- * 輸出："115/03/20 07:05:00"
+ * 將日期字符串（YYYY-MM-DD）和時間轉換為民國年份格式
+ * 輸入：date="2026-03-21"，time="07:05"
+ * 輸出："115/03/21 07:05:00"
+ * 注意：直接解析日期字符串，避免時區問題
  */
-function formatToROCDateTime(isoDate: string, timeStr: string): string {
-  const date = new Date(isoDate);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
+function formatToROCDateTime(dateStr: string, timeStr: string): string {
+  // 直接解析 YYYY-MM-DD 格式，避免 new Date() 的時區問題
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) {
+    // 嘗試用 new Date 解析（向後相容）
+    const date = new Date(dateStr);
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const rocYear = year - 1911;
+    return `${rocYear}/${month}/${day} ${timeStr}:00`;
+  }
+  const year = parseInt(parts[0]);
+  const month = parts[1].padStart(2, '0');
+  const day = parts[2].padStart(2, '0');
   const rocYear = year - 1911;
   return `${rocYear}/${month}/${day} ${timeStr}:00`;
 }
@@ -79,10 +102,23 @@ function convertOddEven(oe: string): string {
 // ============ API 調用 ============
 
 /**
- * 從 Google Apps Script 拉取數據
+ * 從 Google Apps Script 拉取今日數據（action=today）
  */
 export async function fetchFromGoogleSheets(): Promise<GoogleSheetsResponse> {
-  const url = 'https://script.google.com/macros/s/AKfycbwTn1ENAOBNtbxX9jQtayBJwiHtA72_1FCpLNYyxPDudU1IF4pJ13sRFd2DevSHe4rfmQ/exec';
+  return fetchFromGoogleSheetsByDate(null);
+}
+
+/**
+ * 從 Google Apps Script 拉取指定日期數據
+ * @param dateStr - YYYY-MM-DD 格式日期，null 表示今日
+ */
+export async function fetchFromGoogleSheetsByDate(dateStr: string | null): Promise<GoogleSheetsResponse> {
+  let url: string;
+  if (dateStr) {
+    url = `${GAS_URL}?action=date&date=${dateStr}`;
+  } else {
+    url = `${GAS_URL}?action=today`;
+  }
   
   try {
     const response = await fetch(url, {
@@ -94,15 +130,39 @@ export async function fetchFromGoogleSheets(): Promise<GoogleSheetsResponse> {
     });
     
     if (!response.ok) {
-      console.error(`[GoogleSheets] HTTP ${response.status}`);
-      return { success: false, action: 'error', timestamp: new Date().toISOString(), data: [] };
+      console.error(`[GoogleSheets] HTTP ${response.status} for date=${dateStr || 'today'}`);
+      return { success: false, action: 'error', timestamp: new Date().toISOString(), data: [], error: `HTTP ${response.status}` };
     }
     
     const data = await response.json() as GoogleSheetsResponse;
     return data;
   } catch (err) {
-    console.error('[GoogleSheets] Failed to fetch data:', err);
-    return { success: false, action: 'error', timestamp: new Date().toISOString(), data: [] };
+    console.error(`[GoogleSheets] Failed to fetch data for date=${dateStr || 'today'}:`, err);
+    return { success: false, action: 'error', timestamp: new Date().toISOString(), data: [], error: String(err) };
+  }
+}
+
+/**
+ * 查詢 Google Apps Script 中有哪些可用日期（action=history）
+ */
+export async function fetchAvailableDates(): Promise<{ date: string; count: number; complete: boolean }[]> {
+  const url = `${GAS_URL}?action=history`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(30000),
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json() as { success: boolean; data: { dates: { date: string; count: number; complete: boolean }[] } };
+    if (!data.success || !data.data?.dates) return [];
+    return data.data.dates;
+  } catch (err) {
+    console.error('[GoogleSheets] Failed to fetch available dates:', err);
+    return [];
   }
 }
 
@@ -137,7 +197,7 @@ export async function batchUpsertDraws(draws: SyncedDraw[]): Promise<number> {
   const db = await getDb();
   if (!db || draws.length === 0) return 0;
   
-  // 驗證期號格式
+  // 驗證期號格式（9位數字）
   const validDraws = draws.filter(d => /^\d{9}$/.test(d.drawNumber));
   const rejected = draws.length - validDraws.length;
   if (rejected > 0) {
@@ -199,21 +259,31 @@ export async function batchUpsertDraws(draws: SyncedDraw[]): Promise<number> {
 // ============ 同步邏輯 ============
 
 /**
- * 同步 Google Sheets 數據到數據庫
+ * 同步今日 Google Sheets 數據到數據庫
  */
-export async function syncGoogleSheetsData(): Promise<{ success: boolean; count: number; message: string }> {
-  console.log('[GoogleSheets] Starting sync...');
+export async function syncGoogleSheetsData(): Promise<SyncResult> {
+  return syncGoogleSheetsByDate(null);
+}
+
+/**
+ * 同步指定日期的 Google Sheets 數據到數據庫
+ * @param dateStr - YYYY-MM-DD 格式日期，null 表示今日
+ */
+export async function syncGoogleSheetsByDate(dateStr: string | null): Promise<SyncResult> {
+  const label = dateStr || 'today';
+  console.log(`[GoogleSheets] Starting sync for date=${label}...`);
   
   try {
     // 1. 從 Google Sheets 拉取數據
-    const response = await fetchFromGoogleSheets();
+    const response = await fetchFromGoogleSheetsByDate(dateStr);
     
     if (!response.success || !response.data || response.data.length === 0) {
-      console.log('[GoogleSheets] No data received from Google Sheets');
-      return { success: false, count: 0, message: 'No data from Google Sheets' };
+      const msg = response.error || 'No data from Google Sheets';
+      console.log(`[GoogleSheets] No data received for date=${label}: ${msg}`);
+      return { success: false, count: 0, message: msg, date: dateStr || undefined };
     }
     
-    console.log(`[GoogleSheets] Received ${response.data.length} records`);
+    console.log(`[GoogleSheets] Received ${response.data.length} records for date=${label}`);
     
     // 2. 處理數據
     const processed = processGoogleSheetsData(response.data);
@@ -221,18 +291,33 @@ export async function syncGoogleSheetsData(): Promise<{ success: boolean; count:
     // 3. 批量 upsert 到數據庫
     const count = await batchUpsertDraws(processed);
     
-    console.log(`[GoogleSheets] Synced ${count} records successfully`);
-    return { success: true, count, message: `Synced ${count} records` };
+    console.log(`[GoogleSheets] Synced ${count} records for date=${label}`);
+    return { success: true, count, message: `Synced ${count} records`, date: dateStr || undefined };
   } catch (err) {
-    console.error('[GoogleSheets] Sync failed:', err);
-    return { success: false, count: 0, message: `Sync failed: ${String(err)}` };
+    console.error(`[GoogleSheets] Sync failed for date=${label}:`, err);
+    return { success: false, count: 0, message: `Sync failed: ${String(err)}`, date: dateStr || undefined };
   }
+}
+
+/**
+ * 批量同步多個日期的歷史數據
+ * @param dates - YYYY-MM-DD 格式日期陣列
+ */
+export async function syncMultipleDates(dates: string[]): Promise<SyncResult[]> {
+  const results: SyncResult[] = [];
+  for (const dateStr of dates) {
+    const result = await syncGoogleSheetsByDate(dateStr);
+    results.push(result);
+    // 避免請求過快
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  return results;
 }
 
 /**
  * 定期同步 Google Sheets 數據（用於定時任務）
  */
-export async function startPeriodicSync(intervalMinutes: number = 30): Promise<void> {
+export async function startPeriodicSync(intervalMinutes: number = 5): Promise<void> {
   console.log(`[GoogleSheets] Starting periodic sync every ${intervalMinutes} minutes`);
   
   // 立即執行一次

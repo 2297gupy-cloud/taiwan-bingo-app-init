@@ -1,0 +1,13 @@
+{
+  "query": "SHOW TABLES LIKE 'bingo_%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SHOW TABLES LIKE 'bingo_%';",
+  "rows": [
+    {
+      "Tables_in_kTdJcS62GUwid3zgDEGkMA (bingo_%)": "bingo_rooms"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_kTdJcS62GUwid3zgDEGkMA (bingo_%)\nbingo_rooms\n",
+  "stderr": "",
+  "execution_time_ms": 1570
+}

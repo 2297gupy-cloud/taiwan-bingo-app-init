@@ -27,7 +27,7 @@ import {
 } from "./bingo-db";
 import { backupCsvRouter } from "./backup-csv-router";
 import { syncRecentDays, syncBingoDataForDate, getTaiwanDateStr } from "./services/taiwan-lottery-api";
-import { syncGoogleSheetsData } from "./services/google-sheets-sync";
+import { syncGoogleSheetsData, syncGoogleSheetsByDate, syncMultipleDates, fetchAvailableDates } from "./services/google-sheets-sync";
 import { resetAPIMode, getTodayDrawSchedule, getCurrentDrawIndex } from "./services/live-draw-simulator";
 import { generateAIPrediction } from "./services/ai-predictor";
 import {
@@ -49,6 +49,7 @@ import {
   deleteAiSuperPrizePrediction,
   getHourDrawsWithSuper,
   verifySuperPrizePrediction,
+  getDailyVerifyDetails,
 } from "./services/ai-star-strategy";
 import { aiApiKeys, drawRecords, aiUrlConfigs } from "../drizzle/schema";
 import { eq, desc, sql } from "drizzle-orm";
@@ -73,10 +74,34 @@ export const appRouter = router({
   
   // Google Sheets 同步路由
   googleSheets: router({
+    // 同步今日數據
     sync: protectedProcedure
       .mutation(async () => {
         const result = await syncGoogleSheetsData();
         return result;
+      }),
+
+    // 同步指定日期的歷史數據
+    syncByDate: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式必須為 YYYY-MM-DD') }))
+      .mutation(async ({ input }) => {
+        const result = await syncGoogleSheetsByDate(input.date);
+        return result;
+      }),
+
+    // 批量同步多個日期
+    syncMultiple: protectedProcedure
+      .input(z.object({ dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).min(1).max(30) }))
+      .mutation(async ({ input }) => {
+        const results = await syncMultipleDates(input.dates);
+        return results;
+      }),
+
+    // 查詢 Google Sheets 中有哪些可用日期
+    availableDates: protectedProcedure
+      .query(async () => {
+        const dates = await fetchAvailableDates();
+        return dates;
       }),
   }),
 
@@ -432,6 +457,16 @@ export const appRouter = router({
       }))
       .query(async ({ input, ctx }) => {
         return getAnalysisRecords(input.days, ctx.user.id);
+      }),
+
+    /** 取得指定日期每個時段的黃金球預測及每期命中詳情 */
+    getDailyVerifyDetails: publicProcedure
+      .input(z.object({
+        dateStr: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const dateStr = input.dateStr || getTodayDateStr();
+        return getDailyVerifyDetails(dateStr);
       }),
 
     /** 儲存用戶 API Key */

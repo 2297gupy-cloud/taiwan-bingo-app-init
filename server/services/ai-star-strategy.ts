@@ -24,7 +24,7 @@ async function db() {
 export const HOUR_SLOTS = [
   // 卡片邏輯：source=複製數據的時段，target=卡片顯示時段，verifyHour=驗證時段(同 target，即時驗證)
   // 例：14時卡片 → 複製13時數據(source=13) → 驗證14:00~14:55(verifyHour=14)
-  { source: "07", target: "08", label: "08時", copyRange: "0700~0755", draws: 12, verifyHour: "08", verifyRange: "0800~0855" },
+  { source: "07", target: "08", label: "08時", copyRange: "0705~0755", draws: 11, verifyHour: "08", verifyRange: "0800~0855" },
   { source: "08", target: "09", label: "09時", copyRange: "0800~0855", draws: 12, verifyHour: "09", verifyRange: "0900~0955" },
   { source: "09", target: "10", label: "10時", copyRange: "0900~0955", draws: 12, verifyHour: "10", verifyRange: "1000~1055" },
   { source: "10", target: "11", label: "11時", copyRange: "1000~1055", draws: 12, verifyHour: "11", verifyRange: "1100~1155" },
@@ -1227,4 +1227,134 @@ export async function verifySuperPrizePrediction(
       };
     }
   });
+}
+
+// ============================================================
+// 7 天分析記錄 - 每日每時段驗證詳情
+// ============================================================
+
+/**
+ * 取得指定日期每個時段的黃金球預測及每期命中詳情
+ * 用於 7 天分析記錄頁面顯示
+ */
+export async function getDailyVerifyDetails(dateStr: string): Promise<Array<{
+  slot: typeof HOUR_SLOTS[0];
+  goldenBalls: number[];
+  isManual: boolean;
+  hasPrediction: boolean;
+  /** 每期驗證結果（verifyHour 時段的每一期） */
+  periods: Array<{
+    term: string;
+    time: string;
+    isHit: boolean;
+    hits: number[];
+    superNumber: number;
+    isSuperHit: boolean;
+    pending: boolean;
+  }>;
+  /** 命中期數（有命中至少 1 顆黃金球的期數） */
+  hitPeriods: number;
+  /** 總期數（已開獎的期數） */
+  totalPeriods: number;
+}>> {
+  const database = await db();
+  const rocDate = toROCDateStr(dateStr);
+  const results = [];
+
+  for (const slot of HOUR_SLOTS) {
+    // 查詢該時段的預測
+    const predictions = await database
+      .select()
+      .from(aiStarPredictions)
+      .where(
+        and(
+          eq(aiStarPredictions.dateStr, dateStr),
+          eq(aiStarPredictions.sourceHour, slot.source)
+        )
+      )
+      .limit(1);
+
+    const prediction = predictions[0];
+    const goldenBalls: number[] = prediction ? (prediction.goldenBalls as number[]) : [];
+    const hasPrediction = !!prediction;
+    const isManual = prediction ? prediction.isManual === 1 : false;
+
+    // 查詢 verifyHour 時段的所有開獎記錄
+    const verifyHour = slot.verifyHour;
+    const hourNum = parseInt(verifyHour, 10);
+
+    // 生成完整 12 個時間點（xx:00, xx:05, xx:10 ... xx:55）
+    const timeSlots: string[] = [];
+    for (let m = 0; m < 60; m += 5) {
+      timeSlots.push(`${String(hourNum).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+
+    const allDraws = await database
+      .select()
+      .from(drawRecords)
+      .where(
+        and(
+          like(drawRecords.drawTime, `${rocDate}%`),
+          like(drawRecords.drawTime, `% ${String(hourNum).padStart(2, "0")}:%`)
+        )
+      )
+      .orderBy(desc(drawRecords.drawTime))
+      .limit(30);
+
+    // 用 drawTime 去重
+    const drawMap = new Map<string, typeof allDraws[0]>();
+    for (const d of allDraws) {
+      const timeKey = d.drawTime.split(" ")[1]?.substring(0, 5) || "";
+      if (!drawMap.has(timeKey)) {
+        drawMap.set(timeKey, d);
+      }
+    }
+
+    // 按時間順序生成每期結果
+    const periods = timeSlots.map((timeSlot) => {
+      const draw = drawMap.get(timeSlot);
+      if (draw) {
+        const numbers = draw.numbers as number[];
+        const hits = goldenBalls.length > 0 ? numbers.filter((n) => goldenBalls.includes(n)) : [];
+        const superNum = draw.superNumber as number;
+        const isSuperHit = goldenBalls.length > 0 && goldenBalls.includes(superNum);
+        return {
+          term: draw.drawNumber,
+          time: timeSlot,
+          isHit: hits.length > 0,
+          hits,
+          superNumber: superNum,
+          isSuperHit,
+          pending: false,
+        };
+      } else {
+        return {
+          term: "---",
+          time: timeSlot,
+          isHit: false,
+          hits: [] as number[],
+          superNumber: 0,
+          isSuperHit: false,
+          pending: true,
+        };
+      }
+    });
+
+    // 統計命中期數
+    const completedPeriods = periods.filter((p) => !p.pending);
+    const hitPeriods = completedPeriods.filter((p) => p.isHit).length;
+    const totalPeriods = completedPeriods.length;
+
+    results.push({
+      slot,
+      goldenBalls,
+      isManual,
+      hasPrediction,
+      periods,
+      hitPeriods,
+      totalPeriods,
+    });
+  }
+
+  return results;
 }

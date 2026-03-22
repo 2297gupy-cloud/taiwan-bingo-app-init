@@ -1,0 +1,60 @@
+{
+  "query": "SELECT drawNumber, drawTime, superNumber FROM draw_records ORDER BY drawTime DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, superNumber FROM draw_records ORDER BY drawTime DESC LIMIT 10;",
+  "rows": [
+    {
+      "drawNumber": "115016389",
+      "drawTime": "115/03/22 19:25:00",
+      "superNumber": "36"
+    },
+    {
+      "drawNumber": "115016388",
+      "drawTime": "115/03/22 19:20:00",
+      "superNumber": "61"
+    },
+    {
+      "drawNumber": "115016387",
+      "drawTime": "115/03/22 19:15:00",
+      "superNumber": "72"
+    },
+    {
+      "drawNumber": "115016386",
+      "drawTime": "115/03/22 19:10:00",
+      "superNumber": "45"
+    },
+    {
+      "drawNumber": "115016385",
+      "drawTime": "115/03/22 19:05:00",
+      "superNumber": "50"
+    },
+    {
+      "drawNumber": "115016384",
+      "drawTime": "115/03/22 19:00:00",
+      "superNumber": "62"
+    },
+    {
+      "drawNumber": "115016383",
+      "drawTime": "115/03/22 18:55:00",
+      "superNumber": "58"
+    },
+    {
+      "drawNumber": "115016382",
+      "drawTime": "115/03/22 18:50:00",
+      "superNumber": "13"
+    },
+    {
+      "drawNumber": "115016381",
+      "drawTime": "115/03/22 18:45:00",
+      "superNumber": "68"
+    },
+    {
+      "drawNumber": "115016380",
+      "drawTime": "115/03/22 18:40:00",
+      "superNumber": "26"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\tsuperNumber\n115016389\t115/03/22 19:25:00\t36\n115016388\t115/03/22 19:20:00\t61\n115016387\t115/03/22 19:15:00\t72\n115016386\t115/03/22 19:10:00\t45\n115016385\t115/03/22 19:05:00\t50\n115016384\t115/03/22 19:00:00\t62\n115016383\t115/03/22 18:55:00\t58\n115016382\t115/03/22 18:50:00\t13\n115016381\t115/03/22 18:45:00\t68\n115016380\t115/03/22 18:40:00\t26\n",
+  "stderr": "",
+  "execution_time_ms": 1898
+}

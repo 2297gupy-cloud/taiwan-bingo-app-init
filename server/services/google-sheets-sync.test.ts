@@ -1,16 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   processGoogleSheetsData,
-  fetchFromGoogleSheets,
 } from './google-sheets-sync';
 
 describe('Google Sheets Sync Service', () => {
   describe('processGoogleSheetsData', () => {
     it('should convert Google Sheets data to application format', () => {
+      // 新格式：date 是 YYYY-MM-DD（不帶時區），來自 Google Apps Script ?action=date
       const input = [
         {
           period: '115016038',
-          date: '2026-03-20T16:00:00.000Z',
+          date: '2026-03-21',
           time: '07:05',
           numbers: ['04', '13', '15', '18', '20', '21', '27', '30', '38', '42', '49', '50', '56', '58', '65', '67', '70', '71', '77', '80'],
           superNum: '超級獎49',
@@ -19,7 +19,7 @@ describe('Google Sheets Sync Service', () => {
         },
         {
           period: '115016044',
-          date: '2026-03-20T16:00:00.000Z',
+          date: '2026-03-21',
           time: '07:35',
           numbers: ['16', '18', '28', '31', '33', '36', '39', '41', '45', '47', '49', '54', '57', '59', '63', '64', '65', '73', '74', '76'],
           superNum: '超級獎39',
@@ -32,10 +32,10 @@ describe('Google Sheets Sync Service', () => {
 
       expect(result).toHaveLength(2);
       
-      // 第一筆記錄
+      // 第一筆記錄：日期應為 115/03/21（直接解析 YYYY-MM-DD，不受時區影響）
       expect(result[0]).toEqual({
         drawNumber: '115016038',
-        drawTime: '115/03/20 07:05:00',
+        drawTime: '115/03/21 07:05:00',
         numbers: [4, 13, 15, 18, 20, 21, 27, 30, 38, 42, 49, 50, 56, 58, 65, 67, 70, 71, 77, 80],
         superNumber: 49,
         bigSmall: '－',
@@ -45,7 +45,7 @@ describe('Google Sheets Sync Service', () => {
       // 第二筆記錄
       expect(result[1]).toEqual({
         drawNumber: '115016044',
-        drawTime: '115/03/20 07:35:00',
+        drawTime: '115/03/21 07:35:00',
         numbers: [16, 18, 28, 31, 33, 36, 39, 41, 45, 47, 49, 54, 57, 59, 63, 64, 65, 73, 74, 76],
         superNumber: 39,
         bigSmall: 'big',
@@ -57,7 +57,7 @@ describe('Google Sheets Sync Service', () => {
       const input = [
         {
           period: '115016048',
-          date: '2026-03-20T16:00:00.000Z',
+          date: '2026-03-21',
           time: '07:55',
           numbers: ['05', '06', '07', '10', '14', '15', '18', '21', '22', '26', '30', '33', '34', '39', '40', '48', '62', '63', '69', '80'],
           superNum: '超級獎62',
@@ -66,7 +66,7 @@ describe('Google Sheets Sync Service', () => {
         },
         {
           period: '115016050',
-          date: '2026-03-20T16:00:00.000Z',
+          date: '2026-03-21',
           time: '08:05',
           numbers: ['09', '11', '21', '27', '29', '34', '35', '39', '40', '41', '43', '46', '47', '51', '52', '57', '61', '66', '70', '75'],
           superNum: '超級獎41',
@@ -88,7 +88,7 @@ describe('Google Sheets Sync Service', () => {
       const input = [
         {
           period: '115016001',
-          date: '2026-03-20T16:00:00.000Z',
+          date: '2026-03-21',
           time: '07:05',
           numbers: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'],
           superNum: '超級獎01',
@@ -102,16 +102,25 @@ describe('Google Sheets Sync Service', () => {
       expect(result[0].bigSmall).toBe('big');
       expect(result[0].oddEven).toBe('even');
     });
-  });
 
-  describe('fetchFromGoogleSheets', () => {
-    it('should fetch data from Google Apps Script API', async () => {
-      // 這是一個集成測試，實際調用 API
-      const result = await fetchFromGoogleSheets();
+    it('should correctly convert ROC year for 2026-03-22 without timezone issues', () => {
+      const input = [{
+        period: '115016441',
+        date: '2026-03-22',
+        time: '07:05',
+        numbers: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'],
+        superNum: '超級獎05',
+        size: '－',
+        oe: '－',
+      }];
+      const result = processGoogleSheetsData(input);
+      // 關鍵：日期應為 22，不受時區影響變成 21
+      expect(result[0].drawTime).toBe('115/03/22 07:05:00');
+    });
 
-      expect(result).toBeDefined();
-      expect(result.success).toBe(true);
-      expect(Array.isArray(result.data)).toBe(true);
+    it('should handle empty array', () => {
+      const result = processGoogleSheetsData([]);
+      expect(result).toHaveLength(0);
     });
   });
 });

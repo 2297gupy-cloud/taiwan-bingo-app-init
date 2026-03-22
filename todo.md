@@ -887,3 +887,32 @@
 - [x] 得底移除複製卡片中表格前的重複 7 點說明
 - [x] 確保只保留【AI一星級策略】或【AI超級獎策略】標籤下的 7 點說明
 - [x] 測試複製效果
+
+
+## 7 天分析紀錄功能 (2026-03-22)
+- [ ] 設計分析紀錄的數據結構（日期、時段、驗證結果、中獎號碼、成績）
+- [ ] 創建後端 API 端點保存和查詢分析紀錄
+- [ ] 開發前端 UI 展示每日各時段的驗證結果
+- [ ] 實現成績統計（命中率、中獎次數等）
+- [ ] 實現導出功能（CSV/Excel 格式）
+- [ ] 測試 7 天分析紀錄功能
+
+## 7 天分析紀錄功能 (2026-03-22)
+- [ ] 檢查現有驗證邏輯和數據結構
+- [ ] 修正 7 天分析邏輯，確保日期綁定（避免驗證到其他日期）
+- [ ] 確保 15 個時段的驗證對應正確（08時驗證0705~0755的11期，09時驗證0800~0855的12期...）
+- [ ] 實現 7 天分析紀錄的前端 UI 展示（仿照截圖格式）
+- [ ] 測試功能並保存檢查點
+
+## Google Sheets 歷史同步功能 (2026-03-22)
+- [x] 確認 Google Apps Script 支援 ?action=date&date=YYYY-MM-DD 查詢歷史分頁
+- [x] 修改 google-sheets-sync.ts 新增 syncBingoDataForDate 函數（指定日期同步）
+- [x] 修改 google-sheets-sync.ts 新增 syncBingoDataMultipleDates 函數（批量同步）
+- [x] 修正 formatToROCDateTime 日期解析（直接解析 YYYY-MM-DD，避免時區偏移問題）
+- [x] 新增 routers.ts 的 googleSheets.syncByDate 路由（手動同步指定日期）
+- [x] 新增 routers.ts 的 googleSheets.syncMultiple 路由（批量同步多日）
+- [x] 新增 routers.ts 的 googleSheets.availableDates 路由（查詢可用日期）
+- [x] 在 7 天分析記錄 UI 中新增「從 Google 同步」按鈕（已登入才顯示）
+- [x] 新增 getDailyVerifyDetails publicProcedure（查詢指定日期每時段黃金球及命中詳情）
+- [x] 更新 services/google-sheets-sync.test.ts 使用新日期格式（YYYY-MM-DD）
+- [x] 新增 server/google-sheets-sync.test.ts 完整單元測試（7 個測試全部通過）

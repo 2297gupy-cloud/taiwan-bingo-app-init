@@ -1,0 +1,70 @@
+{
+  "query": "SELECT drawNumber, drawTime, superNumber FROM draw_records WHERE drawTime LIKE '115/03/22%' AND drawTime LIKE '% 08:%' ORDER BY drawTime LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3EvX9rH8vJHs1LE.34486a3ccb4b --database kTdJcS62GUwid3zgDEGkMA --execute SELECT drawNumber, drawTime, superNumber FROM draw_records WHERE drawTime LIKE '115/03/22%' AND drawTime LIKE '% 08:%' ORDER BY drawTime LIMIT 15;",
+  "rows": [
+    {
+      "drawNumber": "115016252",
+      "drawTime": "115/03/22 08:00:00",
+      "superNumber": "13"
+    },
+    {
+      "drawNumber": "115016253",
+      "drawTime": "115/03/22 08:05:00",
+      "superNumber": "69"
+    },
+    {
+      "drawNumber": "115016254",
+      "drawTime": "115/03/22 08:10:00",
+      "superNumber": "48"
+    },
+    {
+      "drawNumber": "115016255",
+      "drawTime": "115/03/22 08:15:00",
+      "superNumber": "49"
+    },
+    {
+      "drawNumber": "115016256",
+      "drawTime": "115/03/22 08:20:00",
+      "superNumber": "15"
+    },
+    {
+      "drawNumber": "115016257",
+      "drawTime": "115/03/22 08:25:00",
+      "superNumber": "34"
+    },
+    {
+      "drawNumber": "115016258",
+      "drawTime": "115/03/22 08:30:00",
+      "superNumber": "74"
+    },
+    {
+      "drawNumber": "115016259",
+      "drawTime": "115/03/22 08:35:00",
+      "superNumber": "17"
+    },
+    {
+      "drawNumber": "115016260",
+      "drawTime": "115/03/22 08:40:00",
+      "superNumber": "43"
+    },
+    {
+      "drawNumber": "115016261",
+      "drawTime": "115/03/22 08:45:00",
+      "superNumber": "55"
+    },
+    {
+      "drawNumber": "115016262",
+      "drawTime": "115/03/22 08:50:00",
+      "superNumber": "55"
+    },
+    {
+      "drawNumber": "115016263",
+      "drawTime": "115/03/22 08:55:00",
+      "superNumber": "58"
+    }
+  ],
+  "messages": [],
+  "stdout": "drawNumber\tdrawTime\tsuperNumber\n115016252\t115/03/22 08:00:00\t13\n115016253\t115/03/22 08:05:00\t69\n115016254\t115/03/22 08:10:00\t48\n115016255\t115/03/22 08:15:00\t49\n115016256\t115/03/22 08:20:00\t15\n115016257\t115/03/22 08:25:00\t34\n115016258\t115/03/22 08:30:00\t74\n115016259\t115/03/22 08:35:00\t17\n115016260\t115/03/22 08:40:00\t43\n115016261\t115/03/22 08:45:00\t55\n115016262\t115/03/22 08:50:00\t55\n115016263\t115/03/22 08:55:00\t58\n",
+  "stderr": "",
+  "execution_time_ms": 1695
+}
