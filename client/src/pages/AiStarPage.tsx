@@ -410,10 +410,10 @@ function SlotCard({
 
   const handleCopy = useCallback(() => {
     if (formattedData?.text) {
-      // 移除 formattedData.text 中開頭的 7 點說明（在表格之前）
+      // 移除 formattedData.text 中所有表格前的 7 點說明（包括開頭和重複的）
       let baseText = formattedData.text;
-      // 移除開頭的 7 點說明（從開頁到第一標項窗或表格之前）
-      const sevenPointsPattern = /^1\. 演算之後 12 期出至最佳三顆黃金球數字[\s\S]*?^7\. 核心演算結論[^\n]*?\n(?=--|\u671f別)/m;
+      // 移除所有以 "1. 演算之後" 開頁的 7 點說明，不論是開頭還是重複的
+      const sevenPointsPattern = /^1\. 演算之後 12 期出[\s\S]*?(?=\n--+|\n期別)/m;
       baseText = baseText.replace(sevenPointsPattern, '').trim();
       
       // 附加策略文字（如果有選中的策略）
