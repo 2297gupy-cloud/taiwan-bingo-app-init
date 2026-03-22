@@ -412,8 +412,9 @@ function SlotCard({
     if (formattedData?.text) {
       // 移除 formattedData.text 中開頭的 7 點說明（在表格之前）
       let baseText = formattedData.text;
-      const sevenPointsPattern = /^[\s\S]*?^(1\. 演算之後 12 期出至最佳三顆黃金球數字[\s\S]*?7\. 核心演算結論[^\n]*?)\n(?=--+|期別)/m;
-      baseText = baseText.replace(sevenPointsPattern, '');
+      // 移除開頭的 7 點說明（從開頁到第一標項窗或表格之前）
+      const sevenPointsPattern = /^1\. 演算之後 12 期出至最佳三顆黃金球數字[\s\S]*?^7\. 核心演算結論[^\n]*?\n(?=--|\u671f別)/m;
+      baseText = baseText.replace(sevenPointsPattern, '').trim();
       
       // 附加策略文字（如果有選中的策略）
       let textToCopy = baseText;
