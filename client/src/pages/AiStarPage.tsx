@@ -573,19 +573,39 @@ export default function AiStarPage() {
   });
   const [strategyEditMode, setStrategyEditMode] = useState<'star' | 'super' | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearMode, setClearMode] = useState<'star' | 'super' | 'all' | null>(null);
 
-  // 清除策略文字的函數
-  const handleClearStrategy = useCallback(() => {
-    setStrategyTextStar('');
-    setStrategyTextSuper('');
-    setStrategyEditMode(null);
-    try {
-      localStorage.removeItem('aistar_strategy_star');
-      localStorage.removeItem('aistar_strategy_super');
-    } catch {}
-    toast.success('策略文字已清除');
+  // 清除特定模式的策略文字函數
+  const handleClearStrategyMode = useCallback((mode: 'star' | 'super' | 'all') => {
+    if (mode === 'star') {
+      setStrategyTextStar('');
+      try { localStorage.removeItem('aistar_strategy_star'); } catch {}
+      if (strategyEditMode === 'star') setStrategyEditMode(null);
+      toast.success('一星級策略已清除');
+    } else if (mode === 'super') {
+      setStrategyTextSuper('');
+      try { localStorage.removeItem('aistar_strategy_super'); } catch {}
+      if (strategyEditMode === 'super') setStrategyEditMode(null);
+      toast.success('超級獎策略已清除');
+    } else {
+      setStrategyTextStar('');
+      setStrategyTextSuper('');
+      setStrategyEditMode(null);
+      try {
+        localStorage.removeItem('aistar_strategy_star');
+        localStorage.removeItem('aistar_strategy_super');
+      } catch {}
+      toast.success('策略文字已清除');
+    }
     setShowClearConfirm(false);
-  }, []);
+    setClearMode(null);
+  }, [strategyEditMode]);
+
+  const handleClearStrategy = useCallback(() => {
+    if (clearMode) {
+      handleClearStrategyMode(clearMode);
+    }
+  }, [clearMode, handleClearStrategyMode]);
 
   // 自動儲存策略文字到 localStorage
   useEffect(() => {
@@ -851,27 +871,91 @@ export default function AiStarPage() {
               }`}>
                 {/* 編輯狀態指示器 */}
                 <div className="flex items-center justify-between">
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setStrategyEditMode(strategyEditMode === 'star' ? null : 'star')}
-                      className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
-                        strategyEditMode === 'star'
-                          ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/50"
-                          : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
-                      }`}
-                    >
-                      一星級
-                    </button>
-                    <button
-                      onClick={() => setStrategyEditMode(strategyEditMode === 'super' ? null : 'super')}
-                      className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
-                        strategyEditMode === 'super'
-                          ? "bg-red-500/30 text-red-300 border border-red-500/50"
-                          : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
-                      }`}
-                    >
-                      超級獎
-                    </button>
+                  <div className="flex gap-1 flex-wrap">
+                    <div className="flex gap-0.5 items-center">
+                      <button
+                        onClick={() => setStrategyEditMode(strategyEditMode === 'star' ? null : 'star')}
+                        className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
+                          strategyEditMode === 'star'
+                            ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/50"
+                            : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
+                        }`}
+                      >
+                        一星級
+                      </button>
+                      {strategyTextStar && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              onClick={() => setClearMode('star')}
+                              title="清除一星級策略"
+                              className="px-1 py-1 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
+                            >
+                              ✕
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="max-w-sm">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>確認清除一星級策略？</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                此操作將清除一星級的策略文字，且無法復原。是否繼續？
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>取消</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleClearStrategyMode('star')}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                確認清除
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                    <div className="flex gap-0.5 items-center">
+                      <button
+                        onClick={() => setStrategyEditMode(strategyEditMode === 'super' ? null : 'super')}
+                        className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
+                          strategyEditMode === 'super'
+                            ? "bg-red-500/30 text-red-300 border border-red-500/50"
+                            : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
+                        }`}
+                      >
+                        超級獎
+                      </button>
+                      {strategyTextSuper && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              onClick={() => setClearMode('super')}
+                              title="清除超級獎策略"
+                              className="px-1 py-1 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
+                            >
+                              ✕
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="max-w-sm">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>確認清除超級獎策略？</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                此操作將清除超級獎的策略文字，且無法復原。是否繼續？
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>取消</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleClearStrategyMode('super')}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                確認清除
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
                   {/* 狀態標籤 + 清除按鍵 */}
                   <div className="flex items-center gap-1">
