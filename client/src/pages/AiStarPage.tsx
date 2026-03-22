@@ -801,22 +801,27 @@ export default function AiStarPage() {
                 <span className="text-[9px] sm:text-[8px] text-red-400 text-center leading-tight">清除全部</span>
               </button>
               
-              {/* 卡片 4: API Key */}
-              <button
-                onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-                className="flex flex-col items-center justify-center p-2 sm:p-1.5 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/50 transition-all relative"
-              >
-                <Settings className="h-4 w-4 sm:h-3 sm:w-3 text-blue-400 mb-1" />
-                <span className="text-[9px] sm:text-[8px] text-blue-400 text-center leading-tight">API Key</span>
-                {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
-                  <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" style={{ boxShadow: "0 0 5px rgba(239,68,68,0.8)" }} />
-                )}
-              </button>
+
             </div>
 
-            {/* 下排：三卡片框架（左文字、中API KEY、右清除） */}
+            {/* 下排：三卡片框架（左API KEY、中文字編輯、右清除） */}
             <div className="mt-2 grid grid-cols-3 gap-2 w-full">
-              {/* 左卡片：文字編輯區 */}
+              {/* 左卡片：API KEY */}
+              <button
+                onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
+                className="flex flex-col items-center justify-center p-2 rounded-lg border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 transition-all relative"
+              >
+                <Settings className="h-4 w-4 text-blue-400 mb-0.5" />
+                <span className="text-[8px] font-medium text-blue-300 text-center">API Key</span>
+                {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
+                  <span
+                    className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"
+                    style={{ boxShadow: "0 0 6px rgba(239,68,68,0.8)" }}
+                  />
+                )}
+              </button>
+
+              {/* 中卡片：文字編輯區 */}
               <div className="flex flex-col p-2 rounded-lg border border-slate-600/40 bg-slate-900/40 hover:bg-slate-900/60 transition-all">
                 <div className="flex items-center gap-1 mb-1">
                   <Pencil className="h-3 w-3 text-slate-400" />
@@ -881,20 +886,7 @@ export default function AiStarPage() {
                 </button>
               </div>
 
-              {/* 中卡片：API KEY */}
-              <button
-                onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-                className="flex flex-col items-center justify-center p-2 rounded-lg border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 transition-all relative"
-              >
-                <Settings className="h-4 w-4 text-blue-400 mb-0.5" />
-                <span className="text-[8px] font-medium text-blue-300 text-center">API Key</span>
-                {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
-                  <span
-                    className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"
-                    style={{ boxShadow: "0 0 6px rgba(239,68,68,0.8)" }}
-                  />
-                )}
-              </button>
+
 
               {/* 右卡片：清除/刪除 */}
               <button
