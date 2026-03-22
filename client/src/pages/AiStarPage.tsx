@@ -775,32 +775,7 @@ export default function AiStarPage() {
                 <span className="text-[9px] sm:text-[8px] text-amber-400 text-center leading-tight">一鍵全部分析</span>
               </button>
               
-              {/* 卡片 3: 清除全部 */}
-              <button
-                onClick={async () => {
-                  try {
-                    if (predictions && predictions.length > 0) {
-                      await Promise.all(
-                        predictions.map(pred =>
-                          deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: pred.sourceHour })
-                        )
-                      );
-                    }
-                    setManualText("");
-                    setParsedBalls([]);
-                    setSelectedSlot(safeEffectiveSlot);
-                    setVerifySlot(null);
-                    toast.success(`已清除所有時段球號`);
-                  } catch {
-                    toast.error("清除失敗");
-                  }
-                }}
-                className="flex flex-col items-center justify-center p-2 sm:p-1.5 rounded-lg border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/50 transition-all"
-              >
-                <Trash2 className="h-4 w-4 sm:h-3 sm:w-3 text-red-400 mb-1" />
-                <span className="text-[9px] sm:text-[8px] text-red-400 text-center leading-tight">清除全部</span>
-              </button>
-              
+
 
             </div>
 
