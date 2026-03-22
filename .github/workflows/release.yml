@@ -1,0 +1,78 @@
+name: Release - Create GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: |
+          pnpm run build:client
+          pnpm run build:server
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # 從 git log 生成更新日誌
+          CHANGELOG=$(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"%h - %s (%an)" || echo "Initial release")
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            ## Changes in this Release
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## Installation
+            ```bash
+            git clone https://github.com/2297gupy-cloud/taiwan-bingo-app-init.git
+            cd taiwan-bingo-app-init
+            git checkout ${{ github.ref_name }}
+            pnpm install
+            pnpm run db:push
+            pnpm run dev
+            ```
+
+            ## Documentation
+            - [README](README.md)
+            - [DEVELOPER Guide](DEVELOPER.md)
+            - [PLAYBOOK Guide](PLAYBOOK.md)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/**/*
+            package.json
+            README.md
+            DEVELOPER.md
+            PLAYBOOK.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
