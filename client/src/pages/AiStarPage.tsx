@@ -847,8 +847,8 @@ export default function AiStarPage() {
 
             </div>
 
-            {/* 下排：三卡片框架（左API KEY、中文字編輯、右清除） */}
-            <div className="mt-2 grid grid-cols-3 gap-2 w-full">
+            {/* 下排：四卡片框架（左API KEY、中文字編輯、右清除、一个空框） */}
+            <div className="mt-2 grid grid-cols-4 gap-2 w-full">
               {/* 左卡片：API KEY */}
               <button
                 onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
@@ -997,30 +997,6 @@ export default function AiStarPage() {
                     )}
                   </div>
                 </div>
-                {strategyEditMode ? (
-                  <textarea
-                    value={strategyEditMode === 'star' ? strategyTextStar : strategyTextSuper}
-                    onChange={(e) =>
-                      strategyEditMode === 'star'
-                        ? setStrategyTextStar(e.target.value)
-                        : setStrategyTextSuper(e.target.value)
-                    }
-                    placeholder="輸入策略文字..."
-                    className="w-full min-h-[80px] p-2 rounded bg-slate-800/60 border border-slate-600/40 text-[8px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
-                  />
-                ) : (
-                  <div className="w-full min-h-[80px] p-2 rounded bg-slate-800/30 border border-slate-700/20 text-[8px] text-slate-400 overflow-y-auto scrollbar-thin">
-                    {strategyEditMode === null && (strategyTextStar || strategyTextSuper) ? (
-                      <div className="space-y-0.5 text-slate-300">
-                        {strategyTextStar && <div><strong>一星級：</strong> {strategyTextStar.substring(0, 60)}...</div>}
-                        {strategyTextSuper && <div><strong>超級獎：</strong> {strategyTextSuper.substring(0, 60)}...</div>}
-                      </div>
-                    ) : (
-                      <span className="text-slate-500 italic">點擊編輯按鍵</span>
-                    )}
-                  </div>
-                )}
-
               </div>
 
 
@@ -1053,6 +1029,44 @@ export default function AiStarPage() {
                 <Trash2 className="h-4 w-4 text-red-400 mb-0.5" />
                 <span className="text-[8px] font-medium text-red-300 text-center">清除全部</span>
               </button>
+
+              {/* 第四卡片：空框 */}
+              <div className="flex flex-col items-center justify-center p-2 rounded-lg border border-slate-600/30 bg-slate-800/20 hover:bg-slate-800/30 transition-all">
+                {/* 空框 */}
+              </div>
+            </div>
+
+            {/* 第五排：文字框 */}
+            <div className="mt-2 w-full">
+              <div className={`flex flex-col rounded-lg border p-2 space-y-1 transition-all ${
+                strategyEditMode 
+                  ? 'border-yellow-500/60 bg-yellow-500/10 ring-1 ring-yellow-500/30' 
+                  : 'border-yellow-600/40 bg-yellow-500/5'
+              }`}>
+                {strategyEditMode ? (
+                  <textarea
+                    value={strategyEditMode === 'star' ? strategyTextStar : strategyTextSuper}
+                    onChange={(e) =>
+                      strategyEditMode === 'star'
+                        ? setStrategyTextStar(e.target.value)
+                        : setStrategyTextSuper(e.target.value)
+                    }
+                    placeholder="輸入策略文字..."
+                    className="w-full min-h-[120px] p-2 rounded bg-slate-800/60 border border-slate-600/40 text-[8px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
+                  />
+                ) : (
+                  <div className="w-full min-h-[120px] p-2 rounded bg-slate-800/30 border border-slate-700/20 text-[8px] text-slate-400 overflow-y-auto scrollbar-thin">
+                    {strategyEditMode === null && (strategyTextStar || strategyTextSuper) ? (
+                      <div className="space-y-0.5 text-slate-300">
+                        {strategyTextStar && <div><strong>一星級：</strong> {strategyTextStar}</div>}
+                        {strategyTextSuper && <div><strong>超級獎：</strong> {strategyTextSuper}</div>}
+                      </div>
+                    ) : (
+                      <span className="text-slate-500 italic">點擊編輯按鈕</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 七項演算邏輯說明 */}
