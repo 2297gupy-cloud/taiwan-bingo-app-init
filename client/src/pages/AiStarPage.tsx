@@ -1047,24 +1047,7 @@ export default function AiStarPage() {
               )}
             </div>
 
-            {/* 七項演算邏輯說明 */}
-            {(strategyTextStar || strategyTextSuper) && (
-              <div className="mt-2 p-2 rounded-lg border border-amber-500/30 bg-amber-500/5">
-                <div className="flex items-center gap-1 mb-1">
-                  <Brain className="h-3 w-3 text-amber-400" />
-                  <span className="text-[8px] font-medium text-amber-300">演算邏輯說明</span>
-                </div>
-                <div className="space-y-0.5 text-[7px] text-amber-200/80">
-                  <div>1. 演算之後 12 期出至最佳三顆黃金球數字，展開以下說明</div>
-                  <div>2. 強勢熱門號，「尾數共振」偵測</div>
-                  <div>3. 穩定的連莊號，捕捉剛起步的二連莊趨勢</div>
-                  <div>4. 捕捉斜連交會點，鎖定高機率落球區</div>
-                  <div>5. 縮小斜連跨度執行與精準死碼排除，強化防禦邏輯</div>
-                  <div>6. 核心演算邏輯穩定，不用回測驗證</div>
-                  <div>7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯</div>
-                </div>
-              </div>
-            )}
+
           </div>
 
           {/* API Key 設定面板 */}
