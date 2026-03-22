@@ -440,8 +440,8 @@ export async function getFormattedHourData(
     return `${d.term}\t${d.time}\t ${numsStr}\t\t${superAwardStr}\t${bigSmallDisplay}\t${oddEvenDisplay}`;
   });
 
-  // 組合完整的複製文本
-  const text = `${reportTitle}\n${reportDate}\n${separator}\n${header}\n${lines.join("\n")}\n${separator}\n${FIXED_ANALYSIS_FOOTER}`;
+  // 組合完整的複製文本（移除 7 點說明，改由前端文字編輯框架供應）
+  const text = `${reportTitle}\n${reportDate}\n${separator}\n${header}\n${lines.join("\n")}\n${separator}`;
   return { text };
 }
 
