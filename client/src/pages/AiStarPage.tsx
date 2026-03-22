@@ -1040,11 +1040,13 @@ export default function AiStarPage() {
                   className="w-full min-h-[120px] p-2 rounded bg-slate-800/60 border border-slate-600/40 text-[8px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
                 />
               ) : (
-                <div className="w-full min-h-[120px] p-2 rounded bg-slate-800/30 border border-slate-700/20 text-[8px] text-slate-400 overflow-y-auto scrollbar-thin">
+                <div className="w-full min-h-[120px] p-2 rounded bg-slate-800/30 border border-slate-700/20 text-[8px] text-slate-400 overflow-y-auto scrollbar-thin whitespace-pre-wrap break-words">
                   {strategyEditMode === null && (strategyTextStar || strategyTextSuper) ? (
-                    <div className="space-y-0.5 text-slate-300">
-                      {strategyTextStar && <div><strong>一星級：</strong> {strategyTextStar}</div>}
-                      {strategyTextSuper && <div><strong>超級獎：</strong> {strategyTextSuper}</div>}
+                    <div className="space-y-1 text-slate-300">
+                      {strategyTextStar && <div className="whitespace-pre-wrap break-words"><strong>一星級：</strong>
+{strategyTextStar}</div>}
+                      {strategyTextSuper && <div className="whitespace-pre-wrap break-words"><strong>超級獎：</strong>
+{strategyTextSuper}</div>}
                     </div>
                   ) : (
                     <span className="text-slate-500 italic">點擊編輯按鈕</span>
