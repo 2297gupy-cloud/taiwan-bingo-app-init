@@ -864,14 +864,14 @@ export default function AiStarPage() {
                 )}
               </button>
 
-              <div className={`flex-1 flex flex-col rounded-lg border p-2 space-y-1 transition-all ${
+              <div className={`flex-1 flex flex-col rounded-lg border p-2 space-y-1 transition-all min-w-0 ${
                 strategyEditMode 
                   ? 'border-yellow-500/60 bg-yellow-500/10 ring-1 ring-yellow-500/30' 
                   : 'border-yellow-600/40 bg-yellow-500/5'
               }`}>
                 {/* 編輯狀態指示器 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-1 flex-wrap">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <div className="flex gap-1 flex-wrap min-w-0">
                     <div className="flex gap-0.5 items-center">
                       <button
                         onClick={() => setStrategyEditMode(strategyEditMode === 'star' ? null : 'star')}
@@ -889,7 +889,7 @@ export default function AiStarPage() {
                             <button
                               onClick={() => setClearMode('star')}
                               title="清除一星級策略"
-                              className="px-1 py-1 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
+                              className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-red-500/30 text-red-400 border border-red-500/60 hover:bg-red-500/50 hover:text-red-200 hover:border-red-400 transition-all"
                             >
                               ✕
                             </button>
@@ -931,7 +931,7 @@ export default function AiStarPage() {
                             <button
                               onClick={() => setClearMode('super')}
                               title="清除超級獎策略"
-                              className="px-1 py-1 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
+                              className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-red-500/30 text-red-400 border border-red-500/60 hover:bg-red-500/50 hover:text-red-200 hover:border-red-400 transition-all"
                             >
                               ✕
                             </button>
@@ -958,7 +958,7 @@ export default function AiStarPage() {
                     </div>
                   </div>
                   {/* 狀態標籤 + 清除按鍵 */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap justify-end">
                     <div className={`text-[7px] font-semibold px-1.5 py-0.5 rounded ${
                       strategyEditMode 
                         ? 'bg-yellow-500/30 text-yellow-300' 
@@ -1006,10 +1006,10 @@ export default function AiStarPage() {
                         : setStrategyTextSuper(e.target.value)
                     }
                     placeholder="輸入策略文字..."
-                    className="flex-1 min-h-[60px] p-1 rounded bg-slate-800/60 border border-slate-600/40 text-[7px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
+                    className="w-full min-h-[80px] p-2 rounded bg-slate-800/60 border border-slate-600/40 text-[8px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
                   />
                 ) : (
-                  <div className="flex-1 min-h-[60px] p-1 rounded bg-slate-800/30 border border-slate-700/20 text-[7px] text-slate-400 overflow-y-auto scrollbar-thin">
+                  <div className="w-full min-h-[80px] p-2 rounded bg-slate-800/30 border border-slate-700/20 text-[8px] text-slate-400 overflow-y-auto scrollbar-thin">
                     {strategyEditMode === null && (strategyTextStar || strategyTextSuper) ? (
                       <div className="space-y-0.5 text-slate-300">
                         {strategyTextStar && <div><strong>一星級：</strong> {strategyTextStar.substring(0, 60)}...</div>}
