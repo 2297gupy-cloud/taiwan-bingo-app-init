@@ -543,6 +543,9 @@ export default function AiStarPage() {
   const [batchAnalysisProgress, setBatchAnalysisProgress] = useState(0);
   const [batchAnalysisTotal, setBatchAnalysisTotal] = useState(0);
   const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false);
+  const [strategyTextStar, setStrategyTextStar] = useState("");
+  const [strategyTextSuper, setStrategyTextSuper] = useState("");
+  const [strategyEditMode, setStrategyEditMode] = useState<'star' | 'super' | null>(null);
 
   // 查詢時段配置
   const { data: slotsData } = trpc.aiStar.getSlots.useQuery(undefined, {
@@ -810,6 +813,137 @@ export default function AiStarPage() {
                 )}
               </button>
             </div>
+
+            {/* 下排：三卡片框架（左文字、中API KEY、右清除） */}
+            <div className="mt-2 grid grid-cols-3 gap-2 w-full">
+              {/* 左卡片：文字編輯區 */}
+              <div className="flex flex-col p-2 rounded-lg border border-slate-600/40 bg-slate-900/40 hover:bg-slate-900/60 transition-all">
+                <div className="flex items-center gap-1 mb-1">
+                  <Pencil className="h-3 w-3 text-slate-400" />
+                  <span className="text-[8px] font-medium text-slate-300">策略文字</span>
+                </div>
+                <div className="flex gap-1 mb-1">
+                  <button
+                    onClick={() => setStrategyEditMode(strategyEditMode === 'star' ? null : 'star')}
+                    className={cn(
+                      "flex-1 px-1 py-0.5 rounded text-[7px] font-medium transition-all",
+                      strategyEditMode === 'star'
+                        ? "bg-amber-500/30 text-amber-300 border border-amber-500/50"
+                        : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
+                    )}
+                  >
+                    一星級
+                  </button>
+                  <button
+                    onClick={() => setStrategyEditMode(strategyEditMode === 'super' ? null : 'super')}
+                    className={cn(
+                      "flex-1 px-1 py-0.5 rounded text-[7px] font-medium transition-all",
+                      strategyEditMode === 'super'
+                        ? "bg-red-500/30 text-red-300 border border-red-500/50"
+                        : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
+                    )}
+                  >
+                    超級獎
+                  </button>
+                </div>
+                {strategyEditMode ? (
+                  <textarea
+                    value={strategyEditMode === 'star' ? strategyTextStar : strategyTextSuper}
+                    onChange={(e) =>
+                      strategyEditMode === 'star'
+                        ? setStrategyTextStar(e.target.value)
+                        : setStrategyTextSuper(e.target.value)
+                    }
+                    placeholder="輸入策略文字..."
+                    className="flex-1 min-h-[60px] p-1 rounded bg-slate-800/60 border border-slate-600/40 text-[7px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
+                  />
+                ) : (
+                  <div className="flex-1 min-h-[60px] p-1 rounded bg-slate-800/30 border border-slate-700/20 text-[7px] text-slate-400 overflow-y-auto scrollbar-thin">
+                    {strategyEditMode === null && (strategyTextStar || strategyTextSuper) ? (
+                      <div className="space-y-0.5 text-slate-300">
+                        {strategyTextStar && <div><strong>一星級：</strong> {strategyTextStar.substring(0, 60)}...</div>}
+                        {strategyTextSuper && <div><strong>超級獎：</strong> {strategyTextSuper.substring(0, 60)}...</div>}
+                      </div>
+                    ) : (
+                      <span className="text-slate-500 italic">點擊編輯按鍵</span>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    if (strategyEditMode === 'star') setStrategyTextStar('');
+                    else if (strategyEditMode === 'super') setStrategyTextSuper('');
+                    setStrategyEditMode(null);
+                  }}
+                  className="mt-1 px-1 py-0.5 rounded text-[7px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-all"
+                >
+                  刪除
+                </button>
+              </div>
+
+              {/* 中卡片：API KEY */}
+              <button
+                onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
+                className="flex flex-col items-center justify-center p-2 rounded-lg border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 transition-all relative"
+              >
+                <Settings className="h-4 w-4 text-blue-400 mb-0.5" />
+                <span className="text-[8px] font-medium text-blue-300 text-center">API Key</span>
+                {(userApiKey?.openaiKey || userApiKey?.geminiKey) && (
+                  <span
+                    className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"
+                    style={{ boxShadow: "0 0 6px rgba(239,68,68,0.8)" }}
+                  />
+                )}
+              </button>
+
+              {/* 右卡片：清除/刪除 */}
+              <button
+                onClick={async () => {
+                  try {
+                    if (predictions && predictions.length > 0) {
+                      await Promise.all(
+                        predictions.map(pred =>
+                          deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: pred.sourceHour })
+                        )
+                      );
+                    }
+                    setManualText('');
+                    setParsedBalls([]);
+                    setSelectedSlot(safeEffectiveSlot);
+                    setVerifySlot(null);
+                    setStrategyTextStar('');
+                    setStrategyTextSuper('');
+                    setStrategyEditMode(null);
+                    toast.success(`已清除所有時段球號`);
+                  } catch {
+                    toast.error('清除失敗');
+                  }
+                }}
+                className="flex flex-col items-center justify-center p-2 rounded-lg border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 transition-all"
+              >
+                <Trash2 className="h-4 w-4 text-red-400 mb-0.5" />
+                <span className="text-[8px] font-medium text-red-300 text-center">清除全部</span>
+              </button>
+            </div>
+
+            {/* 七項演算邏輯說明 */}
+            {(strategyTextStar || strategyTextSuper) && (
+              <div className="mt-2 p-2 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                <div className="flex items-center gap-1 mb-1">
+                  <Brain className="h-3 w-3 text-amber-400" />
+                  <span className="text-[8px] font-medium text-amber-300">演算邏輯說明</span>
+                </div>
+                <div className="space-y-0.5 text-[7px] text-amber-200/80">
+                  <div>1. 演算之後 12 期出至最佳三顆黃金球數字，展開以下說明</div>
+                  <div>2. 強勢熱門號，「尾數共振」偵測</div>
+                  <div>3. 穩定的連莊號，捕捉剛起步的二連莊趨勢</div>
+                  <div>4. 捕捉斜連交會點，鎖定高機率落球區</div>
+                  <div>5. 縮小斜連跨度執行與精準死碼排除，強化防禦邏輯</div>
+                  <div>6. 核心演算邏輯穩定，不用回測驗證</div>
+                  <div>7. 核心演算結論 (5期策略) 預計期數/推薦組合重點/策略邏輯</div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* API Key 設定面板 */}
