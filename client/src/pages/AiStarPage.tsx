@@ -356,6 +356,8 @@ function SlotCard({
   onDelete,
   dateStr,
   userApiKey,
+  strategyText,
+  strategyMode,
 }: {
   slot: { source: string; target: string; label: string; copyRange?: string; draws: number; verifyHour?: string; verifyRange?: string };
   prediction?: {

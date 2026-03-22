@@ -836,3 +836,6 @@
 - [x] 在文字編輯卡片上添加「清除策略文字」按鍵
 - [x] 清除時同時清除 localStorage 中的策略內容
 - [x] 測試清除按鍵效果
+
+## Bug 修復 (2026-03-22)
+- [x] 修復 SlotCard 組件中 strategyText is not defined ReferenceError
