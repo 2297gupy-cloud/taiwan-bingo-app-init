@@ -410,8 +410,13 @@ function SlotCard({
 
   const handleCopy = useCallback(() => {
     if (formattedData?.text) {
+      // 移除 formattedData.text 中開頭的 7 點說明（在表格之前）
+      let baseText = formattedData.text;
+      const sevenPointsPattern = /^[\s\S]*?^(1\. 演算之後 12 期出至最佳三顆黃金球數字[\s\S]*?7\. 核心演算結論[^\n]*?)\n(?=--+|期別)/m;
+      baseText = baseText.replace(sevenPointsPattern, '');
+      
       // 附加策略文字（如果有選中的策略）
-      let textToCopy = formattedData.text;
+      let textToCopy = baseText;
       if (strategyText && strategyText.trim()) {
         const strategyLabel = strategyMode === 'star' ? '【AI一星級策略】' : strategyMode === 'super' ? '【AI超級獎策略】' : '【策略文字】';
         textToCopy = `${textToCopy}\n\n${strategyLabel}\n${strategyText.trim()}`;
