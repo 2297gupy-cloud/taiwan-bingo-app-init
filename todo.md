@@ -944,3 +944,13 @@
 - [x] 包含貢獻工作流程（Fork、分支、提交、Pull Request）
 - [x] 包含性能優化與安全最佳實踐
 - [x] 包含資源參考與獲取幫助指南
+
+
+## GitHub Repository 與 CI/CD 設定 (2026-03-22)
+- [x] 建立 GitHub Actions CI Workflow（自動化測試與 Linting）
+- [x] 建立 GitHub Actions CD Workflow（自動化部署到 Manus）
+- [x] 建立代碼質量檢查 Workflow（安全性與性能分析）
+- [x] 建立自動化發佈 Release Workflow
+- [x] 撰寫詳細的部署指南（DEPLOYMENT.md）
+- [x] 上傳所有文件到 GitHub Repository
+- [x] 驗證 GitHub Repository 中的所有文件
