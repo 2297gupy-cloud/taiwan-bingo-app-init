@@ -954,3 +954,11 @@
 - [x] 撰寫詳細的部署指南（DEPLOYMENT.md）
 - [x] 上傳所有文件到 GitHub Repository
 - [x] 驗證 GitHub Repository 中的所有文件
+
+
+## 克隆與一鍵安裝指令驗證 (2026-03-22)
+- [x] 撰寫克隆與一鍵安裝指令文檔（QUICK_CLONE_INSTALL.md）
+- [x] 測試克隆指令（Git 克隆成功）
+- [x] 測試依賴安裝（pnpm install 成功）
+- [x] 測試構建指令（pnpm build 成功）
+- [x] 推送文檔到 GitHub Repository
