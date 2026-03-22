@@ -846,13 +846,35 @@ export default function AiStarPage() {
                       超級獎
                     </button>
                   </div>
-                  {/* 狀態標籤 */}
-                  <div className={`text-[7px] font-semibold px-1.5 py-0.5 rounded ${
-                    strategyEditMode 
-                      ? 'bg-yellow-500/30 text-yellow-300' 
-                      : 'bg-slate-700/30 text-slate-400'
-                  }`}>
-                    {strategyEditMode ? '✎ 編輯中' : '👁 預覽'}
+                  {/* 狀態標籤 + 清除按鍵 */}
+                  <div className="flex items-center gap-1">
+                    <div className={`text-[7px] font-semibold px-1.5 py-0.5 rounded ${
+                      strategyEditMode 
+                        ? 'bg-yellow-500/30 text-yellow-300' 
+                        : 'bg-slate-700/30 text-slate-400'
+                    }`}>
+                      {strategyEditMode ? '✎ 編輯中' : '👁 預覽'}
+                    </div>
+                    {(strategyTextStar || strategyTextSuper) && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm('確定要清除所有策略文字嗎？此操作無法復原。')) {
+                            setStrategyTextStar('');
+                            setStrategyTextSuper('');
+                            setStrategyEditMode(null);
+                            try {
+                              localStorage.removeItem('aistar_strategy_star');
+                              localStorage.removeItem('aistar_strategy_super');
+                            } catch {}
+                            toast.success('策略文字已清除');
+                          }
+                        }}
+                        title="清除策略文字"
+                        className="px-1.5 py-0.5 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
+                      >
+                        ✕ 清除
+                      </button>
+                    )}
                   </div>
                 </div>
                 {strategyEditMode ? (
