@@ -747,53 +747,58 @@ export default function AiStarPage() {
           </div>
 
           {/* 第二行：說明文字 & 按鍵 */}
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] text-muted-foreground/60">
+          <div className="mb-2">
+            <p className="text-[10px] text-muted-foreground/60 mb-1">
               選擇時段 → AI 分析 → 驗證命中 · 長按卡片可複製數據
             </p>
-            <div className="flex items-center gap-1 justify-end overflow-x-auto scrollbar-none">
-              <AiManualCalculation />
-              <button
-                onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
-                disabled={batchAnalyzeMutation.isPending}
-                className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0 whitespace-nowrap"
-              >
-                {batchAnalyzeMutation.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3 w-3" />
-                )}
-                <span className="hidden sm:inline">一鍵全部分析</span>
-                <span className="sm:hidden">分析</span>
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    if (predictions && predictions.length > 0) {
-                      await Promise.all(
-                        predictions.map(pred =>
-                          deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: pred.sourceHour })
-                        )
-                      );
+            {/* 手機版本：按鍵分为两行 */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 w-full sm:w-auto">
+              {/* 第一行：AI手動網址 + 分析 + 清除 */}
+              <div className="flex items-center gap-1 justify-end overflow-x-auto scrollbar-none flex-1 sm:flex-none">
+                <AiManualCalculation />
+                <button
+                  onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
+                  disabled={batchAnalyzeMutation.isPending}
+                  className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 transition-colors shrink-0 whitespace-nowrap"
+                >
+                  {batchAnalyzeMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  <span className="hidden sm:inline">一鍵全部分析</span>
+                  <span className="sm:hidden">分析</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      if (predictions && predictions.length > 0) {
+                        await Promise.all(
+                          predictions.map(pred =>
+                            deleteMutation.mutateAsync({ dateStr: dateStr || todayStr, sourceHour: pred.sourceHour })
+                          )
+                        );
+                      }
+                      setManualText("");
+                      setParsedBalls([]);
+                      setSelectedSlot(safeEffectiveSlot);
+                      setVerifySlot(null);
+                      toast.success(`已清除所有時段球號`);
+                    } catch {
+                      toast.error("清除失敗");
                     }
-                    setManualText("");
-                    setParsedBalls([]);
-                    setSelectedSlot(safeEffectiveSlot);
-                    setVerifySlot(null);
-                    toast.success(`已清除所有時段球號`);
-                  } catch {
-                    toast.error("清除失敗");
-                  }
-                }}
-                className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0 whitespace-nowrap"
-              >
-                <Trash2 className="h-3 w-3" />
-                <span className="hidden sm:inline">清除全部</span>
-                <span className="sm:hidden">清除</span>
-              </button>
+                  }}
+                  className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-colors shrink-0 whitespace-nowrap"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  <span className="hidden sm:inline">清除全部</span>
+                  <span className="sm:hidden">清除</span>
+                </button>
+              </div>
+              {/* 第二行：設定（手機版本单独一行）*/}
               <button
                 onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
-                className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-colors shrink-0 whitespace-nowrap"
+                className="flex items-center gap-0.5 px-1 sm:px-2 py-0.5 rounded text-[8px] sm:text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 hover:border-blue-500/40 transition-colors shrink-0 whitespace-nowrap w-full sm:w-auto justify-center sm:justify-start"
               >
                 <Settings className="h-3 w-3" />
                 <span className="hidden sm:inline">API Key</span>
