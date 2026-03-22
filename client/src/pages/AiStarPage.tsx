@@ -796,35 +796,43 @@ export default function AiStarPage() {
                 )}
               </button>
 
-              {/* 中卡片：文字編輯區 */}
-              <div className="flex flex-col p-2 rounded-lg border border-slate-600/40 bg-slate-900/40 hover:bg-slate-900/60 transition-all">
-                <div className="flex items-center gap-1 mb-1">
-                  <Pencil className="h-3 w-3 text-slate-400" />
-                  <span className="text-[8px] font-medium text-slate-300">策略文字</span>
-                </div>
-                <div className="flex gap-1 mb-1">
-                  <button
-                    onClick={() => setStrategyEditMode(strategyEditMode === 'star' ? null : 'star')}
-                    className={cn(
-                      "flex-1 px-1 py-0.5 rounded text-[7px] font-medium transition-all",
-                      strategyEditMode === 'star'
-                        ? "bg-amber-500/30 text-amber-300 border border-amber-500/50"
-                        : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
-                    )}
-                  >
-                    一星級
-                  </button>
-                  <button
-                    onClick={() => setStrategyEditMode(strategyEditMode === 'super' ? null : 'super')}
-                    className={cn(
-                      "flex-1 px-1 py-0.5 rounded text-[7px] font-medium transition-all",
-                      strategyEditMode === 'super'
-                        ? "bg-red-500/30 text-red-300 border border-red-500/50"
-                        : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
-                    )}
-                  >
-                    超級獎
-                  </button>
+              <div className={`flex-1 flex flex-col rounded-lg border p-2 space-y-1 transition-all ${
+                strategyEditMode 
+                  ? 'border-yellow-500/60 bg-yellow-500/10 ring-1 ring-yellow-500/30' 
+                  : 'border-yellow-600/40 bg-yellow-500/5'
+              }`}>
+                {/* 編輯狀態指示器 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setStrategyEditMode(strategyEditMode === 'star' ? null : 'star')}
+                      className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
+                        strategyEditMode === 'star'
+                          ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/50"
+                          : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
+                      }`}
+                    >
+                      一星級
+                    </button>
+                    <button
+                      onClick={() => setStrategyEditMode(strategyEditMode === 'super' ? null : 'super')}
+                      className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
+                        strategyEditMode === 'super'
+                          ? "bg-red-500/30 text-red-300 border border-red-500/50"
+                          : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
+                      }`}
+                    >
+                      超級獎
+                    </button>
+                  </div>
+                  {/* 狀態標籤 */}
+                  <div className={`text-[7px] font-semibold px-1.5 py-0.5 rounded ${
+                    strategyEditMode 
+                      ? 'bg-yellow-500/30 text-yellow-300' 
+                      : 'bg-slate-700/30 text-slate-400'
+                  }`}>
+                    {strategyEditMode ? '✎ 編輯中' : '👁 預覽'}
+                  </div>
                 </div>
                 {strategyEditMode ? (
                   <textarea
