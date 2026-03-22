@@ -3,6 +3,17 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ApiKeyPanel } from "@/components/ApiKeyPanel";
 import { AnalysisResultModal } from "@/components/AnalysisResultModal";
 import { AiManualCalculation } from "@/components/AiManualCalculation";
@@ -561,6 +572,20 @@ export default function AiStarPage() {
     try { return localStorage.getItem('aistar_strategy_super') || ""; } catch { return ""; }
   });
   const [strategyEditMode, setStrategyEditMode] = useState<'star' | 'super' | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  // 清除策略文字的函數
+  const handleClearStrategy = useCallback(() => {
+    setStrategyTextStar('');
+    setStrategyTextSuper('');
+    setStrategyEditMode(null);
+    try {
+      localStorage.removeItem('aistar_strategy_star');
+      localStorage.removeItem('aistar_strategy_super');
+    } catch {}
+    toast.success('策略文字已清除');
+    setShowClearConfirm(false);
+  }, []);
 
   // 自動儲存策略文字到 localStorage
   useEffect(() => {
@@ -858,24 +883,33 @@ export default function AiStarPage() {
                       {strategyEditMode ? '✎ 編輯中' : '👁 預覽'}
                     </div>
                     {(strategyTextStar || strategyTextSuper) && (
-                      <button
-                        onClick={() => {
-                          if (window.confirm('確定要清除所有策略文字嗎？此操作無法復原。')) {
-                            setStrategyTextStar('');
-                            setStrategyTextSuper('');
-                            setStrategyEditMode(null);
-                            try {
-                              localStorage.removeItem('aistar_strategy_star');
-                              localStorage.removeItem('aistar_strategy_super');
-                            } catch {}
-                            toast.success('策略文字已清除');
-                          }
-                        }}
-                        title="清除策略文字"
-                        className="px-1.5 py-0.5 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
-                      >
-                        ✕ 清除
-                      </button>
+                      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            title="清除策略文字"
+                            className="px-1.5 py-0.5 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
+                          >
+                            ✕ 清除
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-sm">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>確認清除策略文字？</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              此操作將清除一星級和超級獎的所有策略文字，且無法復原。是否繼續？
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>取消</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleClearStrategy}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              確認清除
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 </div>

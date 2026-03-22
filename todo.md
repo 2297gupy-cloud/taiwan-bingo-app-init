@@ -839,3 +839,7 @@
 
 ## Bug 修復 (2026-03-22)
 - [x] 修復 SlotCard 組件中 strategyText is not defined ReferenceError
+
+## 確認彈窗功能 (2026-03-22)
+- [x] 為「清除」按鈕添加確認彈窗
+- [x] 測試彈窗顯示和確認/取消功能
