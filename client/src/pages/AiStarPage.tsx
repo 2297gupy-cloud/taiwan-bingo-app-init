@@ -552,9 +552,21 @@ export default function AiStarPage() {
   const [batchAnalysisProgress, setBatchAnalysisProgress] = useState(0);
   const [batchAnalysisTotal, setBatchAnalysisTotal] = useState(0);
   const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false);
-  const [strategyTextStar, setStrategyTextStar] = useState("");
-  const [strategyTextSuper, setStrategyTextSuper] = useState("");
+  const [strategyTextStar, setStrategyTextStar] = useState<string>(() => {
+    try { return localStorage.getItem('aistar_strategy_star') || ""; } catch { return ""; }
+  });
+  const [strategyTextSuper, setStrategyTextSuper] = useState<string>(() => {
+    try { return localStorage.getItem('aistar_strategy_super') || ""; } catch { return ""; }
+  });
   const [strategyEditMode, setStrategyEditMode] = useState<'star' | 'super' | null>(null);
+
+  // 自動儲存策略文字到 localStorage
+  useEffect(() => {
+    try { localStorage.setItem('aistar_strategy_star', strategyTextStar); } catch {}
+  }, [strategyTextStar]);
+  useEffect(() => {
+    try { localStorage.setItem('aistar_strategy_super', strategyTextSuper); } catch {}
+  }, [strategyTextSuper]);
 
   // 查詢時段配置
   const { data: slotsData } = trpc.aiStar.getSlots.useQuery(undefined, {
