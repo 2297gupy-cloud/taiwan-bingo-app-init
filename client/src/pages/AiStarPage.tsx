@@ -20,7 +20,7 @@ import { AiManualCalculation } from "@/components/AiManualCalculation";
 import {
   Loader2, Sparkles, Copy, CheckCircle2, XCircle, ChevronLeft, ChevronRight,
   CalendarDays, Trash2, Clock, Brain, Zap, Pencil, ClipboardCheck, Settings,
-  BarChart3, Share2
+  BarChart3, Share2, TrendingUp
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -356,7 +356,7 @@ function VerifyRow({ item }: {
 }
 
 // ============================================================
-// 時段卡片組件
+// 時段卡片組件（改進版：整合 AI 分析按鈕 + 開獎期數）
 // ============================================================
 
 function SlotCard({
@@ -366,6 +366,8 @@ function SlotCard({
   isSelected,
   onSelect,
   onDelete,
+  onAnalyze,
+  isAnalyzing,
   dateStr,
   userApiKey,
   strategyText,
@@ -382,6 +384,8 @@ function SlotCard({
   isSelected: boolean;
   onSelect: () => void;
   onDelete?: () => void;
+  onAnalyze?: () => void;
+  isAnalyzing?: boolean;
   dateStr: string;
   userApiKey?: { openaiKey: string | null; geminiKey: string | null };
   strategyText?: string;
@@ -390,6 +394,7 @@ function SlotCard({
   const [, setLocation] = useLocation();
   const [copied, setCopied] = useState(false);
   const [showFullAnalysis, setShowFullAnalysis] = useState(false);
+
   // 每個卡片複製的是 source 時段的數據（前一個時段）
   const { data: formattedData } = trpc.aiStar.getHourData.useQuery(
     { dateStr, sourceHour: slot.source, copyRange: slot.copyRange },
@@ -411,13 +416,10 @@ function SlotCard({
 
   const handleCopy = useCallback(() => {
     if (formattedData?.text) {
-      // 移除 formattedData.text 中所有表格前的 7 點說明（包括開頭和重複的）
       let baseText = formattedData.text;
-      // 使用 global 標志移除所有以 "1. 演算之後" 開頁的 7 點說明，不論是開頭還是重複的
       const sevenPointsPattern = /^1\. 演算之後 12 期出[\s\S]*?(?=\n--+|\n期別|\n【AI)/gm;
       baseText = baseText.replace(sevenPointsPattern, '').trim();
       
-      // 附加策略文字（如果有選中的策略）
       let textToCopy = baseText;
       if (strategyText && strategyText.trim()) {
         const strategyLabel = strategyMode === 'star' ? '【AI一星級策略】' : strategyMode === 'super' ? '【AI超級獎策略】' : '【策略文字】';
@@ -425,12 +427,10 @@ function SlotCard({
       }
       navigator.clipboard.writeText(textToCopy).then(() => {
         setCopied(true);
-        // 顯示卡片標籤（target 時段）
         const strategyHint = strategyText ? ` + ${strategyMode === 'star' ? '一星級' : '超級獎'}策略` : '';
         toast.success(`已複製 ${slot.target}時 (${slot.copyRange || slot.source + "00~" + slot.source + "55"}) 數據${strategyHint}，自動分析中...`);
         setTimeout(() => setCopied(false), 2000);
         
-        // 複製後自動執行分析
         setTimeout(() => {
           const encodedData = encodeURIComponent(textToCopy);
           const url = `/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`;
@@ -444,10 +444,8 @@ function SlotCard({
 
   const handleCopyToAnalyze = useCallback(() => {
     if (formattedData?.text) {
-      // 使用 hash 方式傳遞大量數據，避免 URL 長度限制
       const encodedData = encodeURIComponent(formattedData.text);
       const url = `/?tab=aianalyze&rawData=${encodedData}&autoAnalyze=1`;
-      // 使用 setLocation 進行 React 內導航，避免頁面重新加載
       setLocation(url);
       toast.success("已複製到 AI演算，自動分析中...");
     } else {
@@ -456,17 +454,6 @@ function SlotCard({
   }, [formattedData, setLocation]);
 
   const longPress = useLongPress(handleCopy, 300);
-  // 禁用長按功能，改為單擊複製並自動分析
-  const simpleLongPress = {
-    handlers: {
-      onClick: (e: React.MouseEvent) => {
-        e.stopPropagation();
-        handleCopy();
-      }
-    },
-    pressing: false,
-    progress: 0
-  };
 
   return (
     <div
@@ -540,11 +527,36 @@ function SlotCard({
           </span>
         </div>
       ) : (
-        <div className="flex items-center justify-center py-1">
+        <div className="flex items-center justify-center py-0.5">
           <span className="text-[9px] text-muted-foreground/50">尚未分析</span>
         </div>
       )}
-      <p className="text-[6px] text-muted-foreground/30 text-center mt-1">長按複製</p>
+      {/* 整合 AI 分析按鈕到卡片底部 */}
+      {onAnalyze && (
+        <button
+          onClick={e => { e.stopPropagation(); onAnalyze(); }}
+          disabled={isAnalyzing}
+          className={cn(
+            "mt-1 w-full flex items-center justify-center gap-0.5 py-0.5 rounded text-[7px] font-medium transition-all",
+            isAnalyzing
+              ? "bg-amber-500/10 text-amber-400/60 cursor-not-allowed"
+              : "bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 active:scale-95"
+          )}
+        >
+          {isAnalyzing ? (
+            <Loader2 className="h-2 w-2 animate-spin" />
+          ) : (
+            <Brain className="h-2 w-2" />
+          )}
+          {isAnalyzing ? "分析中" : "AI分析"}
+        </button>
+      )}
+      {/* 開獎期數指示 */}
+      {drawsInHour > 0 && (
+        <p className="text-[6px] text-muted-foreground/40 text-center mt-0.5">
+          已開{drawsInHour}期
+        </p>
+      )}
     </div>
   );
 }
@@ -569,9 +581,8 @@ export default function AiStarPage() {
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [modalResult, setModalResult] = useState<any>(null);
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
-  const [batchAnalysisProgress, setBatchAnalysisProgress] = useState(0);
-  const [batchAnalysisTotal, setBatchAnalysisTotal] = useState(0);
-  const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false);
+  // 追蹤每個時段的分析狀態（用於 SlotCard 內嵌 AI 分析按鈕）
+  const [analyzingSlots, setAnalyzingSlots] = useState<Set<string>>(new Set());
   const [strategyTextStar, setStrategyTextStar] = useState<string>(() => {
     try { return localStorage.getItem('aistar_strategy_star') || ""; } catch { return ""; }
   });
@@ -684,14 +695,13 @@ export default function AiStarPage() {
   const currentSlotInfo = slots.find(s => s.source === safeEffectiveSlot);
 
   // 驗證時段：每個卡片的黃金球在同時段驗證（verifyHour = target）
-  // 14時卡片 → verifyHour="14" → 驗證 14:00~14:55（即時顯示已開獎結果）
   const effectiveVerifySlot = verifySlot || currentSlotInfo?.target || null;
   const verifySlotInfo = effectiveVerifySlot ? slots.find(s => s.target === effectiveVerifySlot) : null;
   const verifyPrediction = effectiveVerifySlot
     ? predictions?.find(p => p.targetHour === effectiveVerifySlot)
     : currentPrediction;
 
-  // 驗證結果查詢：用 verifyHour（卡片顯示時段+1）查詢（只有選擇了日期才查詢）
+  // 驗證結果查詢
   const actualVerifyHour = verifySlotInfo?.verifyHour || "";
   const { data: verifyResult } = trpc.aiStar.verify.useQuery(
     {
@@ -706,14 +716,12 @@ export default function AiStarPage() {
     }
   );
 
-  // AI 分析 mutation
+  // AI 分析 mutation（單一時段）
   const analyzeMutation = trpc.aiStar.analyze.useMutation({
     onSuccess: (data) => {
-      // 檢查是否使用了專業演算或 LLM
       const usedAI = (data as any).usedProfessionalAnalysis || (data as any).usedLLM;
       const llmErr = (data as any).llmError;
       if (llmErr && !usedAI) {
-        // LLM 失敗，回退到統計方法
         const isApiKeyError = llmErr.includes("401") || llmErr.includes("invalid_api_key") || llmErr.includes("Incorrect API key");
         if (isApiKeyError) {
           toast.error(`❌ API Key 無效！已回退到統計方法分析。`, {
@@ -730,23 +738,32 @@ export default function AiStarPage() {
         const keyType = usedAI ? "AI 專業演算" : "統計方法";
         toast.success(`${data.sourceHour}時段分析完成 (${keyType})，推薦 ${data.goldenBalls.length} 顆黃金球`);
       }
-      // 只儲存結果，不自動彈出（用戶點擊「AI 推理說明」時才彈出）
       setModalResult(data);
+      // 清除該時段的分析中狀態
+      setAnalyzingSlots(prev => {
+        const next = new Set(prev);
+        next.delete(data.sourceHour);
+        return next;
+      });
       refetchPredictions();
     },
     onError: (err) => {
       toast.error(`AI 分析失敗：${err.message}`);
+      // 清除所有分析中狀態
+      setAnalyzingSlots(new Set());
     },
   });
 
-  // 批量分析 mutation
+  // 批量分析 mutation（一鍵全部分析）
   const batchAnalyzeMutation = trpc.aiStar.batchAnalyze.useMutation({
     onSuccess: (data) => {
       toast.success(`批量分析完成！成功 ${data.success}/${data.total} 個時段`);
+      setAnalyzingSlots(new Set());
       refetchPredictions();
     },
     onError: (err) => {
       toast.error(`批量分析失敗：${err.message}`);
+      setAnalyzingSlots(new Set());
     },
   });
 
@@ -769,7 +786,7 @@ export default function AiStarPage() {
     },
   });
 
-  // 取得格式化時段數據（用於複製）（只有選擇了日期才查詢）
+  // 取得格式化時段數據（用於複製）
   const { data: hourDataForCopy } = trpc.aiStar.getHourData.useQuery(
     { dateStr: dateStr || todayStr, sourceHour: effectiveSlot, copyRange: currentSlotInfo?.copyRange },
     { staleTime: 30000, enabled: hasDateSelected }
@@ -796,6 +813,12 @@ export default function AiStarPage() {
       toast.success("數據已複製，可貼到 AI 工具分析");
     }
   };
+
+  // 單一時段 AI 分析處理函數
+  const handleSlotAnalyze = useCallback((sourceHour: string) => {
+    setAnalyzingSlots(prev => new Set(prev).add(sourceHour));
+    analyzeMutation.mutate({ dateStr: dateStr || todayStr, sourceHour });
+  }, [analyzeMutation, dateStr, todayStr]);
 
   if (!slotsData) {
     return (
@@ -853,33 +876,19 @@ export default function AiStarPage() {
             </div>
           </div>
 
-          {/* 第二行：說明文字 & 按鍵 */}
+          {/* 第二行：說明文字 & 操作按鍵（三卡片：AI手動網址、API KEY、清除全部） */}
           <div className="mb-2">
             <p className="text-[10px] text-muted-foreground/60 mb-2">
-              選擇時段 → AI 分析 → 驗證命中 · 長按卡片可複製數據
+              點擊時段卡片選擇 → 卡片內 AI分析 → 驗證命中 · 長按卡片可複製數據
             </p>
-            {/* 第一排：四卡片框架（AI手動網址、一鍵全部分析、API KEY、清除全部） */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-1 w-full">
+            {/* 操作卡片：三卡片（移除「一鍵全部分析」，改整合到各時段卡片） */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-1.5 w-full mb-2">
               {/* 卡片 1: AI手動網址 */}
               <div className="flex flex-col items-center justify-center p-2 sm:p-1.5 rounded-lg border border-slate-700/50 bg-slate-900/30 hover:bg-slate-900/50 hover:border-slate-600/70 transition-all cursor-pointer">
                 <AiManualCalculation />
               </div>
               
-              {/* 卡片 2: 一鍵全部分析 */}
-              <button
-                onClick={() => batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr })}
-                disabled={batchAnalyzeMutation.isPending}
-                className="flex flex-col items-center justify-center p-2 sm:p-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/50 transition-all"
-              >
-                {batchAnalyzeMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 sm:h-3 sm:w-3 animate-spin text-amber-400 mb-1" />
-                ) : (
-                  <Sparkles className="h-4 w-4 sm:h-3 sm:w-3 text-amber-400 mb-1" />
-                )}
-                <span className="text-[9px] sm:text-[8px] text-amber-400 text-center leading-tight">一鍵全部分析</span>
-              </button>
-              
-              {/* 卡片 3: API KEY */}
+              {/* 卡片 2: API KEY */}
               <button
                 onClick={() => setShowApiKeyPanel(!showApiKeyPanel)}
                 className="flex flex-col items-center justify-center p-2 sm:p-1.5 rounded-lg border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 transition-all relative"
@@ -894,7 +903,7 @@ export default function AiStarPage() {
                 )}
               </button>
               
-              {/* 卡片 4: 清除全部 */}
+              {/* 卡片 3: 清除全部 */}
               <button
                 onClick={async () => {
                   try {
@@ -924,19 +933,49 @@ export default function AiStarPage() {
               </button>
             </div>
 
-            {/* 第二排：文字編輯卡片 */}
-            <div className={`mt-2 flex flex-col rounded-lg border p-2 space-y-1 transition-all ${
+            {/* 一鍵全部分析（獨立橫幅按鈕，更醒目） */}
+            <button
+              onClick={() => {
+                // 標記所有時段為分析中
+                const allSources = slots.map(s => s.source);
+                setAnalyzingSlots(new Set(allSources));
+                batchAnalyzeMutation.mutate({ dateStr: dateStr || todayStr });
+              }}
+              disabled={batchAnalyzeMutation.isPending}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15 hover:border-amber-500/60 transition-all mb-2"
+            >
+              {batchAnalyzeMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+              )}
+              <span className="text-[10px] font-semibold text-amber-400">
+                {batchAnalyzeMutation.isPending ? "批量分析中，請稍候..." : "⚡ 一鍵全部分析（所有時段）"}
+              </span>
+              {!batchAnalyzeMutation.isPending && (
+                <span className="text-[9px] text-amber-400/60">
+                  {predictions?.length || 0}/{slots.length} 已完成
+                </span>
+              )}
+            </button>
+
+            {/* 策略文字編輯卡片（整合到各時段總覽上方） */}
+            <div className={`flex flex-col rounded-lg border p-2 space-y-1 transition-all ${
                 strategyEditMode 
                   ? 'border-yellow-500/60 bg-yellow-500/10 ring-1 ring-yellow-500/30' 
                   : 'border-yellow-600/40 bg-yellow-500/5'
               }`}>
-              {/* 編輯狀態指示器 */}
+              {/* 策略標題列 */}
               <div className="flex items-center justify-between flex-wrap gap-1">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-yellow-400" />
+                  <span className="text-[9px] font-semibold text-yellow-400">策略文字</span>
+                </div>
                 <div className="flex gap-1 flex-wrap min-w-0">
                   <div className="flex gap-0.5 items-center">
                     <button
                       onClick={() => setStrategyEditMode(strategyEditMode === 'star' ? null : 'star')}
-                      className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
+                      className={`px-2 py-0.5 rounded text-[8px] font-medium transition-all ${
                         strategyEditMode === 'star'
                           ? "bg-yellow-500/30 text-yellow-300 border border-yellow-500/50"
                           : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
@@ -978,7 +1017,7 @@ export default function AiStarPage() {
                   <div className="flex gap-0.5 items-center">
                     <button
                       onClick={() => setStrategyEditMode(strategyEditMode === 'super' ? null : 'super')}
-                      className={`px-2 py-1 rounded text-[8px] font-medium transition-all ${
+                      className={`px-2 py-0.5 rounded text-[8px] font-medium transition-all ${
                         strategyEditMode === 'super'
                           ? "bg-red-500/30 text-red-300 border border-red-500/50"
                           : "bg-slate-800/50 text-slate-400 border border-slate-700/30 hover:bg-slate-800/70"
@@ -1017,9 +1056,7 @@ export default function AiStarPage() {
                       </AlertDialog>
                     )}
                   </div>
-                </div>
-                {/* 狀態標籤 + 清除按鍵 */}
-                <div className="flex items-center gap-1 flex-wrap justify-end">
+                  {/* 狀態標籤 */}
                   <div className={`text-[7px] font-semibold px-1.5 py-0.5 rounded ${
                     strategyEditMode 
                       ? 'bg-yellow-500/30 text-yellow-300' 
@@ -1034,7 +1071,7 @@ export default function AiStarPage() {
                           title="清除策略文字"
                           className="px-1.5 py-0.5 rounded text-[7px] font-medium bg-slate-700/50 text-slate-400 border border-slate-600/40 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 transition-all"
                         >
-                          ✕ 清除
+                          ✕ 清除全部
                         </button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="max-w-sm">
@@ -1067,10 +1104,10 @@ export default function AiStarPage() {
                       : setStrategyTextSuper(e.target.value)
                   }
                   placeholder="輸入策略文字..."
-                  className="w-full min-h-[120px] p-2 rounded bg-slate-800/60 border border-slate-600/40 text-[8px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
+                  className="w-full min-h-[100px] p-2 rounded bg-slate-800/60 border border-slate-600/40 text-[8px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-slate-500/60 resize-none"
                 />
               ) : (
-                <div className="w-full min-h-[120px] p-2 rounded bg-slate-800/30 border border-slate-700/20 text-[8px] text-slate-400 overflow-y-auto scrollbar-thin whitespace-pre-wrap break-words">
+                <div className="w-full min-h-[60px] p-2 rounded bg-slate-800/30 border border-slate-700/20 text-[8px] text-slate-400 overflow-y-auto scrollbar-thin whitespace-pre-wrap break-words">
                   {strategyEditMode === null && (strategyTextStar || strategyTextSuper) ? (
                     <div className="space-y-1 text-slate-300">
                       {strategyTextStar && <div className="whitespace-pre-wrap break-words"><strong>一星級：</strong>
@@ -1079,43 +1116,50 @@ export default function AiStarPage() {
 {strategyTextSuper}</div>}
                     </div>
                   ) : (
-                    <span className="text-slate-500 italic">點擊編輯按鈕</span>
+                    <span className="text-slate-500 italic">點擊「一星級」或「超級獎」按鈕開始編輯策略文字</span>
                   )}
                 </div>
               )}
             </div>
-
-
           </div>
 
           {/* API Key 設定面板 */}
           {showApiKeyPanel && <ApiKeyPanel onClose={() => setShowApiKeyPanel(false)} />}
 
-          {/* 第三行：批量分析進度提示 */}
+          {/* 批量分析進度提示 */}
           {batchAnalyzeMutation.isPending && (
             <div className="mb-2 p-2 rounded bg-amber-500/10 border border-amber-500/20">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
-                <span className="text-[10px] text-amber-400">正在批量分析所有時段，請稍候...</span>
+                <span className="text-[10px] text-amber-400">
+                  正在批量分析所有時段（{predictions?.length || 0}/{slots.length}）...
+                </span>
+              </div>
+              {/* 進度條 */}
+              <div className="mt-1.5 w-full h-1 rounded-full bg-amber-500/10">
+                <div
+                  className="h-full rounded-full bg-amber-400 transition-all"
+                  style={{ width: `${slots.length > 0 ? ((predictions?.length || 0) / slots.length) * 100 : 0}%` }}
+                />
               </div>
             </div>
           )}
 
-          {/* 第四行：時段網格 */}
+          {/* 各時段總覽（整合 AI 分析按鈕） */}
           <div className="flex items-center gap-1.5 mb-1.5">
             <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
             <span className="text-xs font-medium text-foreground shrink-0">各時段總覽</span>
             <span className="text-[10px] text-muted-foreground">
-              {predictions?.length || 0} 個已分析
+              {predictions?.length || 0}/{slots.length} 已分析
             </span>
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-1">
             {slots.map(slot => {
               const pred = predictions?.find(p => p.sourceHour === slot.source);
-              // isCurrent: 當前時間對應的卡片（比對 target 時段）
               const isCurrent = currentSlot?.hour === slot.target;
-                const isSelected = safeEffectiveSlot === slot.source;
+              const isSelected = safeEffectiveSlot === slot.source;
+              const isSlotAnalyzing = analyzingSlots.has(slot.source) || batchAnalyzeMutation.isPending;
               return (
                 <SlotCard
                   key={slot.source}
@@ -1136,18 +1180,19 @@ export default function AiStarPage() {
                       toast.error("清除失敗");
                     }
                   } : undefined}
+                  onAnalyze={() => handleSlotAnalyze(slot.source)}
+                  isAnalyzing={isSlotAnalyzing}
                   dateStr={dateStr || todayStr}
                   strategyText={strategyEditMode === 'star' ? strategyTextStar : strategyEditMode === 'super' ? strategyTextSuper : (strategyTextStar || strategyTextSuper)}
                   strategyMode={strategyEditMode || (strategyTextStar ? 'star' : strategyTextSuper ? 'super' : null)}
                 />
               );
             })}
-
           </div>
         </CardContent>
       </Card>
 
-      {/* ── 選中時段 黃金球展示 ── */}
+      {/* ── 選中時段 黃金球展示（移除「一鍵全部分析」按鍵，保留「AI分析」） ── */}
       <Card className="border-border/30">
         <CardContent className="p-2.5">
           <div className="flex items-center justify-between mb-2">
@@ -1172,13 +1217,14 @@ export default function AiStarPage() {
                   複製數據
                 </button>
               )}
+              {/* 此處只保留單一時段 AI 分析按鈕，移除「一鍵全部分析」 */}
               <div className="relative">
                 <Button
-                  onClick={() => analyzeMutation.mutate({ dateStr: dateStr || todayStr, sourceHour: safeEffectiveSlot })}
-                  disabled={analyzeMutation.isPending}
+                  onClick={() => handleSlotAnalyze(safeEffectiveSlot)}
+                  disabled={analyzeMutation.isPending || analyzingSlots.has(safeEffectiveSlot)}
                   className="gap-1.5 text-xs px-3 py-1.5 h-8 font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-md border-0 hover:scale-105"
                 >
-                  {analyzeMutation.isPending ? (
+                  {(analyzeMutation.isPending || analyzingSlots.has(safeEffectiveSlot)) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Brain className="h-4 w-4" />
@@ -1300,7 +1346,7 @@ export default function AiStarPage() {
             </div>
           </div>
 
-          {/* 驗證時段選擇：顯示「卡片時段 → 驗證時段」 */}
+          {/* 驗證時段選擇 */}
           <div className="mb-2">
             <p className="text-[10px] text-muted-foreground mb-1">選擇驗證時段（即時驗證同時段開獎結果）：</p>
             <div className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border/20">
@@ -1321,7 +1367,6 @@ export default function AiStarPage() {
                           : "border-transparent text-muted-foreground/30 cursor-not-allowed"
                     )}
                   >
-                    {/* 顯示卡片時段（target = verifyHour，即時驗證同時段） */}
                     <span>{slot.target.padStart(2, "0")}時</span>
                     <span className="text-[7px] opacity-60">{slot.verifyRange?.replace("~", "-") || ""}</span>
                   </button>
@@ -1517,7 +1562,7 @@ export default function AiStarPage() {
                     {isDailyVerifyLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                   </div>
 
-                  {/* 時段選擇橫向溻動列 */}
+                  {/* 時段選擇橫向滾動列 */}
                   {dailyVerifyDetails && (
                     <>
                       <div className="flex gap-0 overflow-x-auto scrollbar-none border-b border-border/20 mb-2">
